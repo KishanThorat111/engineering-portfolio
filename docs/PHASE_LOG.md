@@ -394,3 +394,113 @@ rehabilitation (6) any time before launch.
 
 Phase 4 — Flagship Proof: the Hospital System (T10). Open with the Phase 4 contract from
 `docs/IMPLEMENTATION_HANDOFF.md` §4. Read this log first, especially decisions 1–3.
+
+---
+
+## Phase 4 — Flagship Proof: the Hospital System (Blueprint T10) · 4 August 2026
+
+### Shipped
+
+- **`src/layouts/CaseStudyLayout.astro`** — the reusable case-study template implementing
+  blueprint §4.0 items 1–10 in order, and the anti-drift mechanism Phase 5 depends on.
+- **`/systems/hospital-operations`** — the flagship case study.
+- **`src/content/systems/hospital-operations.md`** — the system entry, and four decision
+  entries in the `decisions` collection scoped to it.
+- **`src/components/diagrams/HospitalArchitecture.astro`** — hand-authored architecture SVG
+  in the token palette.
+- The metric schema gained a required `caption`; the phone number moved to print-only.
+
+### Verification record
+
+- Remote CI green.
+- **The anti-drift guard was proven by breaking it**: removing the `security` slot failed the
+  build with *"Case study 'hospital-operations' is missing required section(s): security"*.
+  Reverted uncommitted.
+- **The route/id coupling was proven too**: renaming the content file failed the build
+  immediately with *"Missing content entry: systems/hospital-operations"* — the page's own
+  guard catches it before it can degrade into a subtle broken link. Reverted uncommitted.
+- **Verified in a browser**: page renders with **zero images** and no holes; 0 horizontal
+  overflow at 390px; exactly one `h1`; sections render in §4.0 order (Context, Constraints,
+  Architecture, Decisions, Security, Operations, Limitations, Outcomes); 4 decision cards, 2
+  limitations, 3 stat blocks, 3 takeaways.
+- **Home's featured-systems section now renders** — 1 card, linking to
+  `/systems/hospital-operations`, which returns 200. It appeared purely from authoring
+  content, with no edit to Home, exactly as Phase 3 designed.
+- **Diagram legibility measured, not assumed**: at 360px the SVG renders 328px wide, labels at
+  13.1px and secondary text at 10.4px; every text node measured against its own box, nothing
+  overflows. One label was shortened after measurement.
+- Budgets: case study 10.6KB gz HTML + 2.3KB gz CSS ≈ 12.9KB (budget 90KB). Still **zero
+  bundled JS**.
+- All gates pass including contrast; `format:check` clean; `npm audit` 0 vulnerabilities.
+- The regenerated `cv.pdf` is byte-identical to the committed one after the phone change,
+  which independently confirms both determinism and that the number still prints.
+
+### Template contract — what Phase 5 MUST inherit
+
+1. **What is shared (do not re-implement per system).** `CaseStudyLayout` owns the section
+   order and renders these from schema data, so they cannot drift: the **header** (title,
+   status badge, role line, stack), the **decision cards**, the **limitations**, and the
+   **outcomes block** (metrics, optional prose, three-bullet recruiter box). Section headings
+   and kickers are also the layout's, not the page's.
+2. **What is per-system.** Five required prose slots — `context`, `constraints`,
+   `architecture`, `security`, `operations` — plus two optional ones, `outcomes` (prose above
+   the takeaway box) and `gallery`. A sixth slot, `owner-input`, carries asset markers.
+3. **A missing required slot fails the build.** This is the anti-drift guard. If Phase 5 finds
+   a section genuinely does not apply to a system, **do not delete the requirement** — the
+   correct move is to write the section saying so plainly, which is more honest anyway. If the
+   section list itself must change, change it once in the layout, apply to all three, and
+   record why here.
+4. **A page is one file per system**, e.g. `src/pages/systems/menu-platform.astro`, and it must
+   `getEntry` with a hard error if the entry is missing (copy the guard from the hospital
+   page). The content file name fixes the route, so `menu-platform.md` ⇒
+   `/systems/menu-platform`, which is what Home already links to.
+5. **Decision cards come from the `decisions` collection**, filtered by `system` matching the
+   entry id and sorted by `order`. Phase 5 authors Menu's and Electrical's the same way. The
+   layout's decisions heading currently reads "Four calls, and what each one cost" — **if a
+   system has a different number of decisions, that heading needs generalising once, in the
+   layout, for all three.** This is the single most likely drift point.
+6. **Gallery renders only if the page provides the slot.** With no images the section is
+   absent, not empty. Do not ship placeholder frames.
+7. **OWNER-INPUT markers must be injected with `set:html`**, not written as literal comments
+   in a Fragment. A Fragment whose only children are comments renders as empty — Astro treats
+   it as having no content, so the markers silently never reach the built HTML. The hospital
+   page shows the pattern: an array of asset descriptions mapped to comment strings.
+8. **Ruling 4 holds on every case study.** No user counts, tenant counts, revenue, or uptime
+   — they do not exist in evidence. Where a reader might expect them, the hospital page says
+   plainly why they are absent, in the `outcomes` slot. Phase 5 should do the same rather than
+   leaving a silent gap.
+9. **Metrics now require a `caption`.** Split the figure from its unit: value `256`, caption
+   "CI-gated tests passing at the readiness audit", qualifier "as of Jul 2026".
+
+### Content decisions worth knowing
+
+- **Two limitations, not three.** Blueprint §4.1 names exactly two as mandatory and §4.0
+  allows two or three. A third real finding is available from the knowledge base if the owner
+  wants it published: the worker permanent-delete endpoint lacks the history guard its
+  supervisor equivalent has (KB §15 finding 4, rated Medium/High). It was left out because
+  publishing a potential data-loss path in a hospital system is a disclosure decision beyond
+  an implementation phase, and Ruling 4 makes conservative the default. **Not a gap — a
+  parked choice.**
+- **The first limitation is stated without a rescue.** Its "addressed by" line says nothing
+  was retrofitted, because nothing was. Softening it there would have discredited every other
+  sentence on the site. Phase 6 supplies the cross-link to the readiness programme that
+  followed.
+- **The phone number is print-only.** Hidden from the rendered page, present in the PDF, since
+  claims must match between them but contact routing need not. Residual: it is still in the
+  page source, so this stops it being read, not scraped. If the owner wants it genuinely
+  absent from the HTML, the PDF script would need to inject it at print time instead.
+
+### OWNER-INPUT — open items
+
+Phase 4 adds **five**, all gallery screenshots for the hospital case study, each recorded in
+the built HTML with its exact capture and sanitisation requirements. The page is complete
+without them by design. Total open markers now six, including the headshot.
+
+Otherwise unchanged: domain and Cloudflare Pages project still gate a live URL; lessons
+confirmation bites in Phase 6; GitHub profile rehabilitation any time before launch.
+
+### Next session
+
+Phase 5 — The System Suite (T11–T13). Open with the Phase 5 contract from
+`docs/IMPLEMENTATION_HANDOFF.md` §4. Read this log first, especially the template contract
+above — items 3, 5, and 7 are where drift would start.
