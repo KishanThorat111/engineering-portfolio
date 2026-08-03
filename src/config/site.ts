@@ -14,9 +14,20 @@ export const SITE = {
     'subscription billing — engineered and operated end-to-end as sole engineer, alongside ' +
     'enterprise AI workflow automation for a UK client.',
   email: 'kishanthorat111@outlook.com',
+  /**
+   * Published because it is the contact detail on the ratified CV source and a
+   * CV without one is materially weaker for the recruiter journey. It lives
+   * here rather than in page markup so the owner can withdraw it from the site
+   * and the PDF together, in one edit.
+   */
+  phone: '+91 95386 65107',
   linkedin: 'https://linkedin.com/in/kishanthorat',
   github: 'https://github.com/KishanThorat111',
   repo: 'https://github.com/KishanThorat111/engineering-portfolio',
+  location: 'Belagavi, India',
+  /** Blueprint §2, Home section 6. Traces to the CV's Additional Information line. */
+  availability: 'Open to relocation — UK · available immediately',
+  languages: ['English', 'Hindi', 'Kannada', 'Marathi'],
 } as const;
 
 /** Hero status chips — blueprint §2, Home section 1 (locked set). */

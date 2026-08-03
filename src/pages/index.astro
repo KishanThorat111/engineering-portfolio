@@ -1,22 +1,143 @@
 ---
+/**
+ * Home — blueprint §2 section ordering.
+ *
+ * Sections 3 and 4 are driven by the `systems` and `experience` collections,
+ * which Phases 4–6 author. They render nothing while those collections are
+ * empty, so those phases light them up by adding content and never by editing
+ * this page. That is deliberate: constitution rule 9 forbids shipping a
+ * placeholder, and the CI link gate forbids a card linking to a route that
+ * does not exist yet. An absent section is honest; a stubbed one is not.
+ */
+import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+import EvidenceChip from '../components/EvidenceChip.astro';
+import SystemCard from '../components/SystemCard.astro';
+import Button from '../components/Button.astro';
 import { SITE, STATUS_CHIPS } from '../config/site';
+import { PILLARS } from '../config/pillars';
 
-// Home in Phase 1 is the hero only — claim, sub-line, status chips
-// (blueprint §1 locked wording). The remaining five Home sections ship in
-// Phase 3 from content collections.
+const chips = (await getCollection('evidenceChips')).sort((a, b) => a.data.order - b.data.order);
+const systems = (await getCollection('systems')).sort((a, b) => a.data.order - b.data.order);
+const roles = (await getCollection('experience')).sort((a, b) => a.data.order - b.data.order);
+
+/** The current role snapshot is the most recent entry — blueprint §2 section 4. */
+const currentRole = roles[0];
+
 const title = `${SITE.name} — ${SITE.claim}`;
+
+/** Blueprint §6: stagger entrances by no more than 60ms. */
+const stagger = (index: number) => `--reveal-delay: ${Math.min(index * 60, 240)}ms`;
 ---
 
 <BaseLayout title={title} description={SITE.subline}>
+  <!-- 1. Hero — locked claim, sub-line, and status chips (blueprint §1). -->
   <section class="hero">
     <div class="container">
       <p class="kicker">{SITE.role}</p>
       <h1>{SITE.claim}</h1>
       <p class="subline">{SITE.subline}</p>
-      <ul class="status-chips">
-        {STATUS_CHIPS.map((chip) => <li>{chip}</li>)}
+
+      <ul class="chip-strip">
+        {
+          STATUS_CHIPS.map((chip) => (
+            <li>
+              <EvidenceChip fact={chip} />
+            </li>
+          ))
+        }
       </ul>
+
+      <div class="hero-actions">
+        <Button href="/cv.pdf" download>Download CV</Button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Proof strip — every chip traceable, every figure dated. -->
+  <section class="band" aria-labelledby="proof-heading">
+    <div class="container">
+      <h2 id="proof-heading" class="visually-hidden">Evidence</h2>
+      <ul class="chip-strip">
+        {
+          chips.map((chip, index) => (
+            <li data-reveal style={stagger(index)}>
+              <EvidenceChip fact={chip.data.fact} qualifier={chip.data.qualifier} />
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- 3. Featured systems — appears when Phases 4–5 author the collection. -->
+  {
+    systems.length > 0 && (
+      <section class="band">
+        <div class="container">
+          <SectionHeader kicker="Systems" title="Built, secured, and operated end to end" />
+          <div class="system-grid">
+            {systems.slice(0, 3).map((system, index) => (
+              <div data-reveal style={stagger(index)}>
+                <SystemCard
+                  title={system.data.title}
+                  status={system.data.status}
+                  statusDetail={system.data.statusDetail}
+                  problem={system.data.problem}
+                  stack={system.data.stack}
+                  href={`/systems/${system.id}`}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- 4. Current role snapshot — appears when Phase 6 authors the collection. -->
+  {
+    currentRole && (
+      <section class="band">
+        <div class="container">
+          <SectionHeader kicker="Current role" title={currentRole.data.role} />
+          <div class="body-copy narrow" data-reveal>
+            <p class="role-org">
+              {currentRole.data.organisation} · {currentRole.data.from} – {currentRole.data.to}
+            </p>
+            <p>{currentRole.data.bullets[0]}</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- 5. How I work — the five pillars, one line each (blueprint §1). -->
+  <section class="band">
+    <div class="container">
+      <SectionHeader kicker="How I work" title="Five things I hold to" />
+      <ul class="pillars">
+        {
+          PILLARS.map((pillar, index) => (
+            <li data-reveal style={stagger(index)}>
+              <h3>{pillar.title}</h3>
+              <p>{pillar.line}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- 6. Closing — availability and contact. -->
+  <section class="band closing">
+    <div class="container">
+      <SectionHeader kicker="Availability" title={SITE.availability} />
+      <div class="closing-actions" data-reveal>
+        <Button href={`mailto:${SITE.email}`}>Email me</Button>
+        <Button href={SITE.linkedin} variant="secondary" rel="me noopener">LinkedIn</Button>
+      </div>
     </div>
   </section>
 </BaseLayout>
@@ -28,7 +149,7 @@ const title = `${SITE.name} — ${SITE.claim}`;
 
   @media (min-width: 768px) {
     .hero {
-      padding-block: var(--space-24) var(--space-16);
+      padding-block: var(--space-24) var(--space-12);
     }
   }
 
@@ -59,7 +180,10 @@ const title = `${SITE.name} — ${SITE.claim}`;
     font-size: var(--text-md);
   }
 
-  .status-chips {
+  /* One list shape for both kinds of chip. They share this visual form and
+     nothing else: the hero's are locked §1 status wording, the proof strip's
+     are the evidenceChips collection. */
+  .chip-strip {
     list-style: none;
     display: flex;
     flex-wrap: wrap;
@@ -68,13 +192,77 @@ const title = `${SITE.name} — ${SITE.claim}`;
     padding: 0;
   }
 
-  .status-chips li {
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-block-start: var(--space-8);
+  }
+
+  .band {
+    padding-block: var(--space-12);
+  }
+
+  .band .chip-strip {
+    margin-block-start: 0;
+  }
+
+  .system-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 768px) {
+    .system-grid {
+      grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    }
+  }
+
+  .narrow {
+    max-width: var(--measure);
+  }
+
+  .role-org {
     font-family: var(--font-mono);
     font-size: var(--text-sm);
-    color: var(--text);
-    background: var(--bg-raised);
-    border: var(--border-width) solid var(--border);
-    border-radius: 999px;
-    padding: var(--space-1) var(--space-3);
+    color: var(--text-muted);
+    margin-block-end: var(--space-3);
+  }
+
+  .pillars {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .pillars {
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-8);
+    }
+  }
+
+  .pillars h3 {
+    font-size: var(--text-base);
+    margin-block-end: var(--space-2);
+  }
+
+  .pillars p {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    max-width: 46ch;
+  }
+
+  .closing-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .closing {
+    padding-block-end: var(--space-16);
   }
 </style>
