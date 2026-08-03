@@ -284,3 +284,113 @@ project) remain the only ones blocking a live URL, and neither blocks Phase 3.
 
 Phase 3 — The Human Fast Lane (T7–T9). Open with the Phase 3 contract from
 `docs/IMPLEMENTATION_HANDOFF.md` §4. Read this log first, especially decisions 1 and 3.
+
+---
+
+## Phase 3 — The Human Fast Lane (Blueprint T7–T9) · 3 August 2026
+
+### Shipped
+
+- **Home**, composed in blueprint §2 order. The hero's page-local chip markup is gone,
+  replaced by `EvidenceChip` (the Phase 2 hand-off). Sections 3 and 4 are driven by the
+  `systems` and `experience` collections and render nothing while those are empty.
+- **/about** — the career-transfer narrative, human colour in one paragraph, and the
+  responsive headshot pipeline (`Headshot.astro`, AVIF/WebP via `Picture`) built and waiting
+  behind an OWNER-INPUT marker.
+- **/cv** — semantic HTML from `src/config/cv.ts`, with print styles that invert to black on
+  white — plus `scripts/cv-pdf.mjs` producing a committed, deterministic `/public/cv.pdf`.
+- **The motion system** — `src/styles/motion.css` and a ~600-byte inline reveal script. No
+  animation library; still zero bundled JavaScript.
+- Nav grown to About and CV; GitHub and LinkedIn moved to footer-only as Phase 1 planned.
+- A plain-language notice on `/dev/components` saying it is a workshop page.
+
+### Verification record
+
+- Remote CI green.
+- **Motion verified in a real browser across three conditions**, not asserted:
+  reduced-motion → nothing ever hidden (opacity 1, no transform, root flag never set);
+  JS disabled → identical; motion enabled → all 11 elements reveal on scroll, none left
+  hidden.
+- **Mobile checked at 390×844**: zero horizontal overflow on all four pages, exactly one
+  `h1` per page, mobile nav disclosure toggles `aria-expanded`, `/cv.pdf` resolves 200
+  `application/pdf`. The **CV download button sits at 683px — inside the first viewport**, so
+  the recruiter journey is one tap with no scrolling, well inside the 90-second budget.
+- **PDF determinism proven by hashing**: `npm run cv:pdf -- --check` renders twice and
+  reports identical SHA-256. Output is 3 pages, 237KB.
+- Budgets: heaviest page `/cv` at 5.8KB gz HTML + 3.4KB gz CSS ≈ 9.2KB (budget 90KB).
+  **Zero bundled JS files** — both scripts are inlined, ~1.1KB raw combined (budget 15KB gz).
+- All gates pass including contrast; `npm run format:check` clean; `npm audit` 0
+  vulnerabilities. Lockfile regenerated from scratch after adding the dependency, and `npm ci`
+  verified to reproduce the tree — the Phase 1 rule.
+
+### Engineering decisions — Phase 4+ MUST inherit these
+
+1. **Home sections 3 and 4 are data-driven and currently invisible.** `src/pages/index.astro`
+   renders the featured-systems grid only when `getCollection('systems')` is non-empty, and
+   the role snapshot only when `experience` is non-empty. **Phase 4 lights up the systems
+   section purely by authoring content — do not edit Home to "add" it.** Card hrefs are
+   already `/systems/{entry.id}`, so a file named `hospital-operations.md` must correspond to
+   a page at `/systems/hospital-operations` or the link gate will fail.
+2. **Home shows the first three systems by `order`**, and `SystemCard` shows the first three
+   `stack` entries. Phase 4/5 should set `order` deliberately: the flagship hospital system
+   should be `order: 1`, and the most important stack tags first.
+3. **The hero has one button, not two.** Blueprint §2 specifies "See the systems" and
+   "Download CV"; only the latter exists because `/systems` does not. **Phase 5 must restore
+   the second button** when it ships the systems index. The omission is deliberate — a dead
+   link fails the gate and inventing different wording would breach locked §1 copy.
+4. **Getting an empty collection logs a warning**, e.g. *"The collection 'systems' does not
+   exist or is empty"*. Expected until Phases 4–6 author content, same as decision 8 above.
+   Do not silence it by inventing entries.
+5. **The `.body-copy` and `.prose` classes activate the link underline slide-in** from
+   `motion.css`. Case-study prose in Phase 4 should use `.prose` so links behave consistently
+   with /about; nav and footer links deliberately keep their Phase 1 treatment.
+6. **`data-reveal` marks a revealable element; `data-reveal-ready` is the root flag.** They
+   must never share a name — see the bug below. To stagger entrances, set
+   `style="--reveal-delay: 60ms"`, capped at 240ms; the helper on Home shows the pattern.
+7. **Do not add a prop named `as`** (Phase 2 decision 1 still stands). `Headshot`, `Button`,
+   and `SectionHeader` all avoid it.
+8. **CV facts live in `src/config/cv.ts`, not in the page.** Phase 7's machine layer should
+   read that module rather than parse `/cv`. If a CV fact changes, change it there and
+   re-run `npm run build && npm run cv:pdf` so the PDF matches — the PDF is printed from the
+   page, so nothing else is needed to keep them consistent.
+9. **`npm run cv:pdf` is local-only and must never enter CI.** `playwright-core` was chosen
+   over `playwright` precisely because it has no browser-download postinstall. It drives Edge
+   or Chrome already installed on the machine. If CI ever needs the PDF, commit it — do not
+   add a browser to the pipeline.
+10. **Three narrowing edits to CV wording** are recorded in `src/config/cv.ts` with reasons:
+    the venture framing replaced per Ruling 1, absolute date qualifiers added to figures per
+    Ruling 3 and rule 2, and "Currently" replaced with a date per §3.5. Phase 6 will need the
+    same treatment for /experience bullets (Phase 2 decision 9).
+11. **Platform domains are plain text, never links** — Ruling 1 records that one page on that
+    domain uses language this portfolio does not, so the portfolio does not route a reader
+    there. Phase 4/5 case studies should follow this when naming platform URLs.
+
+### The bug the browser caught that the code review did not
+
+The reveal system was first written with the root flag and the per-element hook sharing one
+attribute name, `data-reveal`. That makes `<html>` itself match `[data-reveal]` — the exact
+selector the observer collects — so the root was observed, flipped to `in`, and every reveal
+rule stopped matching. Reading the code, it looked correct; the three-condition browser test
+showed `revealCount` of 12 instead of 11 and a root attribute reading `in`. Renamed to
+`data-reveal-ready`, re-tested, correct.
+
+The general lesson, which is the same one Phase 1 recorded in a different costume: **a
+mechanism is not verified until it has been executed in the conditions it claims to handle.**
+Reduced-motion support in particular is invisible to every gate in this repository — no
+typecheck, no copy gate, no HTML validation, and no contrast check would have caught it.
+
+### OWNER-INPUT — open items
+
+Phase 3 adds **one**: the headshot (item 3, previously listed as "bites in Phase 3" — it now
+does). It is marked in `src/pages/about.astro` with the exact filename and the two lines that
+switch it on. The page reads correctly without it, so this is not a launch blocker until
+Phase 8, but it is the last thing standing between /about and its intended form.
+
+Otherwise unchanged: domain and Cloudflare Pages project (items 1–2) still gate a live URL;
+screenshots (4) bite in Phases 4–5; lessons confirmation (5) in Phase 6; GitHub profile
+rehabilitation (6) any time before launch.
+
+### Next session
+
+Phase 4 — Flagship Proof: the Hospital System (T10). Open with the Phase 4 contract from
+`docs/IMPLEMENTATION_HANDOFF.md` §4. Read this log first, especially decisions 1–3.
