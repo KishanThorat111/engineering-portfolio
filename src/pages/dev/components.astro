@@ -52,6 +52,12 @@ const chips = (await getCollection('evidenceChips')).sort((a, b) => a.data.order
         from search and from the sitemap. Sample data is real and traceable — a component that needs
         invented data to look right is a finding about the component.
       </p>
+      <p class="fixture-notice">
+        <strong>This is a workshop page, not part of the portfolio.</strong> The examples below are arranged
+        to show component states, not to describe the work: cards are truncated, headings repeat, and
+        every link here points back to the home page rather than to a real one. Read
+        <a href="/">the site itself</a> for the actual content.
+      </p>
     </header>
 
     <section class="block">
@@ -228,6 +234,22 @@ const chips = (await getCollection('evidenceChips')).sort((a, b) => a.data.order
     margin-block-start: var(--space-4);
     max-width: var(--measure);
     color: var(--text-muted);
+  }
+
+  /* Carries the caution token because mistaking this page for the portfolio is
+     the one real risk of deploying it. */
+  .fixture-notice {
+    margin-block-start: var(--space-6);
+    max-width: var(--measure);
+    border-inline-start: 2px solid var(--accent-warm);
+    padding: var(--space-2) 0 var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+
+  .fixture-notice strong {
+    color: var(--text);
+    font-weight: var(--weight-medium);
   }
 
   .block {

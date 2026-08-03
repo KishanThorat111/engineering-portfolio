@@ -2,15 +2,20 @@
 import { SITE } from '../config/site';
 
 /*
- * Phase 1 navigation carries only destinations that exist: Contact (mailto),
- * GitHub, and LinkedIn. The five internal items (Systems · Experience ·
- * Engineering · About · CV) join this list as their routes ship in later
- * phases — the constitution forbids shipping links to pages that don't exist
- * yet (no placeholder content), and the CI link gate enforces it.
+ * Navigation carries only destinations that exist. Blueprint §2 specifies five
+ * internal items — Systems · Experience · Engineering · About · CV — and they
+ * join this list as their routes ship: About and CV in Phase 3, Systems in
+ * Phase 5, Experience and Engineering in Phase 6. The constitution forbids
+ * links to pages that do not exist, and the CI link gate enforces it.
+ *
+ * GitHub and LinkedIn were carried here in Phase 1 only because nothing
+ * internal existed yet. Phase 1 recorded that they move to footer-only once
+ * internal items land; that has now happened, and the footer still carries
+ * both (blueprint §2 puts them there).
  */
 const navLinks = [
-  { label: 'GitHub', href: SITE.github },
-  { label: 'LinkedIn', href: SITE.linkedin },
+  { label: 'About', href: '/about' },
+  { label: 'CV', href: '/cv' },
 ];
 ---
 
@@ -46,9 +51,7 @@ const navLinks = [
         {
           navLinks.map((link) => (
             <li>
-              <a href={link.href} rel="me noopener">
-                {link.label}
-              </a>
+              <a href={link.href}>{link.label}</a>
             </li>
           ))
         }
