@@ -1,0 +1,3 @@
+# Experience entries land here in Phase 6. Tracked now so the glob loader
+# resolves cleanly. Do not place a README.md here: the loader pattern is
+# **/*.md, so any Markdown file here is parsed as an experience entry.

@@ -1,0 +1,4 @@
+# Case-study content lands here in Phases 4-5. The directory is tracked now so
+# the glob loader resolves cleanly. Do not place a README.md here: the loader
+# pattern is **/*.md, so any Markdown file in this directory is parsed as a
+# system entry and validated against the schema.
