@@ -1,0 +1,481 @@
+---
+/**
+ * /cv — semantic HTML CV, and the source the PDF is printed from.
+ *
+ * `scripts/cv-pdf.mjs` renders this exact page to /public/cv.pdf, so the two
+ * cannot state different facts: there is one document, printed two ways. The
+ * print styles at the bottom are what make it print-perfect — a dark screen
+ * theme printed as-is would waste ink and read badly, so print inverts to
+ * black-on-white and drops the site chrome.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Button from '../components/Button.astro';
+import { SITE } from '../config/site';
+import {
+  CV_CERTIFICATIONS,
+  CV_EARLIER_CAREER,
+  CV_EDUCATION,
+  CV_PROFILE,
+  CV_ROLES,
+  CV_SKILLS,
+} from '../config/cv';
+---
+
+<BaseLayout
+  title={`CV — ${SITE.name}`}
+  description="Curriculum vitae: software engineer taking systems from design through to operated production."
+>
+  <div class="container cv-page">
+    <div class="cv-actions no-print">
+      <Button href="/cv.pdf" download>Download as PDF</Button>
+    </div>
+
+    <article class="cv">
+      <header class="cv-header">
+        <h1>{SITE.name}</h1>
+        <p class="cv-title">Software Engineer — full-stack and AI workflow automation</p>
+        <ul class="cv-contact">
+          <li>{SITE.location}</li>
+          <li>{SITE.phone}</li>
+          <li><a href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
+          <li><a href={SITE.linkedin} rel="me noopener">linkedin.com/in/kishanthorat</a></li>
+          <li><a href={SITE.github} rel="me noopener">github.com/KishanThorat111</a></li>
+        </ul>
+      </header>
+
+      <section class="cv-section">
+        <h2>Profile</h2>
+        <p>{CV_PROFILE}</p>
+      </section>
+
+      <section class="cv-section">
+        <h2>Experience</h2>
+        {
+          CV_ROLES.map((role) => (
+            <div class="role">
+              <div class="role-head">
+                <h3>
+                  {role.title} <span class="role-org">— {role.organisation}</span>
+                </h3>
+                <p class="role-period">{role.period}</p>
+              </div>
+              {role.note && <p class="role-note">{role.note}</p>}
+              {role.bullets.length > 0 && (
+                <ul class="role-bullets">
+                  {role.bullets.map((bullet) => (
+                    <li>{bullet}</li>
+                  ))}
+                </ul>
+              )}
+              {role.platforms &&
+                role.platforms.map((platform) => (
+                  <div class="platform">
+                    <h4>{platform.name}</h4>
+                    <p class="platform-meta">{platform.meta}</p>
+                    <ul class="role-bullets">
+                      {platform.bullets.map((bullet) => (
+                        <li>{bullet}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+            </div>
+          ))
+        }
+        <p class="earlier">{CV_EARLIER_CAREER}</p>
+      </section>
+
+      <section class="cv-section">
+        <h2>Technical skills</h2>
+        <dl class="skills">
+          {
+            CV_SKILLS.map((skill) => (
+              <div class="skill">
+                <dt>{skill.label}</dt>
+                <dd>{skill.value}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </section>
+
+      <section class="cv-section">
+        <h2>Education</h2>
+        <ul class="education">
+          {
+            CV_EDUCATION.map((entry) => (
+              <li>
+                <span class="qualification">{entry.qualification}</span>
+                <span class="institution">{entry.institution}</span>
+                <span class="period">{entry.period}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+
+      <section class="cv-section">
+        <h2>Certifications</h2>
+        <p class="certifications">{CV_CERTIFICATIONS}</p>
+      </section>
+
+      <section class="cv-section">
+        <h2>Additional information</h2>
+        <p>
+          {SITE.availability} · Languages: {SITE.languages.join(', ')}
+        </p>
+      </section>
+    </article>
+  </div>
+</BaseLayout>
+
+<style>
+  .cv-page {
+    padding-block: var(--space-12) var(--space-16);
+  }
+
+  .cv-actions {
+    margin-block-end: var(--space-8);
+  }
+
+  .cv {
+    max-width: 48rem;
+  }
+
+  .cv-header h1 {
+    font-size: var(--text-2xl);
+  }
+
+  .cv-title {
+    margin-block-start: var(--space-2);
+    color: var(--text-muted);
+    font-size: var(--text-md);
+  }
+
+  .cv-contact {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+    margin: var(--space-4) 0 0;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+
+  .cv-contact a {
+    color: var(--text-muted);
+  }
+
+  .cv-section {
+    margin-block-start: var(--space-12);
+  }
+
+  .cv-section > h2 {
+    font-size: var(--text-sm);
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    padding-block-end: var(--space-2);
+    border-block-end: var(--border-width) solid var(--border);
+    margin-block-end: var(--space-6);
+  }
+
+  .role + .role {
+    margin-block-start: var(--space-8);
+  }
+
+  .role-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+
+  .role-head h3 {
+    font-size: var(--text-md);
+  }
+
+  .role-org {
+    color: var(--text-muted);
+    font-weight: var(--weight-regular);
+  }
+
+  .role-period {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .role-note {
+    margin-block-start: var(--space-2);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .role-bullets {
+    margin: var(--space-3) 0 0;
+    padding-inline-start: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .role-bullets li {
+    font-size: var(--text-sm);
+    line-height: var(--leading-body);
+  }
+
+  .platform {
+    margin-block-start: var(--space-6);
+    padding-inline-start: var(--space-4);
+    border-inline-start: var(--border-width) solid var(--border);
+  }
+
+  .platform h4 {
+    font-size: var(--text-base);
+  }
+
+  .platform-meta {
+    margin-block-start: var(--space-1);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+  }
+
+  .earlier {
+    margin-block-start: var(--space-8);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+
+  .skills {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .skill {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  @media (min-width: 640px) {
+    .skill {
+      grid-template-columns: 11rem 1fr;
+      gap: var(--space-4);
+    }
+  }
+
+  .skill dt {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    padding-block-start: 0.15em;
+  }
+
+  .skill dd {
+    margin: 0;
+    font-size: var(--text-sm);
+  }
+
+  .education {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .education li {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .qualification {
+    font-weight: var(--weight-medium);
+  }
+
+  .institution,
+  .period {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .period {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+
+  .certifications {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+
+  /*
+   * Print — blueprint §2 requires /cv to be print-clean, and this is also
+   * exactly what scripts/cv-pdf.mjs captures. Ink and legibility both argue
+   * for black on white, so the dark theme is dropped rather than dimmed, and
+   * the site chrome that means nothing on paper is removed.
+   */
+  @media print {
+    .cv-page {
+      padding: 0;
+      max-width: none;
+    }
+
+    .cv {
+      max-width: none;
+    }
+
+    /* Tuned for paper, not for screen reading: a recruiter scans this in
+       under a minute, so vertical rhythm is compressed to keep related
+       material on one page rather than to feel spacious. */
+    .cv-section {
+      margin-block-start: 0.85rem;
+      break-inside: avoid;
+    }
+
+    .cv-section > h2 + * {
+      margin-block-start: 0;
+    }
+
+    .role + .role {
+      margin-block-start: 0.7rem;
+    }
+
+    .platform {
+      margin-block-start: 0.55rem;
+      padding-inline-start: 0.5rem;
+    }
+
+    .role-bullets {
+      margin-block-start: 0.3rem;
+      gap: 0.15rem;
+      padding-inline-start: 1rem;
+    }
+
+    .role-bullets li,
+    .skill dd,
+    .role-note {
+      line-height: 1.35;
+    }
+
+    .skills {
+      gap: 0.3rem;
+    }
+
+    .education {
+      gap: 0.45rem;
+    }
+
+    .earlier {
+      margin-block-start: 0.7rem;
+    }
+
+    .cv-contact {
+      margin-block-start: 0.4rem;
+    }
+
+    .role,
+    .platform,
+    .education li,
+    .skill {
+      break-inside: avoid;
+    }
+
+    .cv-header h1 {
+      font-size: 20pt;
+    }
+
+    .cv-title {
+      font-size: 10.5pt;
+    }
+
+    .cv-contact {
+      font-size: 8.5pt;
+      gap: 0.15rem 0.9rem;
+    }
+
+    .cv-section > h2 {
+      font-size: 8.5pt;
+      border-block-end: 0.5pt solid #999;
+      margin-block-end: 0.6rem;
+    }
+
+    .role-head h3 {
+      font-size: 11pt;
+    }
+
+    .platform h4 {
+      font-size: 10pt;
+    }
+
+    .role-bullets li,
+    .skill dd,
+    .role-note {
+      font-size: 9pt;
+    }
+
+    .role-period,
+    .platform-meta,
+    .skill dt,
+    .period {
+      font-size: 8pt;
+    }
+
+    .platform {
+      border-inline-start: 0.5pt solid #bbb;
+    }
+  }
+</style>
+
+<style is:global>
+  @media print {
+    /* Paper is white; the screen theme is not. Tokens are overridden rather
+       than component styles rewritten, so every colour follows in one step. */
+    :root {
+      --bg: #ffffff;
+      --bg-raised: #ffffff;
+      --text: #111111;
+      --text-muted: #444444;
+      --border: #cccccc;
+      --accent: #111111;
+    }
+
+    html,
+    body {
+      background: #ffffff !important;
+      color: #111111 !important;
+    }
+
+    .site-header,
+    .site-footer,
+    .skip-link,
+    .no-print {
+      display: none !important;
+    }
+
+    main {
+      padding: 0 !important;
+    }
+
+    a {
+      color: inherit !important;
+      text-decoration: none !important;
+    }
+
+    @page {
+      margin: 11mm 12mm;
+    }
+  }
+</style>

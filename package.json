@@ -21,6 +21,7 @@
     "gate:links": "node scripts/link-check.mjs",
     "gate:html": "html-validate \"dist/**/*.html\"",
     "gate:contrast": "node scripts/contrast-check.mjs",
+    "cv:pdf": "node scripts/cv-pdf.mjs",
     "verify": "npm run check && npm run build && npm run gate:copy && npm run gate:links && npm run gate:html && npm run gate:contrast"
   },
   "dependencies": {
@@ -31,6 +32,7 @@
     "@fontsource-variable/inter": "^5.2.0",
     "@fontsource-variable/jetbrains-mono": "^5.2.0",
     "html-validate": "^10.0.0",
+    "playwright-core": "^1.49.0",
     "prettier": "^3.4.0",
     "prettier-plugin-astro": "^0.14.0",
     "typescript": "^5.7.0"
