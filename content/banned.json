@@ -1,0 +1,41 @@
+{
+  "$comment": "Banned-word lists enforced against BUILT HTML by scripts/copy-check.mjs. Sources: blueprint Ruling 1 (identity words) and blueprint §3.4 (hype words); placeholders are build-blockers under Truth Constitution rule 9. Terms match case-insensitively on word boundaries; spaces match any whitespace.",
+  "identity": [
+    "founder",
+    "co-founder",
+    "founders",
+    "CEO",
+    "owner",
+    "owners",
+    "business owner",
+    "sole proprietor",
+    "sole proprietorship",
+    "startup",
+    "startups",
+    "entrepreneur",
+    "entrepreneurs",
+    "entrepreneurial",
+    "my company",
+    "my business",
+    "my startup",
+    "our customers",
+    "clients"
+  ],
+  "hype": [
+    "passionate",
+    "ninja",
+    "rockstar",
+    "guru",
+    "cutting-edge",
+    "cutting edge",
+    "revolutionary",
+    "world-class",
+    "blazing",
+    "seamless",
+    "seamlessly",
+    "innovative",
+    "magic",
+    "magical"
+  ],
+  "placeholder": ["lorem ipsum", "coming soon", "placeholder", "TODO", "TBD", "FIXME"]
+}

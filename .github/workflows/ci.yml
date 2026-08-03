@@ -1,0 +1,69 @@
+# CI truth gates — blueprint §7.5.
+#
+# Every push to main passes these gates before it can deploy. The gates encode
+# the Truth Constitution rather than promising it: the copy gate greps BUILT
+# HTML for banned identity and hype words (Ruling 1, §3.4), the link gate makes
+# dead internal links a build failure, and the dependency audit applies the
+# lesson this portfolio publishes — known CVEs must never reach main silently.
+#
+# Lighthouse runs warn-only until Phase 8 hardening flips it to enforcing.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gates:
+    name: Build & truth gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Dependency audit (production, high+)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Typecheck
+        run: npm run check
+
+      - name: Build
+        run: npm run build
+
+      - name: Copy gate — banned words against built HTML
+        run: npm run gate:copy
+
+      - name: Internal link check
+        run: npm run gate:links
+
+      - name: HTML validation
+        run: npm run gate:html
+
+  lighthouse:
+    name: Lighthouse (warn-only until Phase 8)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Lighthouse CI
+        run: npx --yes @lhci/cli@0.14.x autorun
