@@ -14,18 +14,15 @@ export const SITE = {
     'subscription billing — engineered and operated end-to-end as sole engineer, alongside ' +
     'enterprise AI workflow automation for a UK client.',
   email: 'kishanthorat111@outlook.com',
-  /**
-   * PRINT ONLY — deliberately absent from the rendered web page, present in
-   * the downloadable PDF. Do not "fix" this by showing it on /cv.
+  /*
+   * There is deliberately no phone number here.
    *
-   * The rule is that the site and the PDF must state identical *claims*;
-   * contact routing is not a claim. A recruiter who downloads the CV gets the
-   * number they need, while a public web page does not display a personal
-   * mobile to every passer-by and scraper. The split is implemented in
-   * src/pages/cv.astro with a `print-only` class, and the PDF is captured
-   * under print emulation, so it picks the number up automatically.
+   * It lives in content/print-contact.json, which nothing under src/ imports,
+   * so no page can render it and it never reaches the built HTML. The PDF
+   * script injects it at print time instead. An earlier version hid it with a
+   * print-only CSS class, which kept it out of sight but left it in the page
+   * source for anything harvesting contact details. Do not add it back here.
    */
-  phone: '+91 95386 65107',
   linkedin: 'https://linkedin.com/in/kishanthorat',
   github: 'https://github.com/KishanThorat111',
   repo: 'https://github.com/KishanThorat111/engineering-portfolio',

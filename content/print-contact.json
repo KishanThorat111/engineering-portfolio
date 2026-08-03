@@ -1,0 +1,4 @@
+{
+  "$comment": "Contact details that belong in the downloadable CV but not on a public web page. Read ONLY by scripts/cv-pdf.mjs, which injects them into the document at print time. Deliberately NOT in src/config/site.ts: nothing under src/ imports this file, so no page can render these values even by accident, and they never appear in the built HTML for a scraper to find. The site and the PDF must state identical claims — a phone number is a contact channel, not a claim.",
+  "phone": "+91 95386 65107"
+}

@@ -35,14 +35,15 @@ import {
         <h1>{SITE.name}</h1>
         <p class="cv-title">Software Engineer — full-stack and AI workflow automation</p>
         <ul class="cv-contact">
-          <li>{SITE.location}</li>
           {
-            /* Print only — see the note on SITE.phone. The site and the PDF must
-              state identical claims; a contact channel is not a claim, so the
-              number travels with the downloadable document rather than sitting
-              on a public page. */
+            /* No phone number here, deliberately. It is injected into the PDF at
+              print time by scripts/cv-pdf.mjs, from content/print-contact.json,
+              and nothing under src/ imports that file. The site and the PDF must
+              state identical claims; a contact channel is not a claim, and a
+              public page should not carry a personal mobile in its source where
+              a harvester can read it. */
           }
-          <li class="print-only">{SITE.phone}</li>
+          <li>{SITE.location}</li>
           <li><a href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
           <li><a href={SITE.linkedin} rel="me noopener">linkedin.com/in/kishanthorat</a></li>
           <li><a href={SITE.github} rel="me noopener">github.com/KishanThorat111</a></li>
@@ -172,11 +173,6 @@ import {
 
   .cv-contact a {
     color: var(--text-muted);
-  }
-
-  /* Hidden on screen, restored in the print block below. */
-  .print-only {
-    display: none;
   }
 
   .cv-section {
@@ -415,11 +411,6 @@ import {
     .cv-contact {
       font-size: 8.5pt;
       gap: 0.15rem 0.9rem;
-    }
-
-    /* The phone number joins the document here and only here. */
-    .print-only {
-      display: list-item;
     }
 
     .cv-section > h2 {

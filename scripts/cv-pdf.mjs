@@ -35,6 +35,15 @@ const DIST = resolve('dist');
 const OUTPUT = resolve('public/cv.pdf');
 const CHECK = process.argv.includes('--check');
 
+/**
+ * Contact details that belong in the printed document but not on a public web
+ * page. This file is the only reader of content/print-contact.json — nothing
+ * under src/ imports it, so these values cannot reach the built HTML even by
+ * accident, which is the point. Hiding the number with CSS kept it out of
+ * sight but left it in the page source for anything harvesting addresses.
+ */
+const PRINT_CONTACT = JSON.parse(await readFile(resolve('content/print-contact.json'), 'utf8'));
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -107,6 +116,26 @@ async function renderPdf() {
   try {
     const page = await browser.newPage();
     await page.goto(`http://127.0.0.1:${port}/cv`, { waitUntil: 'load' });
+
+    // Add the contact details that exist only in the printed document. Done
+    // here, in a page the browser is about to print and then discard, so the
+    // number is never written into any file the site serves.
+    const injected = await page.evaluate((phone) => {
+      const list = document.querySelector('.cv-contact');
+      if (!list) return false;
+      const item = document.createElement('li');
+      item.textContent = phone;
+      // After the location, matching the order on the source CV.
+      list.children[0]?.insertAdjacentElement('afterend', item) ?? list.prepend(item);
+      return true;
+    }, PRINT_CONTACT.phone);
+    if (!injected) {
+      throw new Error(
+        'cv-pdf: could not find .cv-contact on /cv — the print-only contact block was not added. ' +
+          'Fix the selector rather than shipping a PDF missing its contact details.',
+      );
+    }
+
     // Self-hosted fonts must be resolved before printing, or the PDF falls
     // back to a system face and the line breaks move.
     await page.evaluate(() => document.fonts.ready);
