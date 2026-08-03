@@ -504,3 +504,112 @@ confirmation bites in Phase 6; GitHub profile rehabilitation any time before lau
 Phase 5 — The System Suite (T11–T13). Open with the Phase 5 contract from
 `docs/IMPLEMENTATION_HANDOFF.md` §4. Read this log first, especially the template contract
 above — items 3, 5, and 7 are where drift would start.
+
+---
+
+## Phase 5 — The System Suite (Blueprint T11–T13) · 4 August 2026
+
+### Shipped
+
+- **`/systems/menu-platform`** and **`/systems/electrical-platform`** — the payments case study
+  and the engineering-maturity case study, on the Phase 4 template unchanged in shape.
+- **`/systems`** — the index: three cards, correct statuses, no more-systems strip.
+- **Four new diagrams**: menu architecture, the payment-flow diagram, electrical architecture,
+  and the test-tier diagram.
+- **Two shared changes made once and re-verified across all three**: the decisions heading now
+  derives from the card count, and diagram styling moved to `src/styles/diagrams.css`.
+- The hero's second button restored; Systems added to the nav; the phone number removed from
+  the CV page source entirely.
+
+### Verification record
+
+- Remote CI green.
+- **The heading generalisation was proven by breaking it**: unscoping one decision changed the
+  menu page's heading to *"Three calls, and what each one cost"*. Reverted uncommitted.
+- **All three case studies verified identical in the built output**: same eight sections in
+  §4.0 order (Context, Constraints, Architecture, Decisions, Security, Operations,
+  Limitations, Outcomes), one `h1` each, zero horizontal overflow at 390px, **zero images**,
+  three takeaways each.
+- **Statuses verified everywhere they appear** — the three case studies, Home, and the index —
+  reading `IN PRODUCTION — HOSPITAL`, `LIVE`, `PRE-LAUNCH (Q3 2026)` consistently.
+- **All five diagrams measured at 360px**: 13.1px labels, 10.4px secondary text, every text
+  node checked against its own containing box, none overflowing.
+- **The phone number appears zero times across all nine built pages**, confirmed by searching
+  the built output rather than the source. The PDF still regenerates deterministically with
+  identical hashes across two runs.
+- Budgets: heaviest page 10.8KB gz HTML + 2.3KB gz CSS ≈ 13.1KB (budget 90KB). Still **zero
+  bundled JS**.
+- All gates pass including contrast; `format:check` clean; `npm audit` 0 vulnerabilities.
+
+### Changes to shared code — the record Phase 6 needs
+
+1. **The decisions heading counts its cards.** `CaseStudyLayout` spells the count as a word
+   ("Four calls, and what each one cost", "One call, and what it cost"). If a system ever
+   carries more than nine decisions the helper falls back to a digit — revisit the wording
+   then rather than adding a special case now.
+2. **Diagram styling is `src/styles/diagrams.css`**, imported once by `CaseStudyLayout`.
+   Classes are `dg`, `dg-box`, `dg-key`, `dg-inner`, `dg-label`, `dg-sub`, `dg-flow`,
+   `dg-flow-dashed`, `dg-arrowhead`. **Type sizes there are load-bearing** — they are what
+   put labels at 13.1px on a 360px screen. Changing them changes every diagram at once;
+   re-measure if you do.
+3. **Arrowhead markers need unique ids per diagram.** `ArrowMarker.astro` takes an `id`
+   because marker ids are document-global and the menu page carries two diagrams — sharing an
+   id would have the second silently inherit the first's definition.
+4. **The template itself was not otherwise touched.** Slots, section order, and the required-
+   slot guard are exactly as Phase 4 left them.
+
+### What Phase 6 inherits
+
+1. **The more-systems strip belongs on `/experience`**, not on `/systems` — blueprint §4.4.
+   The index was deliberately left as three cards only.
+2. **The hospital limitation is waiting for its cross-link.** The first limitation on
+   `/systems/hospital-operations` says nothing was retrofitted; the electrical page's context
+   says that platform is where the lesson was applied. **Phase 6's Lesson 1 is what joins
+   them** — blueprint §4.5 asks for the cross-link from the lesson to the readiness
+   programme.
+3. **Decision entries carry a `system` field.** The eight authored so far are all scoped to a
+   system. Blueprint §4.5c wants six decision records on `/engineering`, including the
+   SQL-first router and dual-path activation — both already exist as entries
+   (`wtms-sql-first-ai-router`, `menu-dual-path-activation`). Render them there from the same
+   entries rather than re-authoring; that is rule 10 working.
+4. **Phase 6 will need date qualifiers on CV-derived experience bullets** (Phase 2 decision 9,
+   still open).
+5. **`src/config/pillars.ts` already holds the five pillars** with their one-line forms, used
+   by Home. `/engineering` adds a concrete evidence line to each — extend that module rather
+   than writing a second copy.
+
+### Content decisions worth knowing
+
+- **The Electrical audit verdict is published; its two critical findings are not.** The page
+  states plainly that the most recent readiness audit returned a not-ready verdict with two
+  critical blockers open, and frames that as the programme working. The findings themselves —
+  known dependency vulnerabilities in the production set, and a non-functional offsite backup
+  path — are deliberately not enumerated. They are live security findings on an unlaunched
+  system, and naming them publicly is a disclosure rather than a case study. This is the same
+  judgement as the hospital one below, applied consistently.
+- **The WTMS worker permanent-delete finding is permanently unpublished — planning-authority
+  ruling.** A live data-loss path in a clinical production system is a security disclosure,
+  not portfolio content. **No later phase reopens this.** It is not a gap in the case study
+  and should not be re-proposed as one; Phase 4 parked it as an open choice and that choice
+  is now closed.
+- **The phone number ruling superseded Phase 4's approach.** Print-only CSS hid it from
+  readers but left it in the page source for harvesters. It now lives in
+  `content/print-contact.json`, which nothing under `src/` imports, and the PDF script injects
+  it at print time. Do not move it back into `src/`.
+
+### OWNER-INPUT — open items
+
+Phase 5 adds **seven** gallery screenshots — four for Menu, three for Electrical — each with
+its exact capture and sanitisation requirements in the built HTML. Both pages are complete
+without them. **Total open markers now thirteen**: one headshot and twelve screenshots.
+
+Otherwise unchanged: domain and Cloudflare Pages project still gate a live URL; lessons
+confirmation bites in Phase 6; GitHub profile rehabilitation any time before launch.
+
+### Next session
+
+Phase 6 — The Narrative Layer (T14–T15). Open with the Phase 6 contract from
+`docs/IMPLEMENTATION_HANDOFF.md` §4. Read this log first. Note the unblock rule: if the
+owner's opening message says "Lessons approved as drafted", blueprint §4.5 wording is
+confirmed and both lessons publish; otherwise build the structure, insert OWNER-INPUT, and
+halt those blocks.
