@@ -1,0 +1,199 @@
+---
+/**
+ * /systems/hospital-operations — the flagship case study.
+ *
+ * Structure, section order, and the constitutional sections (header,
+ * decisions, limitations, outcomes) all come from CaseStudyLayout. This file
+ * supplies only the prose that is specific to this system. Phase 5 writes two
+ * more files shaped exactly like this one.
+ */
+import { getEntry } from 'astro:content';
+import CaseStudyLayout from '../../layouts/CaseStudyLayout.astro';
+import HospitalArchitecture from '../../components/diagrams/HospitalArchitecture.astro';
+
+const entry = await getEntry('systems', 'hospital-operations');
+if (!entry) throw new Error('Missing content entry: systems/hospital-operations');
+
+/**
+ * Gallery assets this case study still needs (blueprint §4.1 asset list), with
+ * the sanitisation each one requires (§8.3).
+ *
+ * These become HTML comments in the built page, where `scripts/copy-check.mjs`
+ * reports them on every run and Phase 8 treats any survivor as a launch
+ * blocker. They are injected with `set:html` rather than written as literal
+ * comments in the template because a Fragment whose only children are comments
+ * renders as empty — Astro treats it as having no content, so the markers
+ * would silently never reach the output.
+ *
+ * The page is complete without these images by design. When they arrive, add a
+ * `gallery` slot of <Figure demoTenant> elements and the gallery section
+ * renders itself. Do not ship empty frames waiting to be filled.
+ */
+const SANITISATION =
+  'Demo or staging tenant only. No real staff, patient, or guest names; no real hospital ' +
+  'name or logo in frame; no photographs of actual people; browser chrome cropped or a clean ' +
+  'profile with no bookmarks, extensions, or console visible.';
+
+const PENDING_GALLERY = [
+  'Screenshot 1 of 5 — the QR scan and cleaning submission flow, mobile 390x844, showing the location resolved from the scan and the photo-capture step.',
+  'Screenshot 2 of 5 — the supervisor dashboard, desktop 1440x900, showing the day rounds and their status.',
+  'Screenshot 3 of 5 — a maintenance ticket through its lifecycle, desktop 1440x900, ideally a publicly reported fault at the point of resolution. No guest contact details in frame.',
+  'Screenshot 4 of 5 — a NABH compliance report exported to PDF and captured as an image. Redact every figure identifying the institution. If redaction leaves it unreadable, omit it rather than ship a censored-looking page.',
+  'Screenshot 5 of 5 — the self-service attendance kiosk, mobile 390x844, at the point of capture. Demo worker record; no real selfie of a real person.',
+];
+
+const ownerInputMarkers = PENDING_GALLERY.map(
+  (asset) => `<!-- OWNER-INPUT: ${asset} ${SANITISATION} -->`,
+).join('\n');
+---
+
+<CaseStudyLayout entry={entry}>
+  <Fragment slot="context">
+    <p>
+      Housekeeping in a hospital is not judged on whether the work happened. It is judged on whether
+      anyone can show that it happened — to a supervisor at the end of a shift, and to an
+      accreditation assessor months later. That evidence problem is what this platform exists to
+      solve.
+    </p>
+    <p>
+      It runs the housekeeping operation at a NABH-accredited hospital: cleaning rounds anchored to
+      a physical location by QR code and submitted with photographs, maintenance faults that anyone
+      standing in front of one can report, staff attendance and leave, and the accreditation
+      reporting that pulls all of it together.
+    </p>
+    <p>
+      Three groups use it and only one of them has an account. Admins configure locations, staff,
+      shifts, and reports. Supervisors log in from the floor to submit cleaning records and resolve
+      tickets. Patients, nurses, and housekeeping workers use it without ever registering — which is
+      the constraint that shaped most of what follows.
+    </p>
+  </Fragment>
+
+  <Fragment slot="constraints">
+    <p>
+      <strong>No team.</strong> Every decision here was made, implemented, deployed, and then carried
+      by one person. That changes what is worth building: anything demanding constant attention is a bad
+      trade even when it is the better engineering.
+    </p>
+    <p>
+      <strong>A budget of one machine.</strong> The API, the database, and the reverse proxy are three
+      containers on a single virtual machine.
+    </p>
+    <p>
+      <strong>Users who will not sign up.</strong> A patient reporting a broken light will not create
+      an account, and neither will a worker clocking in at the start of a shift. The design had to work
+      for people who never authenticate at all.
+    </p>
+    <p>
+      <strong>Evidence people have a reason to fake.</strong> Cleaning records and attendance both attest
+      to work being done, by people whose shifts depend on that work being recorded. A system holding
+      that kind of claim has to assume it will be lied to.
+    </p>
+    <p>
+      <strong>Two compliance regimes at once.</strong> India's DPDP Act governs the personal data flowing
+      through it; NABH accreditation governs what the hospital has to be able to demonstrate about its
+      own cleaning.
+    </p>
+  </Fragment>
+
+  <Fragment slot="architecture">
+    <HospitalArchitecture />
+    <div class="prose body-copy lifecycle">
+      <p>
+        A request reaches Caddy, which terminates TLS and forwards to Fastify. Fastify binds to
+        localhost and nothing else, so the proxy is the only thing that can reach it even if a cloud
+        firewall rule were wrong one day.
+      </p>
+      <p>
+        Then the part that matters. The token is verified, and the user is reloaded from the
+        database rather than trusted from the token's own claims — so a disabled account stops
+        working immediately instead of at expiry. The organisation is checked as active. Only then
+        does the handler run, and every query it makes is scoped by the organisation id taken from
+        that verified token. A client can supply an organisation id; the server will compare it and
+        reject a mismatch, but it will never use it.
+      </p>
+      <p>
+        Photographs go to object storage, but they are never served from it directly — the bucket
+        stays private and images are proxied back through the application, so access to a photograph
+        is still a decision the application makes.
+      </p>
+    </div>
+  </Fragment>
+
+  <Fragment slot="security">
+    <p>
+      One organisation is one hospital, and it is the root of everything. Nearly every row carries
+      its id, and where a natural key could collide between two organisations — a staff email, an
+      employee number, a shift name — uniqueness is scoped to the organisation rather than declared
+      globally. The isolation is in the schema, not only in the queries.
+    </p>
+    <p>
+      Sessions are stateless tokens with a flat 24-hour life and no refresh table. Revocation works
+      by moving a timestamp on the user record: any token issued before it stops being accepted
+      everywhere at once, which is what a password change needs to mean.
+    </p>
+    <p>
+      There is exactly one way to cross a tenant boundary. A platform operator can act inside a
+      named organisation by sending a header, checked against that organisation being active. It is
+      the only impersonation path in the system, and it is deliberately the only one.
+    </p>
+    <p>
+      Identity and health fields are encrypted with AES-256-GCM in the application before they reach
+      a column, and in production the process refuses to start without a valid key rather than
+      falling back to storing them in the clear. Uploads are validated by their leading signature
+      bytes instead of the type the client claims, then re-encoded through an image pipeline that
+      discards the original file entirely.
+    </p>
+    <p>
+      Every unauthenticated endpoint carries its own rate limit, tuned per route rather than
+      inherited from a global default — the public surface is the largest one here, so it gets the
+      most specific treatment. The assistant runs a prompt-injection detector that marks a
+      suspicious message and raises an alert before the message reaches a model. Nearly every state
+      change writes an audit row: actor, action, entity, and a before-and-after snapshot.
+    </p>
+  </Fragment>
+
+  <Fragment slot="operations">
+    <p>
+      Every push to the main branch deploys. The pipeline connects to the host, resets the working
+      tree to the exact commit that triggered it — verified by comparing the hash rather than
+      trusting that a pull landed where it should — rebuilds the image without cache, and restarts
+      the stack behind a health check.
+    </p>
+    <p>
+      Then it does something slightly unusual: it searches the running container for a marker string
+      that should only exist in freshly built assets. A deploy that reports success while quietly
+      serving last week's files is worse than one that fails outright, because nobody goes looking
+      for it. That check exists because it happened.
+    </p>
+    <p>
+      The application container runs with a read-only root filesystem, as a non-root user, with
+      privilege escalation disabled, and bound to localhost. The database is bound to localhost too
+      and exposed to nothing else on the host.
+    </p>
+    <p>
+      Retention runs as scheduled work inside the same process: photographs deleted after their
+      window while the record they evidence is kept forever, guest contact details anonymised on a
+      longer clock, idle sessions closed. On boot the process looks for any organisation left
+      mid-reset by a crash and raises an alert, because the safe failure mode for a destructive
+      operation is to stay locked and visible rather than to half-finish quietly.
+    </p>
+  </Fragment>
+
+  <Fragment slot="outcomes">
+    <p>
+      There are no user counts, tenant counts, or uptime figures on this page. They are not
+      published anywhere I can point to, so stating them would mean estimating them, and an estimate
+      dressed as a measurement is the thing this site is arguing against. What is below is what the
+      system is configured to do, as of the last audit of its code.
+    </p>
+  </Fragment>
+
+  <Fragment slot="owner-input" set:html={ownerInputMarkers} />
+</CaseStudyLayout>
+
+<style>
+  .lifecycle {
+    margin-block-start: var(--space-8);
+  }
+</style>
