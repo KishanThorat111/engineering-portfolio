@@ -172,3 +172,115 @@ green when the entry was written. The Definition of Done is now met: run `308280
 green on `e977057`. The Node 24 pin stays (active LTS, matches the development machine, and
 Cloudflare Pages reads `.nvmrc`, so dev/CI/host share one runtime) — kept on its own merits,
 credited with nothing.
+
+---
+
+## Phase 2 — The Constitution Becomes Code (Blueprint T5–T6) · 3 August 2026
+
+### Shipped
+
+- **Five content collections** (`systems`, `experience`, `decisions`, `lessons`,
+  `evidenceChips`) with Zod schemas encoding the Truth Constitution. Schemas live in
+  `src/schemas/` (`constitution.ts` primitives, `content.ts` entities);
+  `src/content.config.ts` wires loaders only, so the schemas stay independently importable.
+- **The complete component set** from blueprint §5 — StatusBadge, EvidenceChip, SystemCard,
+  DecisionCard, LimitationNote, StatBlock, ExperienceCard, SectionHeader, Figure, Button.
+- **`/dev/components`** gallery rendering every component in every state, excluded from
+  discovery by page-level `noindex, nofollow` **and** `Disallow: /dev/` in a new
+  `public/robots.txt`.
+- **Token contrast gate** (`scripts/contrast-check.mjs`, wired into `npm run verify` and CI)
+  enforcing WCAG 2.2 AA on the pairings components actually use.
+- **The five evidence chips** as real content, transcribed from blueprint §2.
+
+### Verification record
+
+- Remote CI green — this is the completion standard inherited from the Phase 1 incident.
+- **The schema was proven by breaking it**, in the Phase 1 copy-gate manner: each invalid
+  file was built, the failure captured, and the file deleted before commit. All four fail
+  the build naming the field and the rule:
+  - system with `limitations: []` → *"Every system discloses at least one honest limitation
+    (constitution rule 3). A case study with nothing to disclose is marketing, not
+    engineering."*
+  - metric with no qualifier → *"metrics.0.qualifier: Required"* — a bare number is not a
+    representable value.
+  - chip stating `256 CI-gated tests` with no date → the rule-2 message.
+  - chip containing "founder" → *"Banned identity word …"*, proving the schema layer fires
+    before the built-HTML copy gate.
+- The schema also caught a genuine error in my own first draft of the chips, which is the
+  most useful evidence available that it is not decorative.
+- Budgets: gallery 4.5KB gz, home 1.8KB gz, CSS 2.1KB + 1.7KB gz — all far inside the 90KB
+  page budget. Components add **zero** client JS; the gallery carries one script tag, the
+  Phase 1 nav (≈0.4KB).
+- `npm run verify` green end to end; `npm run format:check` clean; `npm audit` 0
+  vulnerabilities.
+
+### Engineering decisions — Phase 3+ MUST inherit these
+
+1. **A prop named `as` silently breaks prop typing.** In this toolchain (Astro 7.1.6 +
+   @astrojs/check 0.9.10), a component prop literally named `as` collapses `Astro.props` to
+   `any`, disabling typechecking for that whole component — it surfaces only as a stray
+   "'Props' is declared but never used" warning. Isolated by bisecting a minimal component
+   pair: renaming the prop to `level` with everything else identical fixes it. **Every
+   polymorphic component here uses `level`.** This matters beyond style: it silently
+   disables a gate, so a future component adding an `as` prop would lose prop typechecking
+   without any error saying so.
+2. **Astro 7 content-layer API, read from the installed types rather than recalled:**
+   collections declare a `loader` (`glob` from `astro/loaders`), config must be
+   `src/content.config.ts`, and `z` is **Zod 4** via `astro/zod` (`astro:content`'s `z`
+   export is deprecated). Zod 4 takes `error`, not `message`; a dynamic message naming the
+   offending term needs `superRefine` with `ctx.addIssue`, because `.refine()`'s second
+   argument is no longer a message-producing function.
+3. **Hero status chips — the Phase 1 hand-off.** Phase 1 decision 5 parked the hero's chips
+   as page-local markup. `EvidenceChip` now exists and the `evidenceChips` collection is
+   populated. **Phase 3 must delete the `.status-chips` block and its styles from
+   `src/pages/index.astro` and render the proof strip from `getCollection('evidenceChips')`
+   through `EvidenceChip`.** Note the two are different things: the four hero *status* chips
+   (`3 platforms`, `1 in hospital production`, …) are locked hero wording from blueprint §1
+   and stay in `src/config/site.ts`; the *evidence* chips are the separate proof strip,
+   blueprint §2 section 2. Phase 3 should render the hero status chips with `EvidenceChip`
+   too, so one component owns that visual form.
+4. **Evidence chips are authored; Phase 3 renders them.** Blueprint §2 enumerates them
+   exactly, so writing them was transcription. Phase 3 owns ordering and placement, not
+   re-authoring.
+5. **Case-study routes do not exist yet.** The gallery's `SystemCard` hrefs point at `/`
+   because the CI link gate rightly refuses dead internal links. Phase 4/5 must update
+   `src/dev/preview-fixtures.ts` to the real hrefs when those routes ship.
+6. **Collection naming**: plural (`systems`, `decisions`, `lessons`, `evidenceChips`) except
+   `experience`, which is a mass noun and matches the `/experience` route.
+7. **Never put a `README.md` inside a content directory.** The loader pattern is `**/*.md`,
+   so any Markdown file there is parsed as an entry and fails validation. Each directory's
+   `.gitkeep` says so.
+8. **Empty-collection warnings are expected**, not a defect: the glob loader warns for
+   `systems`, `experience`, `decisions`, and `lessons` until Phases 4–6 author them. Do not
+   silence them by inventing content.
+9. **Experience bullets carrying figures need an inline absolute date** (e.g. "1,500+
+   Confluence pages … (as of Jul 2026)") to satisfy rule 2. Adding a date qualifier
+   *narrows* a claim, so it stays inside Ruling 4's "never exceeds CV wording" — Phase 6
+   should expect this rather than treat it as a schema problem.
+10. **Phase 7 must preserve `Disallow: /dev/`** when it authors the full robots.txt, and must
+    exclude `/dev/` from the sitemap. The page-level `noindex` is the second layer, not a
+    substitute.
+
+### Findings logged for Phase 8's accessibility pass
+
+- **`--border` on `--bg` is 1.33:1, and `--bg-raised` on `--bg` is 1.07:1.** Blueprint §5
+  locks these values and puts elevation in a border-plus-background shift, so card and chip
+  edges are close to imperceptible for low-vision readers. This is not a WCAG AA failure —
+  SC 1.4.11 governs what identifies a component or its state, and these edges identify
+  neither, with all card content independently readable well above AA. It is nonetheless a
+  real consequence of a locked design decision, so the contrast gate prints it on every run
+  rather than hiding it. Changing a locked token is out of scope here; Phase 8's manual pass
+  should decide whether to raise it as an amendment.
+- The contrast gate found and fixed one genuine defect: the secondary button took its
+  outline from `--border` (1.33:1) when SC 1.4.11 requires 3:1 for the boundary identifying
+  a control. Fixed in usage — it now uses `--text-muted` (7.59:1). Tokens were not touched.
+
+### OWNER-INPUT — open items
+
+Unchanged from Phase 1; Phase 2 added none. Items 1 (domain) and 2 (Cloudflare Pages
+project) remain the only ones blocking a live URL, and neither blocks Phase 3.
+
+### Next session
+
+Phase 3 — The Human Fast Lane (T7–T9). Open with the Phase 3 contract from
+`docs/IMPLEMENTATION_HANDOFF.md` §4. Read this log first, especially decisions 1 and 3.
