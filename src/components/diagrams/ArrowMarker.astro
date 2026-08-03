@@ -1,0 +1,28 @@
+---
+/**
+ * The arrowhead marker every case-study diagram uses.
+ *
+ * Marker ids are document-global, so each diagram declares its own with a
+ * distinct id — two diagrams on one page sharing an id would have the second
+ * silently inherit the first's definition.
+ */
+interface Props {
+  id: string;
+}
+
+const { id } = Astro.props;
+---
+
+<defs>
+  <marker
+    id={id}
+    viewBox="0 0 8 8"
+    refX="6"
+    refY="4"
+    markerWidth="5"
+    markerHeight="5"
+    orient="auto"
+  >
+    <path d="M 0 1 L 6 4 L 0 7 z" class="dg-arrowhead"></path>
+  </marker>
+</defs>

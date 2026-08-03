@@ -1,0 +1,75 @@
+/*
+ * Shared styling for the hand-authored case-study diagrams.
+ *
+ * WHY THIS IS ONE FILE
+ * --------------------
+ * There are four diagrams across three case studies. Four copies of the same
+ * style block is four chances for them to drift into looking like four
+ * different hands drew them — which is exactly the divergence the suite is
+ * meant not to have. One definition, imported once by CaseStudyLayout.
+ *
+ * COLOUR CARRIES MEANING
+ * ----------------------
+ * Labels are text tokens, connectors are muted, and `dg-key` — the accent
+ * outline — marks the one element a diagram is actually arguing about. Box
+ * outlines are `--border` and decorative, matching the distinction the
+ * contrast gate already draws between what must be perceived and what merely
+ * separates.
+ *
+ * TYPE SIZES ARE LOAD-BEARING
+ * ---------------------------
+ * Every diagram uses a 300-unit viewBox, so at 360px — the narrowest phone
+ * this site targets — these sizes land near 13px and 10.4px. Changing either
+ * number changes legibility on every diagram at once; re-measure if you do.
+ */
+
+.dg {
+  width: 100%;
+  height: auto;
+  max-width: 30rem;
+}
+
+.dg-box {
+  fill: var(--bg-raised);
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+/* The one element the diagram exists to point at. */
+.dg-key {
+  stroke: var(--accent);
+}
+
+/* An inner grouping — modules inside a process, tiers inside a suite. */
+.dg-inner {
+  fill: var(--bg);
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.dg-label {
+  fill: var(--text);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.dg-sub {
+  fill: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+}
+
+.dg-flow {
+  stroke: var(--text-muted);
+  stroke-width: 1.2;
+  fill: none;
+}
+
+.dg-flow-dashed {
+  stroke-dasharray: 3 3;
+}
+
+.dg-arrowhead {
+  fill: var(--text-muted);
+}

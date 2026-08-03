@@ -25,6 +25,7 @@
  */
 import type { CollectionEntry } from 'astro:content';
 import { getCollection } from 'astro:content';
+import '../styles/diagrams.css';
 import BaseLayout from './BaseLayout.astro';
 import SectionHeader from '../components/SectionHeader.astro';
 import StatusBadge from '../components/StatusBadge.astro';
@@ -57,6 +58,24 @@ if (missing.length > 0) {
 const decisions = (await getCollection('decisions'))
   .filter((decision) => decision.data.system === entry.id)
   .sort((a, b) => a.data.order - b.data.order);
+
+/**
+ * The decisions heading counts the cards rather than hardcoding a number.
+ *
+ * It read "Four calls…" while only the hospital case study existed, which
+ * would have quietly become a lie the moment a system shipped with three or
+ * five. Generalised here, once, for all three — the alternative was three
+ * pages each asserting their own count, which is exactly the drift this
+ * template exists to prevent. Spelled as a word because a bare digit in a
+ * heading reads as a metric, and metrics on this site carry dates.
+ */
+const NUMBER_WORDS = ['no', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+const decisionCount = decisions.length;
+const decisionWord = NUMBER_WORDS[decisionCount] ?? String(decisionCount);
+const decisionsHeading =
+  decisionCount === 1
+    ? 'One call, and what it cost'
+    : `${decisionWord} calls, and what each one cost`;
 
 const title = `${system.title} — case study`;
 ---
@@ -107,7 +126,7 @@ const title = `${system.title} — case study`;
       decisions.length > 0 && (
         <section class="cs-section">
           <div class="container">
-            <SectionHeader kicker="Decisions" title="Four calls, and what each one cost" />
+            <SectionHeader kicker="Decisions" title={decisionsHeading} />
             <div class="decision-list">
               {decisions.map((decision, index) => (
                 <div data-reveal style={`--reveal-delay: ${Math.min(index * 60, 180)}ms`}>

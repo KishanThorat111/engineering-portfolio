@@ -3,21 +3,18 @@
  * Architecture diagram for the hospital housekeeping platform — hand-authored
  * SVG, redrawn from the knowledge base's own component diagram.
  *
- * Colour carries meaning, not decoration, so the contrast gate's distinction
- * applies here too: every label is --text or --text-muted (15:1 and 7.1:1 on
- * the raised surface), connector lines are --text-muted, and --accent is spent
- * on exactly one thing — the single process that everything else hangs off,
- * which is the point the diagram exists to make. Box outlines are --border and
- * are decorative, matching the rule recorded for cards in Phase 2.
+ * Styling moved to the shared src/styles/diagrams.css in Phase 5, when three
+ * more diagrams arrived and four copies of the same style block became four
+ * chances to drift apart. Sizes are unchanged; re-measured after the move.
  *
- * Sized for a 300-unit viewBox so that at 360px wide — the narrowest phone
- * this site targets — an 11-unit label renders at roughly 13px rather than
- * something a reader has to zoom into.
+ * The claim: everything hangs off one process, which is why the accent is
+ * spent there and nowhere else.
  */
+import ArrowMarker from './ArrowMarker.astro';
 ---
 
 <svg
-  class="diagram"
+  class="dg"
   viewBox="0 0 300 372"
   role="img"
   aria-labelledby="arch-title arch-desc"
@@ -32,112 +29,55 @@
     only when a question cannot be answered from the database.
   </desc>
 
-  <!-- Clients -->
-  <rect x="6" y="6" width="288" height="52" rx="6" class="box"></rect>
-  <text x="150" y="26" class="label" text-anchor="middle">Browsers and QR scans</text>
-  <text x="150" y="42" class="sub" text-anchor="middle">admin · supervisor · patient</text>
-  <text x="150" y="53" class="sub" text-anchor="middle">nurse · worker — no account needed</text>
+  <rect x="6" y="6" width="288" height="52" rx="6" class="dg-box"></rect>
+  <text x="150" y="26" class="dg-label" text-anchor="middle">Browsers and QR scans</text>
+  <text x="150" y="42" class="dg-sub" text-anchor="middle">admin · supervisor · patient</text>
+  <text x="150" y="53" class="dg-sub" text-anchor="middle">nurse · worker — no account needed</text>
 
-  <line x1="150" y1="58" x2="150" y2="76" class="flow" marker-end="url(#arrow)"></line>
+  <line x1="150" y1="58" x2="150" y2="76" class="dg-flow" marker-end="url(#hosp-arrow)"></line>
 
-  <!-- Edge -->
-  <rect x="6" y="80" width="288" height="38" rx="6" class="box"></rect>
-  <text x="150" y="99" class="label" text-anchor="middle">Caddy 2 — TLS, security headers</text>
-  <text x="150" y="112" class="sub" text-anchor="middle">the only route inward</text>
+  <rect x="6" y="80" width="288" height="38" rx="6" class="dg-box"></rect>
+  <text x="150" y="99" class="dg-label" text-anchor="middle">Caddy 2 — TLS, security headers</text>
+  <text x="150" y="112" class="dg-sub" text-anchor="middle">the only route inward</text>
 
-  <line x1="150" y1="118" x2="150" y2="136" class="flow" marker-end="url(#arrow)"></line>
+  <line x1="150" y1="118" x2="150" y2="136" class="dg-flow" marker-end="url(#hosp-arrow)"></line>
 
-  <!-- The single process: the one thing the accent is spent on -->
-  <rect x="6" y="140" width="288" height="72" rx="6" class="box box-key"></rect>
-  <text x="150" y="160" class="label" text-anchor="middle">Fastify — one process, one VM</text>
-  <text x="150" y="176" class="sub" text-anchor="middle"
+  <rect x="6" y="140" width="288" height="72" rx="6" class="dg-box dg-key"></rect>
+  <text x="150" y="160" class="dg-label" text-anchor="middle">Fastify — one process, one VM</text>
+  <text x="150" y="176" class="dg-sub" text-anchor="middle"
     >verify token → reload user → check org</text
   >
-  <text x="150" y="188" class="sub" text-anchor="middle"
+  <text x="150" y="188" class="dg-sub" text-anchor="middle"
     >every query scoped to one organisation</text
   >
-  <text x="150" y="204" class="sub" text-anchor="middle">serves the HTML pages and /api/*</text>
+  <text x="150" y="204" class="dg-sub" text-anchor="middle">serves the HTML pages and /api/*</text>
 
-  <line x1="76" y1="212" x2="76" y2="238" class="flow" marker-end="url(#arrow)"></line>
-  <line x1="224" y1="212" x2="224" y2="238" class="flow" marker-end="url(#arrow)"></line>
+  <line x1="76" y1="212" x2="76" y2="238" class="dg-flow" marker-end="url(#hosp-arrow)"></line>
+  <line x1="224" y1="212" x2="224" y2="238" class="dg-flow" marker-end="url(#hosp-arrow)"></line>
 
-  <!-- Stores -->
-  <rect x="6" y="242" width="140" height="44" rx="6" class="box"></rect>
-  <text x="76" y="262" class="label" text-anchor="middle">PostgreSQL 15</text>
-  <text x="76" y="277" class="sub" text-anchor="middle">localhost only</text>
+  <rect x="6" y="242" width="140" height="44" rx="6" class="dg-box"></rect>
+  <text x="76" y="262" class="dg-label" text-anchor="middle">PostgreSQL 15</text>
+  <text x="76" y="277" class="dg-sub" text-anchor="middle">localhost only</text>
 
-  <rect x="154" y="242" width="140" height="44" rx="6" class="box"></rect>
-  <text x="224" y="262" class="label" text-anchor="middle">Cloudflare R2</text>
-  <text x="224" y="277" class="sub" text-anchor="middle">photos, never public</text>
+  <rect x="154" y="242" width="140" height="44" rx="6" class="dg-box"></rect>
+  <text x="224" y="262" class="dg-label" text-anchor="middle">Cloudflare R2</text>
+  <text x="224" y="277" class="dg-sub" text-anchor="middle">photos, never public</text>
 
-  <line x1="150" y1="212" x2="150" y2="316" class="flow flow-dashed" marker-end="url(#arrow)"
-  ></line>
+  <line
+    x1="150"
+    y1="212"
+    x2="150"
+    y2="316"
+    class="dg-flow dg-flow-dashed"
+    marker-end="url(#hosp-arrow)"></line>
 
-  <!-- AI, reached last and only sometimes -->
-  <rect x="6" y="320" width="288" height="46" rx="6" class="box"></rect>
-  <text x="150" y="339" class="label" text-anchor="middle">Vertex AI · Gemini · Azure OpenAI</text>
-  <text x="150" y="355" class="sub" text-anchor="middle">reached only when SQL cannot answer</text>
+  <rect x="6" y="320" width="288" height="46" rx="6" class="dg-box"></rect>
+  <text x="150" y="339" class="dg-label" text-anchor="middle"
+    >Vertex AI · Gemini · Azure OpenAI</text
+  >
+  <text x="150" y="355" class="dg-sub" text-anchor="middle"
+    >reached only when SQL cannot answer</text
+  >
 
-  <defs>
-    <marker
-      id="arrow"
-      viewBox="0 0 8 8"
-      refX="6"
-      refY="4"
-      markerWidth="5"
-      markerHeight="5"
-      orient="auto"
-    >
-      <path d="M 0 1 L 6 4 L 0 7 z" class="arrowhead"></path>
-    </marker>
-  </defs>
+  <ArrowMarker id="hosp-arrow" />
 </svg>
-
-<style>
-  .diagram {
-    width: 100%;
-    height: auto;
-    max-width: 30rem;
-  }
-
-  .box {
-    fill: var(--bg-raised);
-    stroke: var(--border);
-    stroke-width: 1;
-  }
-
-  /* The accent marks the single process everything else depends on — the one
-     claim this diagram is making. */
-  .box-key {
-    stroke: var(--accent);
-  }
-
-  /* Sized so that at 360px — the narrowest phone this site targets — labels
-     land near 13px and secondary text near 10.4px, rather than something a
-     reader has to pinch to read. Verified by measuring the rendered scale. */
-  .label {
-    fill: var(--text);
-    font-family: var(--font-sans);
-    font-size: 12px;
-    font-weight: 500;
-  }
-
-  .sub {
-    fill: var(--text-muted);
-    font-family: var(--font-mono);
-    font-size: 9.5px;
-  }
-
-  .flow {
-    stroke: var(--text-muted);
-    stroke-width: 1.2;
-  }
-
-  .flow-dashed {
-    stroke-dasharray: 3 3;
-  }
-
-  .arrowhead {
-    fill: var(--text-muted);
-  }
-</style>
