@@ -1,0 +1,46 @@
+---
+import { SITE } from '../config/site';
+---
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <ul class="footer-links">
+      <li><a href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
+      <li><a href={SITE.linkedin} rel="me noopener">LinkedIn</a></li>
+      <li><a href={SITE.github} rel="me noopener">GitHub</a></li>
+    </ul>
+    <p class="footer-note">
+      Built and operated by {SITE.name} — <a href={SITE.repo} rel="noopener">source on GitHub</a>
+    </p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-block-start: var(--border-width) solid var(--border);
+    padding-block: var(--space-8);
+    margin-block-start: var(--space-24);
+  }
+
+  .footer-inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .footer-links {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+  }
+
+  .footer-note {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+</style>

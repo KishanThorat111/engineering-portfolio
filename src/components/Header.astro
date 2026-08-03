@@ -1,0 +1,207 @@
+---
+import { SITE } from '../config/site';
+
+/*
+ * Phase 1 navigation carries only destinations that exist: Contact (mailto),
+ * GitHub, and LinkedIn. The five internal items (Systems · Experience ·
+ * Engineering · About · CV) join this list as their routes ship in later
+ * phases — the constitution forbids shipping links to pages that don't exist
+ * yet (no placeholder content), and the CI link gate enforces it.
+ */
+const navLinks = [
+  { label: 'GitHub', href: SITE.github },
+  { label: 'LinkedIn', href: SITE.linkedin },
+];
+---
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="/">{SITE.name}</a>
+
+    <button
+      type="button"
+      class="nav-toggle"
+      aria-expanded="false"
+      aria-controls="site-nav"
+      data-nav-toggle
+    >
+      <span class="visually-hidden">Menu</span>
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        aria-hidden="true"
+      >
+        <line class="bar-top" x1="4" y1="8" x2="20" y2="8"></line>
+        <line class="bar-bottom" x1="4" y1="16" x2="20" y2="16"></line>
+      </svg>
+    </button>
+
+    <nav id="site-nav" class="site-nav" aria-label="Site">
+      <ul>
+        {
+          navLinks.map((link) => (
+            <li>
+              <a href={link.href} rel="me noopener">
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+        <li>
+          <a class="contact-cta" href={`mailto:${SITE.email}`}>Contact</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    border-block-end: var(--border-width) solid var(--border);
+    background: var(--bg);
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-height: 3.5rem;
+    position: relative;
+  }
+
+  .brand {
+    color: var(--text);
+    font-weight: var(--weight-semibold);
+    font-size: var(--text-md);
+    text-decoration: none;
+  }
+
+  .nav-toggle {
+    display: none;
+    background: none;
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: var(--space-2);
+    cursor: pointer;
+  }
+
+  .site-nav ul {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+    margin: 0;
+    padding: 0;
+  }
+
+  .site-nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: var(--text-sm);
+    transition: color var(--duration-micro) var(--ease-out);
+  }
+
+  .site-nav a:hover {
+    color: var(--text);
+  }
+
+  .contact-cta {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg) !important;
+    font-weight: var(--weight-medium);
+    border-radius: var(--radius);
+    padding: var(--space-2) var(--space-4);
+    transition: transform var(--duration-micro) var(--ease-out);
+  }
+
+  .contact-cta:active {
+    transform: scale(0.98);
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 767px) {
+    .nav-toggle {
+      display: inline-flex;
+    }
+
+    .site-nav {
+      display: none;
+      position: absolute;
+      inset-inline: 0;
+      inset-block-start: 100%;
+      background: var(--bg);
+      border-block-end: var(--border-width) solid var(--border);
+      padding: var(--space-4);
+      z-index: 50;
+    }
+
+    .site-header[data-open] .site-nav {
+      display: block;
+    }
+
+    .site-nav ul {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--space-2);
+    }
+
+    .site-nav a {
+      display: block;
+      padding: var(--space-3);
+      font-size: var(--text-base);
+      border-radius: var(--radius);
+    }
+
+    .site-nav a:hover {
+      background: var(--bg-raised);
+    }
+
+    .contact-cta {
+      text-align: center;
+      margin-block-start: var(--space-2);
+    }
+  }
+</style>
+
+<script>
+  // Mobile nav disclosure — the only client JS on the site in Phase 1.
+  const header = document.querySelector<HTMLElement>('.site-header');
+  const toggle = document.querySelector<HTMLButtonElement>('[data-nav-toggle]');
+
+  if (header && toggle) {
+    const setOpen = (open: boolean) => {
+      header.toggleAttribute('data-open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+    };
+
+    toggle.addEventListener('click', () => {
+      setOpen(!header.hasAttribute('data-open'));
+    });
+
+    header.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && header.hasAttribute('data-open')) {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+
+    // A resize past the breakpoint must not leave the panel stuck open.
+    matchMedia('(min-width: 768px)').addEventListener('change', () => setOpen(false));
+  }
+</script>
