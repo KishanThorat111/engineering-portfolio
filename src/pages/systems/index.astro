@@ -1,0 +1,109 @@
+---
+/**
+ * /systems — the index.
+ *
+ * Three cards, nothing else. Blueprint §4.4 puts the "more systems" strip on
+ * /experience, not here: this page is the three platforms that get full case
+ * studies, and mixing compact side-project cards in would blur exactly the
+ * distinction it exists to draw.
+ */
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SystemCard from '../../components/SystemCard.astro';
+import { SITE } from '../../config/site';
+
+const systems = (await getCollection('systems')).sort((a, b) => a.data.order - b.data.order);
+---
+
+<BaseLayout
+  title={`Systems — ${SITE.name}`}
+  description="Three multi-tenant platforms, designed, built, and operated end to end: one in daily hospital production, one live with subscription billing, one pre-launch."
+>
+  <section class="intro">
+    <div class="container">
+      <p class="kicker">Systems</p>
+      <h1>Three platforms, one engineer, no hand-offs</h1>
+      <p class="lede">
+        Each of these was designed, built, secured, deployed, and then operated by me. Each case
+        study says what it does, what it cost, and what is wrong with it — including the one running
+        in a hospital with no test suite behind it.
+      </p>
+    </div>
+  </section>
+
+  <section class="listing">
+    <div class="container">
+      <div class="system-grid">
+        {
+          systems.map((system, index) => (
+            <div data-reveal style={`--reveal-delay: ${Math.min(index * 60, 180)}ms`}>
+              <SystemCard
+                title={system.data.title}
+                status={system.data.status}
+                statusDetail={system.data.statusDetail}
+                problem={system.data.problem}
+                stack={system.data.stack}
+                href={`/systems/${system.id}`}
+              />
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .intro {
+    padding-block: var(--space-16) var(--space-8);
+  }
+
+  @media (min-width: 768px) {
+    .intro {
+      padding-block: var(--space-24) var(--space-12);
+    }
+  }
+
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-block-end: var(--space-4);
+  }
+
+  h1 {
+    font-size: var(--text-xl);
+    max-width: 24ch;
+  }
+
+  @media (min-width: 768px) {
+    h1 {
+      font-size: var(--text-2xl);
+    }
+  }
+
+  .lede {
+    margin-block-start: var(--space-6);
+    max-width: var(--measure);
+    color: var(--text-muted);
+    font-size: var(--text-md);
+  }
+
+  .listing {
+    padding-block-end: var(--space-16);
+  }
+
+  .system-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 768px) {
+    .system-grid {
+      grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    }
+  }
+</style>

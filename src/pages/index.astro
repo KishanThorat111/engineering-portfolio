@@ -50,7 +50,14 @@ const stagger = (index: number) => `--reveal-delay: ${Math.min(index * 60, 240)}
       </ul>
 
       <div class="hero-actions">
-        <Button href="/cv.pdf" download>Download CV</Button>
+        {
+          /* Both buttons blueprint §2 specifies, locked wording. "See the
+            systems" was held back in Phase 3 because /systems did not exist
+            and a dead link fails the gate; Phase 5 shipped the index, so it
+            is restored. */
+        }
+        <Button href="/systems">See the systems</Button>
+        <Button href="/cv.pdf" variant="secondary" download>Download CV</Button>
       </div>
     </div>
   </section>
