@@ -1,0 +1,348 @@
+---
+/**
+ * The case-study template — blueprint §4.0, items 1 to 10, in that order.
+ *
+ * HOW THIS PREVENTS TEMPLATE DRIFT
+ * --------------------------------
+ * Three case studies read as discipline only if they are structurally
+ * identical; any divergence reads as marketing. So the parts that carry the
+ * constitution are rendered here from schema data and cannot be reworded,
+ * reordered, or quietly omitted by a page:
+ *
+ *   item 1  header — title, status, role line, stack   → from entry.data
+ *   item 5  engineering decisions                       → from the decisions collection
+ *   item 8  honest limitations                          → from entry.data.limitations
+ *   item 9  outcomes and the recruiter box              → from entry.data
+ *
+ * The prose sections differ per system, so they arrive as named slots — and
+ * the layout REFUSES TO BUILD if one is missing. A case study that forgets to
+ * describe its security model fails the build rather than shipping a gap,
+ * which is the same trick the content schemas play, applied to page structure.
+ *
+ * Phase 5 applies this to Menu and Electrical by writing a page that fills the
+ * same slots. It should not need to touch this file; if it does, the change
+ * applies to all three and gets recorded in docs/PHASE_LOG.md.
+ */
+import type { CollectionEntry } from 'astro:content';
+import { getCollection } from 'astro:content';
+import BaseLayout from './BaseLayout.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+import StatusBadge from '../components/StatusBadge.astro';
+import DecisionCard from '../components/DecisionCard.astro';
+import LimitationNote from '../components/LimitationNote.astro';
+import StatBlock from '../components/StatBlock.astro';
+
+interface Props {
+  entry: CollectionEntry<'systems'>;
+}
+
+const { entry } = Astro.props;
+const system = entry.data;
+
+/**
+ * Every prose section blueprint §4.0 requires. Missing one is a build error,
+ * not a silently short page.
+ */
+const REQUIRED_SLOTS = ['context', 'constraints', 'architecture', 'security', 'operations'];
+const missing = REQUIRED_SLOTS.filter((name) => !Astro.slots.has(name));
+if (missing.length > 0) {
+  throw new Error(
+    `Case study "${entry.id}" is missing required section(s): ${missing.join(', ')}. ` +
+      'Blueprint §4.0 fixes the section list for all three case studies — add the slot ' +
+      'rather than removing the requirement.',
+  );
+}
+
+/** Decision cards for this system, in authored order (blueprint §4.0 item 5). */
+const decisions = (await getCollection('decisions'))
+  .filter((decision) => decision.data.system === entry.id)
+  .sort((a, b) => a.data.order - b.data.order);
+
+const title = `${system.title} — case study`;
+---
+
+<BaseLayout title={`${title} | Kishan Thorat`} description={system.summary}>
+  <article class="case-study">
+    <!-- 1. Header -->
+    <header class="cs-header">
+      <div class="container">
+        <p class="kicker">Case study</p>
+        <h1>{system.title}</h1>
+        <div class="status-line">
+          <StatusBadge status={system.status} detail={system.statusDetail} />
+        </div>
+        <p class="role">{system.role}</p>
+        <ul class="stack">
+          {system.stack.map((tag) => <li>{tag}</li>)}
+        </ul>
+      </div>
+    </header>
+
+    <!-- 2. Context -->
+    <section class="cs-section">
+      <div class="container">
+        <SectionHeader kicker="Context" title="What it does and who depends on it" />
+        <div class="prose body-copy" data-reveal><slot name="context" /></div>
+      </div>
+    </section>
+
+    <!-- 3. Constraints -->
+    <section class="cs-section">
+      <div class="container">
+        <SectionHeader kicker="Constraints" title="What made it hard" />
+        <div class="prose body-copy" data-reveal><slot name="constraints" /></div>
+      </div>
+    </section>
+
+    <!-- 4. Architecture -->
+    <section class="cs-section">
+      <div class="container">
+        <SectionHeader kicker="Architecture" title="How a request travels" />
+        <div class="architecture" data-reveal><slot name="architecture" /></div>
+      </div>
+    </section>
+
+    <!-- 5. Engineering decisions -->
+    {
+      decisions.length > 0 && (
+        <section class="cs-section">
+          <div class="container">
+            <SectionHeader kicker="Decisions" title="Four calls, and what each one cost" />
+            <div class="decision-list">
+              {decisions.map((decision, index) => (
+                <div data-reveal style={`--reveal-delay: ${Math.min(index * 60, 180)}ms`}>
+                  <DecisionCard
+                    title={decision.data.title}
+                    decision={decision.data.decision}
+                    why={decision.data.why}
+                    tradeoff={decision.data.tradeoff}
+                    aged={decision.data.aged}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    }
+
+    <!-- 6. Security & tenancy -->
+    <section class="cs-section">
+      <div class="container">
+        <SectionHeader kicker="Security" title="Tenancy, identity, and abuse" />
+        <div class="prose body-copy" data-reveal><slot name="security" /></div>
+      </div>
+    </section>
+
+    <!-- 7. Reliability & operations -->
+    <section class="cs-section">
+      <div class="container">
+        <SectionHeader kicker="Operations" title="Shipping it, and keeping it up" />
+        <div class="prose body-copy" data-reveal><slot name="operations" /></div>
+      </div>
+    </section>
+
+    <!-- 8. Honest limitations — constitution rule 3, rendered from schema data -->
+    <section class="cs-section">
+      <div class="container">
+        <SectionHeader kicker="Limitations" title="What is wrong with it" />
+        <div class="limitation-list">
+          {
+            system.limitations.map((item) => (
+              <div data-reveal>
+                <LimitationNote limitation={item.limitation} addressedBy={item.addressedBy} />
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. Outcomes & takeaways -->
+    <section class="cs-section">
+      <div class="container">
+        <SectionHeader kicker="Outcomes" title="What it runs on today" />
+        {
+          system.metrics.length > 0 && (
+            <div class="metric-row" data-reveal>
+              {system.metrics.map((metric) => (
+                <StatBlock
+                  value={metric.value}
+                  caption={metric.caption}
+                  qualifier={metric.qualifier}
+                />
+              ))}
+            </div>
+          )
+        }
+        {
+          Astro.slots.has('outcomes') && (
+            <div class="prose body-copy outcomes-prose" data-reveal>
+              <slot name="outcomes" />
+            </div>
+          )
+        }
+        <aside class="takeaways" data-reveal>
+          <h3>What this demonstrates</h3>
+          <ul>
+            {system.takeaways.map((takeaway) => <li>{takeaway}</li>)}
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 10. Gallery — renders only when a system supplies figures. -->
+    {
+      Astro.slots.has('gallery') && (
+        <section class="cs-section">
+          <div class="container">
+            <SectionHeader kicker="Gallery" title="The product itself" />
+            <div class="gallery-grid" data-reveal>
+              <slot name="gallery" />
+            </div>
+          </div>
+        </section>
+      )
+    }
+
+    {
+      /* Carries OWNER-INPUT comments into the built HTML, where the copy gate
+        reports them, without rendering anything a reader can see. Used for
+        assets a system still needs — gallery screenshots, chiefly. */
+    }
+    <slot name="owner-input" />
+  </article>
+</BaseLayout>
+
+<style>
+  .cs-header {
+    padding-block: var(--space-12) var(--space-8);
+    border-block-end: var(--border-width) solid var(--border);
+  }
+
+  @media (min-width: 768px) {
+    .cs-header {
+      padding-block: var(--space-16) var(--space-12);
+    }
+  }
+
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-block-end: var(--space-4);
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+    max-width: 20ch;
+  }
+
+  @media (min-width: 768px) {
+    h1 {
+      font-size: var(--text-3xl);
+    }
+  }
+
+  .status-line {
+    margin-block-start: var(--space-6);
+  }
+
+  .role {
+    margin-block-start: var(--space-4);
+    color: var(--text-muted);
+    font-size: var(--text-md);
+    max-width: var(--measure);
+  }
+
+  .stack {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-6) 0 0;
+    padding: 0;
+  }
+
+  .stack li {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .cs-section {
+    padding-block: var(--space-12);
+  }
+
+  .decision-list,
+  .limitation-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .limitation-list {
+    gap: var(--space-8);
+  }
+
+  .metric-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8) var(--space-12);
+    margin-block-end: var(--space-8);
+  }
+
+  .outcomes-prose {
+    margin-block-end: var(--space-8);
+  }
+
+  .takeaways {
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+    padding: var(--space-6);
+    max-width: var(--measure);
+  }
+
+  .takeaways h3 {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-block-end: var(--space-4);
+  }
+
+  .takeaways ul {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .takeaways li {
+    font-size: var(--text-sm);
+    line-height: var(--leading-body);
+  }
+
+  .architecture {
+    max-width: 44rem;
+  }
+
+  .gallery-grid {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .gallery-grid {
+      grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+    }
+  }
+</style>
