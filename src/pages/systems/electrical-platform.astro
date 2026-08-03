@@ -1,0 +1,177 @@
+---
+/**
+ * /systems/electrical-platform — the engineering-maturity case study.
+ *
+ * Same template, same slots, same order as the other two. Framed as what I now
+ * do before a system meets its first user, which is why the readiness
+ * programme rather than the feature set is the content.
+ */
+import { getEntry } from 'astro:content';
+import CaseStudyLayout from '../../layouts/CaseStudyLayout.astro';
+import ElectricalArchitecture from '../../components/diagrams/ElectricalArchitecture.astro';
+import ElectricalTestTiers from '../../components/diagrams/ElectricalTestTiers.astro';
+
+const entry = await getEntry('systems', 'electrical-platform');
+if (!entry) throw new Error('Missing content entry: systems/electrical-platform');
+
+const SANITISATION =
+  'Staging tenant only. No real organisation name, logo, address, or staff name in frame; no ' +
+  'real asset identifiers; browser chrome cropped or a clean profile with no bookmarks, ' +
+  'extensions, or console visible.';
+
+const PENDING_GALLERY = [
+  'Screenshot 1 of 3 — an electrical inspection checklist mid-submission, mobile 390x844, showing a template item marked faulty.',
+  'Screenshot 2 of 3 — the public fault-report flow as a guest sees it after scanning a location code, mobile 390x844.',
+  'Screenshot 3 of 3 — the asset registry with an asset in a faulty state, desktop 1440x900, staging data only.',
+];
+
+const ownerInputMarkers = PENDING_GALLERY.map(
+  (asset) => `<!-- OWNER-INPUT: ${asset} ${SANITISATION} -->`,
+).join('\n');
+---
+
+<CaseStudyLayout entry={entry}>
+  <Fragment slot="context">
+    <p>
+      This platform runs structured electrical safety inspections on a recurring schedule, lets
+      anyone standing in front of a broken thing report it without an account, and tracks the
+      physical assets those faults attach to. Five kinds of user, from an unauthenticated guest up
+      to a cross-tenant operator.
+    </p>
+    <p>
+      None of which is the reason it is on this site. It has no users. It is pre-launch, and the
+      interesting thing about it is what has been done to it while nobody was using it.
+    </p>
+    <p>
+      The hospital platform on this site went into daily production with no automated tests at all.
+      That worked, and I would not do it again. This is the system where the lesson was applied
+      first and the users came second: a seventeen-package readiness programme, a written
+      engineering charter, architecture decisions recorded rather than remembered, and a test suite
+      that gates every deploy — all of it before a first customer, not after a first incident.
+    </p>
+  </Fragment>
+
+  <Fragment slot="constraints">
+    <p>
+      <strong>No users to learn from.</strong> Everything here had to be reasoned about rather than observed.
+      There is no production traffic to profile, no incident history to mine, and no real workload to
+      size against — which makes it easy to build for imagined problems and miss real ones.
+    </p>
+    <p>
+      <strong>Still one engineer.</strong> A readiness programme sounds like something a team does. It
+      had to be scoped so one person could actually finish it, which is why it is seventeen bounded work
+      packages rather than an open-ended quality effort.
+    </p>
+    <p>
+      <strong>Governance has to survive a bad week.</strong> Rules I keep in my head are rules I abandon
+      under deadline. If the charter was going to mean anything it had to be written down, enforced in
+      review, and inconvenient to ignore.
+    </p>
+    <p>
+      <strong>Tenant isolation is the one thing that cannot be slightly wrong.</strong> Every other defect
+      is a bug; that one is a breach. It needed a stronger guarantee than my own carefulness.
+    </p>
+  </Fragment>
+
+  <Fragment slot="architecture">
+    <ElectricalArchitecture />
+    <div class="prose body-copy lifecycle">
+      <p>
+        One process, one database, four capability modules an organisation can switch on
+        individually. The boundaries between them are structural rather than networked — a
+        deliberate choice recorded as an architecture decision, along with the rule that adding a
+        queue, a cache server, or a second service is no longer something a single change can do
+        quietly.
+      </p>
+      <p>
+        Authentication is re-verified on every request rather than trusted from the token: the
+        account is reloaded, its active flag checked, tokens issued before the last credential reset
+        rejected, and the organisation's own status confirmed. Workers carry a longer session than
+        staff, because a field device stays signed in for weeks, and are further limited to the
+        locations they actually cover — belonging to the organisation is not enough to touch a
+        ticket in it.
+      </p>
+    </div>
+  </Fragment>
+
+  <Fragment slot="security">
+    <p>
+      Every tenant-owned query is scoped by an organisation identifier taken from the verified
+      token. Never from a body, never from a query string, never from a URL. A client may state an
+      organisation and the server will compare it and reject a mismatch, but it will never act on
+      it. Mutations by bare identifier are preceded by an ownership check, so a correctly-guessed
+      identifier from another organisation finds nothing.
+    </p>
+    <p>
+      That rule is written down in the charter, was verified once by reading every route file, and
+      is now held in place by tests — one regression file per tenant-owned resource area. Each
+      asserts that a second organisation receives a not-found rather than a forbidden, because a
+      forbidden response confirms the resource exists and that is itself a leak.
+    </p>
+    <p>
+      There is one cross-tenant capability, and it is the most heavily audited thing in the system:
+      an operator can act inside a named organisation, and every request made that way is logged —
+      reads included, not just writes. Because those entries carry the real organisation identifier,
+      they appear in that organisation's own audit log. The people whose data was accessed can see
+      that it was.
+    </p>
+    <p>
+      Credential recovery returns the same response and takes the same time whether or not an
+      account exists, which closes the timing channel that identical wording alone leaves open.
+      Personal fields are encrypted at rest unconditionally — not gated on an environment variable,
+      because that is the gate someone forgets.
+    </p>
+  </Fragment>
+
+  <Fragment slot="operations">
+    <p>
+      A broken change cannot reach production. Lint and the full test suite run on every push,
+      against a real disposable database so the integration tier is never skipped in CI, and the
+      deploy job only runs after they pass. The deploy then polls a readiness endpoint that actually
+      checks the database, rather than the liveness endpoint that always returns healthy.
+    </p>
+    <h3>Three tiers, and one that can hide</h3>
+    <p>
+      The suite is deliberately tiered. Unit tests need nothing. Smoke tests exercise the entire
+      HTTP stack in memory, with no listener and no database. Integration tests need a real database
+      — and when there isn't one they skip, loudly, with a message saying so.
+    </p>
+    <ElectricalTestTiers />
+    <div class="prose body-copy lifecycle">
+      <p>
+        That skip is the right behaviour on a laptop and would be a silent hole in CI, so CI always
+        provides a database. It is the tier most able to quietly stop running, which is why it is
+        the one worth pointing at.
+      </p>
+      <p>
+        Resilience is wired into shared primitives rather than left to each call site: the database
+        circuit breaker lives in the query client, the provider breaker inside the one function
+        every external call goes through, and scheduled jobs take a database advisory lock so only
+        one instance runs a given tick. Nobody has to remember any of it, which is the point — the
+        previous arrangement depended on memory and had gaps nobody could see.
+      </p>
+      <p>
+        Backups run daily to offsite storage and the restore path is scripted, with no default
+        target and a typed confirmation. The last drill ran against a development-sized dataset, so
+        its restore time says nothing useful about production, and the recovery point is up to a
+        day. Both are written down rather than assumed.
+      </p>
+    </div>
+  </Fragment>
+
+  <Fragment slot="outcomes">
+    <p>
+      There are no usage figures here because there is no usage. Everything below describes
+      engineering practice, measured at the last readiness audit, and none of it is evidence that
+      this system survives contact with real users — because it has not met any.
+    </p>
+  </Fragment>
+
+  <Fragment slot="owner-input" set:html={ownerInputMarkers} />
+</CaseStudyLayout>
+
+<style>
+  .lifecycle {
+    margin-block-start: var(--space-8);
+  }
+</style>

@@ -1,0 +1,70 @@
+---
+/**
+ * Electrical platform architecture. Styling is shared: src/styles/diagrams.css.
+ *
+ * The claim: four selectable capability modules live inside one process and one
+ * database, with boundaries drawn by structure rather than by network calls.
+ * The accent is spent on the process holding them, because that containment is
+ * the decision the page is defending.
+ */
+import ArrowMarker from './ArrowMarker.astro';
+---
+
+<svg
+  class="dg"
+  viewBox="0 0 300 372"
+  role="img"
+  aria-labelledby="ele-arch-t ele-arch-d"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <title id="ele-arch-t">How the electrical platform is put together</title>
+  <desc id="ele-arch-d">
+    Five kinds of user, from an unauthenticated guest reporting a fault up to a cross-tenant
+    operator, all reach one reverse proxy. Behind it a single Fastify process contains four
+    capability modules — electrical, civil, asset, and complaints — that each organisation can
+    switch on individually. The process reads and writes one PostgreSQL database and stores files in
+    Cloudflare R2, which also holds the offsite database backups.
+  </desc>
+
+  <rect x="6" y="6" width="288" height="52" rx="6" class="dg-box"></rect>
+  <text x="150" y="26" class="dg-label" text-anchor="middle">Five roles, one door</text>
+  <text x="150" y="42" class="dg-sub" text-anchor="middle">guest · worker · supervisor</text>
+  <text x="150" y="54" class="dg-sub" text-anchor="middle">admin · operator</text>
+
+  <line x1="150" y1="58" x2="150" y2="76" class="dg-flow" marker-end="url(#ele-arrow)"></line>
+
+  <rect x="6" y="80" width="288" height="38" rx="6" class="dg-box"></rect>
+  <text x="150" y="99" class="dg-label" text-anchor="middle">Caddy — TLS</text>
+  <text x="150" y="112" class="dg-sub" text-anchor="middle">no host ports on the app</text>
+
+  <line x1="150" y1="118" x2="150" y2="136" class="dg-flow" marker-end="url(#ele-arrow)"></line>
+
+  <rect x="6" y="140" width="288" height="94" rx="6" class="dg-box dg-key"></rect>
+  <text x="150" y="160" class="dg-label" text-anchor="middle">One Fastify process</text>
+  <text x="150" y="176" class="dg-sub" text-anchor="middle">modules, not services</text>
+
+  <rect x="18" y="186" width="62" height="34" rx="4" class="dg-inner"></rect>
+  <text x="49" y="207" class="dg-sub" text-anchor="middle">electrical</text>
+
+  <rect x="88" y="186" width="62" height="34" rx="4" class="dg-inner"></rect>
+  <text x="119" y="207" class="dg-sub" text-anchor="middle">civil</text>
+
+  <rect x="158" y="186" width="62" height="34" rx="4" class="dg-inner"></rect>
+  <text x="189" y="207" class="dg-sub" text-anchor="middle">asset</text>
+
+  <rect x="228" y="186" width="54" height="34" rx="4" class="dg-inner"></rect>
+  <text x="255" y="207" class="dg-sub" text-anchor="middle">faults</text>
+
+  <line x1="90" y1="234" x2="90" y2="258" class="dg-flow" marker-end="url(#ele-arrow)"></line>
+  <line x1="210" y1="234" x2="210" y2="258" class="dg-flow" marker-end="url(#ele-arrow)"></line>
+
+  <rect x="6" y="262" width="140" height="46" rx="6" class="dg-box"></rect>
+  <text x="76" y="282" class="dg-label" text-anchor="middle">PostgreSQL</text>
+  <text x="76" y="298" class="dg-sub" text-anchor="middle">every row org-scoped</text>
+
+  <rect x="154" y="262" width="140" height="46" rx="6" class="dg-box"></rect>
+  <text x="224" y="282" class="dg-label" text-anchor="middle">Cloudflare R2</text>
+  <text x="224" y="298" class="dg-sub" text-anchor="middle">files and backups</text>
+
+  <ArrowMarker id="ele-arrow" />
+</svg>

@@ -1,0 +1,66 @@
+---
+/**
+ * The three test tiers. Styling is shared: src/styles/diagrams.css.
+ *
+ * Deliberately carries no counts. The figures — tests passing, isolation files,
+ * work packages — are stat blocks on the page, where the schema forces each one
+ * to carry its date and its citation. A number drawn into a diagram would
+ * escape that, and would be the first thing to go stale.
+ *
+ * The accent marks the integration tier because it is the one that can quietly
+ * not run: it skips when no database is reachable, which is right on a laptop
+ * and would be a silent hole in CI. That is the point the diagram is making.
+ */
+import ArrowMarker from './ArrowMarker.astro';
+---
+
+<svg
+  class="dg"
+  viewBox="0 0 300 328"
+  role="img"
+  aria-labelledby="tiers-t tiers-d"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <title id="tiers-t">The three tiers of the test suite</title>
+  <desc id="tiers-d">
+    Unit tests cover pure functions and need nothing external. Smoke tests exercise the whole HTTP
+    stack in memory, with no listener and no database. Integration tests need a real PostgreSQL
+    database and skip cleanly with a clear message when none is reachable, so a laptop without
+    Docker still runs the first two tiers — while continuous integration always provides a
+    disposable database, so nothing is ever skipped there.
+  </desc>
+
+  <rect x="6" y="6" width="288" height="52" rx="6" class="dg-box"></rect>
+  <text x="150" y="26" class="dg-label" text-anchor="middle">Unit</text>
+  <text x="150" y="43" class="dg-sub" text-anchor="middle">pure functions, no dependencies</text>
+
+  <line x1="150" y1="58" x2="150" y2="78" class="dg-flow" marker-end="url(#tier-arrow)"></line>
+
+  <rect x="6" y="82" width="288" height="52" rx="6" class="dg-box"></rect>
+  <text x="150" y="102" class="dg-label" text-anchor="middle">HTTP smoke</text>
+  <text x="150" y="119" class="dg-sub" text-anchor="middle">whole stack in memory, no listener</text
+  >
+
+  <line x1="150" y1="134" x2="150" y2="154" class="dg-flow" marker-end="url(#tier-arrow)"></line>
+
+  <rect x="6" y="158" width="288" height="66" rx="6" class="dg-box dg-key"></rect>
+  <text x="150" y="178" class="dg-label" text-anchor="middle">Integration</text>
+  <text x="150" y="195" class="dg-sub" text-anchor="middle">needs a real database</text>
+  <text x="150" y="212" class="dg-sub" text-anchor="middle">one file per tenant-owned resource</text
+  >
+
+  <line x1="90" y1="224" x2="90" y2="248" class="dg-flow" marker-end="url(#tier-arrow)"></line>
+  <line x1="210" y1="224" x2="210" y2="248" class="dg-flow" marker-end="url(#tier-arrow)"></line>
+
+  <rect x="6" y="252" width="140" height="60" rx="6" class="dg-box"></rect>
+  <text x="76" y="272" class="dg-label" text-anchor="middle">On a laptop</text>
+  <text x="76" y="288" class="dg-sub" text-anchor="middle">skips, and</text>
+  <text x="76" y="302" class="dg-sub" text-anchor="middle">says it skipped</text>
+
+  <rect x="154" y="252" width="140" height="60" rx="6" class="dg-box"></rect>
+  <text x="224" y="272" class="dg-label" text-anchor="middle">In CI</text>
+  <text x="224" y="288" class="dg-sub" text-anchor="middle">disposable db,</text>
+  <text x="224" y="302" class="dg-sub" text-anchor="middle">never skipped</text>
+
+  <ArrowMarker id="tier-arrow" />
+</svg>
