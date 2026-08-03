@@ -1,0 +1,179 @@
+---
+/**
+ * /systems/menu-platform — the payments case study.
+ *
+ * Same template, same slots, same order as the other two. This file supplies
+ * prose and diagrams only.
+ */
+import { getEntry } from 'astro:content';
+import CaseStudyLayout from '../../layouts/CaseStudyLayout.astro';
+import MenuArchitecture from '../../components/diagrams/MenuArchitecture.astro';
+import MenuPaymentFlow from '../../components/diagrams/MenuPaymentFlow.astro';
+
+const entry = await getEntry('systems', 'menu-platform');
+if (!entry) throw new Error('Missing content entry: systems/menu-platform');
+
+const SANITISATION =
+  'Demo or staging tenant only. No real restaurant name, logo, address, or phone number in ' +
+  'frame; no real payment identifiers; browser chrome cropped or a clean profile with no ' +
+  'bookmarks, extensions, or console visible.';
+
+const PENDING_GALLERY = [
+  'Screenshot 1 of 4 — the public menu as a diner sees it after scanning, mobile 390x844, with the category navigation and a few items visible.',
+  'Screenshot 2 of 4 — the restaurant dashboard menu editor, desktop 1440x900, showing categories and items.',
+  'Screenshot 3 of 4 — the QR card generator with a theme selected, desktop 1440x900. Use a demo tenant code, not a live one.',
+  'Screenshot 4 of 4 — the platform console tenant list, desktop 1440x900. Every tenant name and contact detail must be demo data.',
+];
+
+const ownerInputMarkers = PENDING_GALLERY.map(
+  (asset) => `<!-- OWNER-INPUT: ${asset} ${SANITISATION} -->`,
+).join('\n');
+---
+
+<CaseStudyLayout entry={entry}>
+  <Fragment slot="context">
+    <p>
+      A restaurant puts a small printed code on each table. A diner scans it and the menu opens — no
+      app, no account, no waiting for a laminated card to come back round. That is the whole product
+      from the outside, and it is deliberately unremarkable.
+    </p>
+    <p>
+      The part that is not unremarkable is what sits behind it. This is a live commercial platform:
+      restaurants subscribe, pay, upgrade, downgrade, lapse, and renew, and every one of those
+      transitions is code I wrote and carry. A trial that quietly fails to convert, or a payment
+      that takes money without activating anything, is not a bug report — it is someone's money and
+      someone's evening service.
+    </p>
+    <p>
+      Three surfaces, one process: the public menu a diner scans into, the dashboard a restaurant
+      signs into, and the console I operate the platform from.
+    </p>
+  </Fragment>
+
+  <Fragment slot="constraints">
+    <p>
+      <strong>Real money, and no one to escalate to.</strong> Payment bugs are not deferred to a payments
+      team, because there isn't one. The failure modes had to be designed for rather than discovered.
+    </p>
+    <p>
+      <strong>Diners are not customers.</strong> The person scanning the code has no relationship with
+      the subscription and never agreed to anything. Nothing about the plan a restaurant is on should
+      ever be their problem.
+    </p>
+    <p>
+      <strong>A gateway that confirms twice.</strong> Payment confirmation arrives by two independent
+      routes that can land in either order, out of order, or not at all. Neither can be treated as authoritative
+      on its own.
+    </p>
+    <p>
+      <strong>Tax law outlives tenants.</strong> Indian GST rules require payment records to be kept for
+      years after a restaurant stops being a customer, which means deleting a tenant cannot simply mean
+      deleting its rows.
+    </p>
+    <p>
+      <strong>One machine, one process.</strong> Same shape as everything else here: the whole platform
+      is a handful of containers on a single host.
+    </p>
+  </Fragment>
+
+  <Fragment slot="architecture">
+    <MenuArchitecture />
+    <div class="prose body-copy lifecycle">
+      <p>
+        Everything arrives at one reverse proxy, and a single explicit list of paths decides what
+        belongs to the product. Anything not on that list falls through to a separate static
+        marketing site. It is a blunt mechanism, and it is written down in one place rather than
+        inferred from three.
+      </p>
+      <p>
+        A menu request is served from an in-process cache when it is warm and from the database when
+        it is not, then counted — asynchronously, so counting never delays the diner. Images go to
+        object storage and are re-encoded on upload rather than served as uploaded.
+      </p>
+      <h3>The path that matters most</h3>
+      <p>
+        The request I care about is the one that follows a payment. It arrives twice, by two routes
+        that know nothing about each other, and both of them are allowed to be first, late,
+        duplicated, or absent. The design does not try to order them. It makes the outcome the same
+        whichever way they land.
+      </p>
+    </div>
+    <MenuPaymentFlow />
+    <div class="prose body-copy lifecycle">
+      <p>
+        The activation function is the whole answer. It is safe to call twice because its first act
+        is to check whether the payment is already recorded as captured — and if it is, to do
+        nothing and say so. When it is not, the subscription change and the payment record are
+        written in one transaction, so there is no window in which one exists without the other.
+      </p>
+    </div>
+  </Fragment>
+
+  <Fragment slot="security">
+    <p>
+      A restaurant signs in with a short code and an eight-digit PIN. That is a small keyspace, so
+      it is defended in layers: the PIN is combined with a server-held secret before hashing, which
+      means a database taken on its own cannot be attacked offline; obvious PINs are rejected
+      outright; and the login limit is applied per restaurant code rather than per address, so
+      spreading an attack across many addresses buys nothing.
+    </p>
+    <p>
+      Changing a PIN invalidates every existing session immediately. The token carries the time the
+      PIN was last changed, and every request compares it against the current value, so revocation
+      needs no session table to go and clear.
+    </p>
+    <p>
+      Recovery is the part most likely to be abused, so it is the part most carefully built:
+      identical responses whether or not an account exists, a one-time code stored only as a hash,
+      attempts counted before the comparison rather than after it, and a short-lived single-use
+      token to finish. Every step is written to the audit trail.
+    </p>
+    <p>
+      On payments, the amount is decided by the server from the plan, never accepted from the
+      browser. Signatures are compared in constant time. The webhook signature is checked against
+      the exact bytes received, not against a re-serialised copy of the parsed body — re-serialising
+      would change the bytes and break the comparison for reasons that would look like a gateway
+      fault.
+    </p>
+  </Fragment>
+
+  <Fragment slot="operations">
+    <p>
+      Every push to the main branch rebuilds and redeploys the stack behind a health check, and a
+      failing check fails the deploy rather than leaving a broken container running.
+    </p>
+    <p>
+      The billing lifecycle runs as scheduled work inside the process, once an hour: trials that
+      have expired, subscriptions that have lapsed into their grace window, grace windows that have
+      run out, plan changes that were paid for and are now due, and reminder emails before a trial
+      or a renewal date. Each job is wrapped separately so one failure cannot stop the rest.
+    </p>
+    <p>
+      The same lifecycle is also applied lazily, on the way in: if an account's paid period lapsed
+      since the last hourly tick, the correction is applied when they next sign in rather than
+      making them wait for the clock. That means the state a restaurant sees is never stale, even
+      between ticks.
+    </p>
+    <p>
+      Backups are taken daily, encrypted before they leave the host, and pruned on a schedule. The
+      restore path is a script with no default target, so restoring somewhere is always a deliberate
+      act.
+    </p>
+  </Fragment>
+
+  <Fragment slot="outcomes">
+    <p>
+      No subscriber counts, revenue figures, or uptime percentages appear here. They exist, but not
+      in any form I can point a reader at, and a number nobody can check is just a
+      confident-sounding sentence. What follows is what the system is built to do.
+    </p>
+  </Fragment>
+
+  <Fragment slot="owner-input" set:html={ownerInputMarkers} />
+</CaseStudyLayout>
+
+<style>
+  .lifecycle {
+    margin-block-start: var(--space-8);
+  }
+</style>

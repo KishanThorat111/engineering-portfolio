@@ -1,0 +1,78 @@
+---
+/**
+ * The dual-path payment activation flow — the flagship diagram of this case
+ * study. Styling is shared: src/styles/diagrams.css.
+ *
+ * Drawn as converging paths rather than a lane-based sequence chart, because
+ * four lanes inside a 300-unit viewBox leaves 75 units per lane and nothing
+ * legible on a phone. The claim being made is convergence, not ordering: two
+ * independent confirmations, arriving in either order or one not at all, meet
+ * at a single function that is safe to run twice.
+ */
+import ArrowMarker from './ArrowMarker.astro';
+---
+
+<svg
+  class="dg"
+  viewBox="0 0 300 384"
+  role="img"
+  aria-labelledby="pay-t pay-d"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <title id="pay-t">How a captured payment activates a subscription</title>
+  <desc id="pay-d">
+    Once the gateway captures a payment, two independent confirmations follow: the browser posting
+    back a signed response, and the gateway's own webhook. Either may arrive first and either may
+    never arrive. Both verify their signature in constant time and then call one activation
+    function. If the payment is already recorded as captured that function does nothing and reports
+    it was already done; otherwise it activates the subscription and records the payment in a single
+    transaction.
+  </desc>
+
+  <rect x="6" y="6" width="288" height="42" rx="6" class="dg-box"></rect>
+  <text x="150" y="26" class="dg-label" text-anchor="middle">Gateway captures the payment</text>
+  <text x="150" y="41" class="dg-sub" text-anchor="middle">the money has moved</text>
+
+  <path d="M 90 48 L 90 70" class="dg-flow" marker-end="url(#pay-arrow)"></path>
+  <path d="M 210 48 L 210 70" class="dg-flow" marker-end="url(#pay-arrow)"></path>
+
+  <rect x="6" y="74" width="140" height="54" rx="6" class="dg-box"></rect>
+  <text x="76" y="94" class="dg-label" text-anchor="middle">Browser confirms</text>
+  <text x="76" y="110" class="dg-sub" text-anchor="middle">may never</text>
+  <text x="76" y="122" class="dg-sub" text-anchor="middle">arrive at all</text>
+
+  <rect x="154" y="74" width="140" height="54" rx="6" class="dg-box"></rect>
+  <text x="224" y="94" class="dg-label" text-anchor="middle">Webhook confirms</text>
+  <text x="224" y="110" class="dg-sub" text-anchor="middle">may arrive</text>
+  <text x="224" y="122" class="dg-sub" text-anchor="middle">first, or twice</text>
+
+  <path d="M 76 128 L 76 148 L 150 148 L 150 164" class="dg-flow" marker-end="url(#pay-arrow)"
+  ></path>
+  <path d="M 224 128 L 224 148 L 150 148" class="dg-flow"></path>
+
+  <rect x="6" y="168" width="288" height="44" rx="6" class="dg-box"></rect>
+  <text x="150" y="188" class="dg-label" text-anchor="middle">Signature checked, constant time</text
+  >
+  <text x="150" y="204" class="dg-sub" text-anchor="middle">webhook checked against raw bytes</text>
+
+  <line x1="150" y1="212" x2="150" y2="230" class="dg-flow" marker-end="url(#pay-arrow)"></line>
+
+  <rect x="6" y="234" width="288" height="44" rx="6" class="dg-box dg-key"></rect>
+  <text x="150" y="254" class="dg-label" text-anchor="middle">One activation function</text>
+  <text x="150" y="270" class="dg-sub" text-anchor="middle">safe to call twice</text>
+
+  <path d="M 90 278 L 90 300" class="dg-flow" marker-end="url(#pay-arrow)"></path>
+  <path d="M 210 278 L 210 300" class="dg-flow" marker-end="url(#pay-arrow)"></path>
+
+  <rect x="6" y="304" width="140" height="56" rx="6" class="dg-box"></rect>
+  <text x="76" y="324" class="dg-label" text-anchor="middle">Already done</text>
+  <text x="76" y="340" class="dg-sub" text-anchor="middle">no write,</text>
+  <text x="76" y="352" class="dg-sub" text-anchor="middle">says so plainly</text>
+
+  <rect x="154" y="304" width="140" height="56" rx="6" class="dg-box"></rect>
+  <text x="224" y="324" class="dg-label" text-anchor="middle">Not yet done</text>
+  <text x="224" y="340" class="dg-sub" text-anchor="middle">activate and</text>
+  <text x="224" y="352" class="dg-sub" text-anchor="middle">record, one txn</text>
+
+  <ArrowMarker id="pay-arrow" />
+</svg>

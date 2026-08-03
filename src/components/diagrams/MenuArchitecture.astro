@@ -1,0 +1,70 @@
+---
+/**
+ * Menu platform architecture. Styling is shared — see src/styles/diagrams.css.
+ *
+ * The claim: one process serves every product surface, and a single list of
+ * paths at the front door decides what belongs to the product and what falls
+ * through to the marketing site.
+ */
+import ArrowMarker from './ArrowMarker.astro';
+---
+
+<svg
+  class="dg"
+  viewBox="0 0 300 396"
+  role="img"
+  aria-labelledby="menu-arch-t menu-arch-d"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <title id="menu-arch-t">How a request reaches the menu platform</title>
+  <desc id="menu-arch-d">
+    Diners, restaurants, and the platform operator all arrive at one reverse proxy. A single
+    allowlist of paths decides whether a request belongs to the product, served by one Fastify
+    process, or falls through to the separate static marketing site. The product process reads and
+    writes one PostgreSQL database, stores images in Cloudflare R2, and talks to the payment
+    gateway.
+  </desc>
+
+  <rect x="6" y="6" width="288" height="48" rx="6" class="dg-box"></rect>
+  <text x="150" y="26" class="dg-label" text-anchor="middle">Diners, restaurants, operator</text>
+  <text x="150" y="43" class="dg-sub" text-anchor="middle">QR scan · sign in · console</text>
+
+  <line x1="150" y1="54" x2="150" y2="72" class="dg-flow" marker-end="url(#menu-arrow)"></line>
+
+  <rect x="6" y="76" width="288" height="46" rx="6" class="dg-box"></rect>
+  <text x="150" y="96" class="dg-label" text-anchor="middle">Caddy — one path allowlist</text>
+  <text x="150" y="112" class="dg-sub" text-anchor="middle"
+    >product paths in, everything else out</text
+  >
+
+  <path d="M 90 122 L 90 140" class="dg-flow" marker-end="url(#menu-arrow)"></path>
+  <path d="M 232 122 L 232 140" class="dg-flow" marker-end="url(#menu-arrow)"></path>
+
+  <rect x="6" y="144" width="168" height="60" rx="6" class="dg-box dg-key"></rect>
+  <text x="90" y="164" class="dg-label" text-anchor="middle">Fastify — the product</text>
+  <text x="90" y="180" class="dg-sub" text-anchor="middle">one process</text>
+  <text x="90" y="194" class="dg-sub" text-anchor="middle">API · dashboard · menu</text>
+
+  <rect x="186" y="144" width="108" height="60" rx="6" class="dg-box"></rect>
+  <text x="240" y="168" class="dg-label" text-anchor="middle">Astro site</text>
+  <text x="240" y="186" class="dg-sub" text-anchor="middle">static pages</text>
+
+  <line x1="46" y1="204" x2="46" y2="228" class="dg-flow" marker-end="url(#menu-arrow)"></line>
+  <line x1="134" y1="204" x2="134" y2="228" class="dg-flow" marker-end="url(#menu-arrow)"></line>
+
+  <rect x="6" y="232" width="80" height="44" rx="6" class="dg-box"></rect>
+  <text x="46" y="252" class="dg-label" text-anchor="middle">Postgres</text>
+  <text x="46" y="267" class="dg-sub" text-anchor="middle">localhost</text>
+
+  <rect x="94" y="232" width="80" height="44" rx="6" class="dg-box"></rect>
+  <text x="134" y="252" class="dg-label" text-anchor="middle">R2</text>
+  <text x="134" y="267" class="dg-sub" text-anchor="middle">images</text>
+
+  <path d="M 90 204 L 90 320" class="dg-flow dg-flow-dashed" marker-end="url(#menu-arrow)"></path>
+
+  <rect x="6" y="324" width="288" height="48" rx="6" class="dg-box"></rect>
+  <text x="150" y="344" class="dg-label" text-anchor="middle">Payment gateway</text>
+  <text x="150" y="361" class="dg-sub" text-anchor="middle">confirms twice, on purpose</text>
+
+  <ArrowMarker id="menu-arrow" />
+</svg>
