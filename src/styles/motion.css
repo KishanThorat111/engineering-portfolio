@@ -1,0 +1,80 @@
+/*
+ * Motion system — blueprint §6. Motion confirms, never performs.
+ *
+ * THE NO-JS AND REDUCED-MOTION CONTRACT
+ * -------------------------------------
+ * Nothing here hides content on its own. Every rule below is scoped to
+ * `html[data-reveal-ready]`, an attribute set only by the inline script in
+ * BaseLayout, and only when the visitor has not asked for reduced motion and
+ * the browser supports IntersectionObserver.
+ *
+ * The root flag is named differently from the per-element `[data-reveal]` hook
+ * on purpose. Sharing one name makes <html> itself match the selector the
+ * observer collects, so the root gets observed, flipped to "in", and every
+ * rule below silently stops matching. That bug was written here and caught in
+ * a real browser, not by reading the code.
+ *
+ * So:
+ *
+ *   - JavaScript disabled or failed  → attribute never set → content visible.
+ *   - prefers-reduced-motion: reduce → attribute never set → content visible,
+ *                                      instantly, with no transform and no
+ *                                      opacity transition to collapse.
+ *
+ * That is the collapse working by construction rather than by an override: a
+ * reduced-motion visitor never enters the animated code path at all. The
+ * media query at the end is a second, independent guarantee in case the
+ * attribute is ever set by other means.
+ */
+
+html[data-reveal-ready] [data-reveal] {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+html[data-reveal-ready] [data-reveal='in'] {
+  opacity: 1;
+  transform: none;
+  /* Blueprint §6: single fade plus 6px rise, 200ms, fires once. */
+  transition:
+    opacity var(--duration-entrance) var(--ease-out),
+    transform var(--duration-entrance) var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+/*
+ * Link underline slide-in, 150ms (blueprint §6).
+ *
+ * Scoped to prose and body copy rather than applied globally: navigation and
+ * footer links got their treatment in Phase 1 and are not reworked here. The
+ * underline is drawn as a background gradient so its width can animate —
+ * text-decoration cannot be transitioned.
+ */
+:is(.prose, .body-copy) a:not(.button) {
+  text-decoration: none;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 0% 1px;
+  transition: background-size var(--duration-micro) var(--ease-out);
+  padding-block-end: 0.1em;
+}
+
+:is(.prose, .body-copy) a:not(.button):hover,
+:is(.prose, .body-copy) a:not(.button):focus-visible {
+  background-size: 100% 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-reveal-ready] [data-reveal],
+  html[data-reveal-ready] [data-reveal='in'] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  :is(.prose, .body-copy) a:not(.button) {
+    transition: none;
+    background-size: 100% 1px;
+  }
+}

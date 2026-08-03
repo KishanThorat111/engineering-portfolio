@@ -3,6 +3,7 @@ import '../styles/tokens.css';
 import '../styles/fonts.css';
 import '../styles/global.css';
 import '../styles/prose.css';
+import '../styles/motion.css';
 import SkipLink from '../components/SkipLink.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
@@ -39,6 +40,51 @@ const { title, description } = Astro.props;
       crossorigin
     />
     <slot name="head" />
+    <script is:inline>
+      /*
+       * Reveal-on-scroll (blueprint §6). Inline and in <head> deliberately: a
+       * deferred script would let content paint and then hide it, producing
+       * exactly the flash that motion is supposed to prevent.
+       *
+       * It opts *in* to animation rather than out of it. A visitor who asked
+       * for reduced motion, or a browser without IntersectionObserver, never
+       * gets the `ready` attribute, so the CSS that hides content never
+       * applies and the page simply renders. If observer setup throws, the
+       * attribute is removed so content cannot be left hidden.
+       */
+      (function () {
+        var root = document.documentElement;
+        if (!window.matchMedia || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        if (!('IntersectionObserver' in window)) return;
+        /*
+         * The root flag is `data-reveal-ready`, deliberately not `data-reveal`.
+         * Sharing the name would make <html> itself match the `[data-reveal]`
+         * selector the observer collects, so the root would be observed,
+         * flipped to "in", and every reveal rule would stop matching. Caught
+         * in a browser during Phase 3; see docs/PHASE_LOG.md.
+         */
+        root.dataset.revealReady = '';
+        addEventListener('DOMContentLoaded', function () {
+          try {
+            var io = new IntersectionObserver(
+              function (entries) {
+                entries.forEach(function (entry) {
+                  if (!entry.isIntersecting) return;
+                  entry.target.dataset.reveal = 'in';
+                  io.unobserve(entry.target);
+                });
+              },
+              { rootMargin: '0px 0px -10% 0px' },
+            );
+            document.querySelectorAll('[data-reveal]').forEach(function (el) {
+              io.observe(el);
+            });
+          } catch (error) {
+            delete root.dataset.revealReady;
+          }
+        });
+      })();
+    </script>
   </head>
   <body>
     <SkipLink />
