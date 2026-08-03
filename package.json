@@ -20,7 +20,8 @@
     "gate:copy": "node scripts/copy-check.mjs",
     "gate:links": "node scripts/link-check.mjs",
     "gate:html": "html-validate \"dist/**/*.html\"",
-    "verify": "npm run check && npm run build && npm run gate:copy && npm run gate:links && npm run gate:html"
+    "gate:contrast": "node scripts/contrast-check.mjs",
+    "verify": "npm run check && npm run build && npm run gate:copy && npm run gate:links && npm run gate:html && npm run gate:contrast"
   },
   "dependencies": {
     "astro": "^7.1.6"
