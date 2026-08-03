@@ -1,0 +1,111 @@
+---
+/**
+ * Decision card — blueprint §5: three labelled rows, DECISION / WHY /
+ * TRADE-OFF, plus an optional AGED row used by the lessons treatment.
+ *
+ * Marked up as a description list because that is what it is: three terms and
+ * their definitions. The labels are therefore real structure a screen reader
+ * announces, not styled text that only looks like structure.
+ */
+interface Props {
+  title: string;
+  decision: string;
+  why: string;
+  tradeoff: string;
+  /** How the decision looks with hindsight — the lessons treatment. */
+  aged?: string;
+  /** See SectionHeader: a prop named `as` breaks prop typing in this toolchain. */
+  level?: 'h3' | 'h4';
+}
+
+const { title, decision, why, tradeoff, aged, level: Tag = 'h3' } = Astro.props;
+
+const rows = [
+  { label: 'Decision', value: decision },
+  { label: 'Why', value: why },
+  { label: 'Trade-off', value: tradeoff },
+];
+---
+
+<article class="decision-card" data-aged={aged ? '' : undefined}>
+  <Tag>{title}</Tag>
+  <dl>
+    {
+      rows.map((row) => (
+        <div class="row">
+          <dt>{row.label}</dt>
+          <dd>{row.value}</dd>
+        </div>
+      ))
+    }
+    {
+      aged && (
+        <div class="row row-aged">
+          <dt>Aged</dt>
+          <dd>{aged}</dd>
+        </div>
+      )
+    }
+  </dl>
+</article>
+
+<style>
+  .decision-card {
+    background: var(--bg-raised);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-6);
+  }
+
+  h3,
+  h4 {
+    font-size: var(--text-md);
+    margin-block-end: var(--space-4);
+  }
+
+  dl {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .row {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  @media (min-width: 640px) {
+    .row {
+      grid-template-columns: 7.5rem 1fr;
+      gap: var(--space-4);
+    }
+  }
+
+  dt {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    padding-block-start: 0.15em;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--text);
+    font-size: var(--text-sm);
+    line-height: var(--leading-body);
+  }
+
+  /* The aged row is the admission, so it is set apart with the caution token
+     rather than blended into the decision it revises. */
+  .row-aged {
+    border-block-start: var(--border-width) solid var(--border);
+    padding-block-start: var(--space-3);
+  }
+
+  .row-aged dt {
+    color: var(--accent-warm);
+  }
+</style>

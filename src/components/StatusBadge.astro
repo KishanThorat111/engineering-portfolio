@@ -1,0 +1,68 @@
+---
+/**
+ * Status badge — blueprint §5.
+ *
+ * The label and glyph come from STATUS_LABELS in the constitution module, not
+ * from props, so that a status can never be relabelled at a call site. The
+ * hospital platform's status is the site's most consequential claim and the
+ * pre-launch platform's status is the one most easily overstated; both are
+ * rendered from one definition that the Phase 7 machine layer also reads.
+ */
+import type { Status } from '../schemas/constitution';
+import { STATUS_LABELS } from '../schemas/constitution';
+
+interface Props {
+  status: Status;
+  /** Optional dated detail, e.g. "Q3 2026" beside PRE-LAUNCH. */
+  detail?: string;
+}
+
+const { status, detail } = Astro.props;
+const { glyph, label, tone } = STATUS_LABELS[status];
+---
+
+<span class="status-badge" data-tone={tone}>
+  <span class="glyph" aria-hidden="true">{glyph}</span>
+  <span class="label">{label}{detail ? ` (${detail})` : ''}</span>
+</span>
+
+<style>
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  /* The glyph carries the colour; the label stays high-contrast text so the
+     badge never depends on colour alone to convey status (WCAG 1.4.1). */
+  .glyph {
+    font-size: 0.9em;
+  }
+
+  .label {
+    color: var(--text);
+  }
+
+  [data-tone='accent'] .glyph {
+    color: var(--accent);
+  }
+
+  [data-tone='warm'] .glyph {
+    color: var(--accent-warm);
+  }
+
+  [data-tone='muted'] .glyph {
+    color: var(--text-muted);
+  }
+
+  [data-tone='muted'] .label {
+    color: var(--text-muted);
+  }
+</style>

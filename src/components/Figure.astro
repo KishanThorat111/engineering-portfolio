@@ -1,0 +1,63 @@
+---
+/**
+ * Figure — blueprint §5: a diagram or screenshot with a caption and, where it
+ * applies, an explicit "viewing a demo tenant" note.
+ *
+ * The demo-tenant note is a constitutional requirement, not decoration
+ * (blueprint §8.3): a reader must never be able to mistake a sanitised
+ * demonstration for a real production tenant's data. It is rendered inside the
+ * <figcaption> so it travels with the image for screen-reader users too.
+ *
+ * The image itself is a slot rather than a src prop, so callers can pass a
+ * hand-authored inline SVG diagram or a responsive <picture> without this
+ * component growing an image pipeline it does not own.
+ */
+interface Props {
+  caption: string;
+  /** Set for any screenshot taken from a demo or staging tenant. */
+  demoTenant?: boolean;
+}
+
+const { caption, demoTenant = false } = Astro.props;
+---
+
+<figure class="figure">
+  <div class="frame">
+    <slot />
+  </div>
+  <figcaption>
+    {caption}
+    {demoTenant && <span class="demo">Viewing a demo tenant — no real data shown.</span>}
+  </figcaption>
+</figure>
+
+<style>
+  .figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .frame {
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+    padding: var(--space-4);
+    overflow-x: auto;
+  }
+
+  figcaption {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .demo {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--accent-warm);
+  }
+</style>

@@ -1,0 +1,9 @@
+# Crawlers of every kind are welcome, including AI agents — the machine layer
+# is an audience this site serves deliberately (blueprint §7.6).
+#
+# Phase 7 owns the full robots and sitemap work. It MUST preserve the /dev/
+# rule below: that route is an internal component gallery, not part of the
+# public site, and it is also marked noindex at the page level.
+User-agent: *
+Allow: /
+Disallow: /dev/

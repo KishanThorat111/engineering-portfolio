@@ -1,0 +1,86 @@
+---
+/**
+ * Buttons — blueprint §5: primary (accent background, dark text) and secondary
+ * (bordered). Radius 6px, 1px borders, no shadow.
+ *
+ * Renders an <a> when given an href and a <button> otherwise. A link that
+ * navigates must never be a <button>: keyboard and screen-reader users rely on
+ * the distinction, and the site's only interactive elements should behave
+ * exactly as their semantics promise.
+ */
+interface Props {
+  href?: string;
+  variant?: 'primary' | 'secondary';
+  type?: 'button' | 'submit';
+  download?: boolean;
+  rel?: string;
+}
+
+const { href, variant = 'primary', type = 'button', download, rel } = Astro.props;
+const Tag = href ? 'a' : 'button';
+---
+
+<Tag
+  class="button"
+  data-variant={variant}
+  href={href}
+  rel={rel}
+  download={download}
+  type={href ? undefined : type}
+>
+  <slot />
+</Tag>
+
+<style>
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    line-height: 1.2;
+    border-radius: var(--radius);
+    border: var(--border-width) solid transparent;
+    padding: var(--space-3) var(--space-4);
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform var(--duration-micro) var(--ease-out);
+  }
+
+  .button[data-variant='primary'] {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  /**
+   * The boundary uses --text-muted, not --border. A secondary button's outline
+   * is the only thing identifying it as a control, so WCAG 2.2 SC 1.4.11 asks
+   * for 3:1 against the background; --border is 1.33:1 and would fail, while
+   * --text-muted is 7.59:1. Both are tokens from tokens.css — this is a usage
+   * decision, not a new colour. Verified by scripts/contrast-check.mjs.
+   */
+  .button[data-variant='secondary'] {
+    background: transparent;
+    color: var(--text);
+    border-color: var(--text-muted);
+  }
+
+  .button[data-variant='secondary']:hover {
+    border-color: var(--accent);
+  }
+
+  .button:active {
+    transform: scale(0.98);
+  }
+
+  /* Blueprint §6 requires reduced motion to remove transforms outright, not
+     merely shorten them — the global rule zeroes durations, so the transform
+     itself is cancelled here. */
+  @media (prefers-reduced-motion: reduce) {
+    .button:active {
+      transform: none;
+    }
+  }
+</style>

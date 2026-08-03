@@ -1,0 +1,53 @@
+---
+/**
+ * Limitation note — blueprint §5: a left-bordered, plain-spoken block carrying
+ * the danger token, with a required "addressed by" line.
+ *
+ * This component renders constitution rule 3, the rule the whole site rests
+ * on. It is deliberately not styled as a warning to be skimmed past: the
+ * limitation is body-weight text a reader is meant to actually read, and the
+ * danger token appears only as a 2px rule, "sparingly" per blueprint §5.
+ */
+interface Props {
+  limitation: string;
+  /** Required, exactly as in `limitationSchema` — a limitation with no stated
+      response reads as an unowned defect rather than engineering judgement. */
+  addressedBy: string;
+}
+
+const { limitation, addressedBy } = Astro.props;
+---
+
+<div class="limitation-note">
+  <p class="limitation">{limitation}</p>
+  <p class="addressed"><span class="label">Addressed by</span> {addressedBy}</p>
+</div>
+
+<style>
+  .limitation-note {
+    border-inline-start: 2px solid var(--accent-danger);
+    padding: var(--space-1) 0 var(--space-1) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .limitation {
+    color: var(--text);
+    font-size: var(--text-base);
+  }
+
+  .addressed {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .label {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-inline-end: var(--space-1);
+  }
+</style>

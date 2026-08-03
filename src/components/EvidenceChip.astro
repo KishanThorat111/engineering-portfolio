@@ -1,0 +1,45 @@
+---
+/**
+ * Evidence chip — blueprint §5: mono fact plus muted qualifier, bordered pill,
+ * wrapping into the Home proof strip.
+ *
+ * Fact and qualifier render as one line of text rather than two elements a
+ * screen reader might announce separately, because a figure read without its
+ * date is exactly the misreading this site exists to prevent.
+ */
+interface Props {
+  fact: string;
+  qualifier?: string;
+}
+
+const { fact, qualifier } = Astro.props;
+---
+
+<span class="evidence-chip">
+  <span class="fact">{fact}</span>{qualifier && <span class="qualifier">{qualifier}</span>}
+</span>
+
+<style>
+  .evidence-chip {
+    display: inline-flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+    background: var(--bg-raised);
+    border: var(--border-width) solid var(--border);
+    border-radius: 999px;
+    padding: var(--space-2) var(--space-4);
+  }
+
+  .fact {
+    color: var(--text);
+  }
+
+  .qualifier {
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+  }
+</style>

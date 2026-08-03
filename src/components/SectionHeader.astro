@@ -1,0 +1,53 @@
+---
+/**
+ * Section header — blueprint §5: kicker plus title.
+ *
+ * The kicker is a paragraph, never a heading. It is a label, and promoting it
+ * to a heading would put a meaningless rung in the document outline that
+ * screen-reader users navigate by.
+ */
+interface Props {
+  kicker?: string;
+  title: string;
+  /**
+   * Heading level, so a section sits correctly in the page outline.
+   *
+   * Named `level` rather than the more idiomatic `as`: in this toolchain a
+   * prop literally named `as` silently collapses `Astro.props` to `any`,
+   * disabling prop typechecking for the whole component. Verified by bisect in
+   * Phase 2 — see docs/PHASE_LOG.md.
+   */
+  level?: 'h2' | 'h3';
+  id?: string;
+}
+
+const { kicker, title, level: Tag = 'h2', id } = Astro.props;
+---
+
+<header class="section-header">
+  {kicker && <p class="kicker">{kicker}</p>}
+  <Tag id={id}>{title}</Tag>
+</header>
+
+<style>
+  .section-header {
+    margin-block-end: var(--space-8);
+  }
+
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-block-end: var(--space-2);
+  }
+
+  h2 {
+    font-size: var(--text-xl);
+  }
+
+  h3 {
+    font-size: var(--text-lg);
+  }
+</style>

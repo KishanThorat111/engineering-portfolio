@@ -1,0 +1,271 @@
+---
+/**
+ * Component gallery — every component from blueprint §5, in every state it can
+ * hold.
+ *
+ * Excluded from discovery two ways: `noindex, nofollow` below, and a
+ * `Disallow: /dev/` in public/robots.txt. Phase 7 owns the full robots and
+ * sitemap work and must preserve both — the note is recorded in PHASE_LOG.
+ *
+ * The evidence chips on this page are the real collection entries, not
+ * fixtures, so the gallery proves the collection-to-component path that Phase 3
+ * relies on when it assembles Home.
+ */
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SectionHeader from '../../components/SectionHeader.astro';
+import StatusBadge from '../../components/StatusBadge.astro';
+import EvidenceChip from '../../components/EvidenceChip.astro';
+import SystemCard from '../../components/SystemCard.astro';
+import DecisionCard from '../../components/DecisionCard.astro';
+import LimitationNote from '../../components/LimitationNote.astro';
+import StatBlock from '../../components/StatBlock.astro';
+import ExperienceCard from '../../components/ExperienceCard.astro';
+import Figure from '../../components/Figure.astro';
+import Button from '../../components/Button.astro';
+import {
+  previewDecisions,
+  previewExperience,
+  previewLimitations,
+  previewMetrics,
+  previewStatuses,
+  previewSystems,
+} from '../../dev/preview-fixtures';
+
+const chips = (await getCollection('evidenceChips')).sort((a, b) => a.data.order - b.data.order);
+---
+
+<BaseLayout
+  title="Component gallery — internal preview"
+  description="Internal preview of every design-system component in every state. Not part of the public site."
+>
+  <Fragment slot="head">
+    <meta name="robots" content="noindex, nofollow" />
+  </Fragment>
+
+  <div class="container gallery">
+    <header class="gallery-head">
+      <p class="kicker">Internal preview</p>
+      <h1>Component gallery</h1>
+      <p class="intro">
+        Every component from the design system, in every state it can hold. This route is excluded
+        from search and from the sitemap. Sample data is real and traceable — a component that needs
+        invented data to look right is a finding about the component.
+      </p>
+    </header>
+
+    <section class="block">
+      <SectionHeader kicker="Status" title="StatusBadge" />
+      <div class="row">
+        {previewStatuses.map((s) => <StatusBadge status={s.status} detail={s.detail} />)}
+      </div>
+    </section>
+
+    <section class="block">
+      <SectionHeader kicker="Proof" title="EvidenceChip" />
+      <p class="note">Rendered from the real <code>evidenceChips</code> collection.</p>
+      <div class="row">
+        {
+          chips.map((chip) => (
+            <EvidenceChip fact={chip.data.fact} qualifier={chip.data.qualifier} />
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="block">
+      <SectionHeader kicker="Systems" title="SystemCard" />
+      <div class="grid">
+        {
+          previewSystems.map((system) => (
+            <SystemCard
+              title={system.title}
+              status={system.status}
+              statusDetail={system.statusDetail}
+              problem={system.problem}
+              stack={system.stack}
+              href={system.href}
+            />
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="block">
+      <SectionHeader kicker="Judgement" title="DecisionCard" />
+      <p class="note">Second card shows the optional AGED row used by the lessons treatment.</p>
+      <div class="stack-list">
+        {
+          previewDecisions.map((decision) => (
+            <DecisionCard
+              title={decision.title}
+              decision={decision.decision}
+              why={decision.why}
+              tradeoff={decision.tradeoff}
+              aged={decision.aged}
+            />
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="block">
+      <SectionHeader kicker="Disclosure" title="LimitationNote" />
+      <div class="stack-list">
+        {
+          previewLimitations.map((item) => (
+            <LimitationNote limitation={item.limitation} addressedBy={item.addressedBy} />
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="block">
+      <SectionHeader kicker="Measurement" title="StatBlock" />
+      <div class="row row-wide">
+        {
+          previewMetrics.map((metric) => (
+            <StatBlock
+              value={metric.value}
+              caption="Measured at audit"
+              qualifier={metric.qualifier}
+            />
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="block">
+      <SectionHeader kicker="Career" title="ExperienceCard" />
+      <p class="note">First card shows the confidential treatment.</p>
+      <div class="stack-list">
+        {
+          previewExperience.map((entry) => (
+            <ExperienceCard
+              role={entry.role}
+              organisation={entry.organisation}
+              from={entry.from}
+              to={entry.to}
+              bullets={entry.bullets}
+              confidential={entry.confidential}
+            />
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="block">
+      <SectionHeader kicker="Media" title="Figure" />
+      <div class="grid">
+        <Figure caption="Hand-authored SVG in the token palette, legible at 360px wide.">
+          <svg viewBox="0 0 320 120" role="img" aria-labelledby="demo-diagram-title">
+            <title id="demo-diagram-title">Three boxes connected left to right</title>
+            <rect x="4" y="34" width="90" height="52" rx="6" fill="#12161F" stroke="#232936"></rect>
+            <rect x="115" y="34" width="90" height="52" rx="6" fill="#12161F" stroke="#4ADE80"
+            ></rect>
+            <rect x="226" y="34" width="90" height="52" rx="6" fill="#12161F" stroke="#232936"
+            ></rect>
+            <line x1="94" y1="60" x2="115" y2="60" stroke="#9AA3B2"></line>
+            <line x1="205" y1="60" x2="226" y2="60" stroke="#9AA3B2"></line>
+          </svg>
+        </Figure>
+        <Figure caption="Screenshot slot with the demo-tenant disclosure." demoTenant={true}>
+          <svg viewBox="0 0 320 120" role="img" aria-labelledby="demo-shot-title">
+            <title id="demo-shot-title">Empty frame showing where a screenshot sits</title>
+            <rect x="4" y="4" width="312" height="112" rx="6" fill="#0B0E14" stroke="#232936"
+            ></rect>
+            <rect x="20" y="24" width="140" height="10" rx="3" fill="#232936"></rect>
+            <rect x="20" y="46" width="220" height="10" rx="3" fill="#232936"></rect>
+            <rect x="20" y="68" width="180" height="10" rx="3" fill="#232936"></rect>
+          </svg>
+        </Figure>
+      </div>
+    </section>
+
+    <section class="block">
+      <SectionHeader kicker="Actions" title="Buttons" />
+      <div class="row">
+        <Button href="/">Primary link</Button>
+        <Button href="/" variant="secondary">Secondary link</Button>
+        <Button>Primary button</Button>
+        <Button variant="secondary">Secondary button</Button>
+      </div>
+    </section>
+
+    <section class="block">
+      <SectionHeader kicker="Structure" title="SectionHeader" level="h2" />
+      <div class="stack-list">
+        <SectionHeader kicker="With kicker" title="Heading level two" level="h2" />
+        <SectionHeader title="Heading level three, no kicker" level="h3" />
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .gallery {
+    padding-block: var(--space-12) var(--space-16);
+  }
+
+  .gallery-head {
+    margin-block-end: var(--space-16);
+  }
+
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--accent-warm);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-block-end: var(--space-2);
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+  }
+
+  .intro {
+    margin-block-start: var(--space-4);
+    max-width: var(--measure);
+    color: var(--text-muted);
+  }
+
+  .block {
+    margin-block-end: var(--space-16);
+  }
+
+  .note {
+    margin-block-end: var(--space-4);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .row-wide {
+    gap: var(--space-12);
+  }
+
+  .grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 768px) {
+    .grid {
+      grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    }
+  }
+
+  .stack-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+</style>

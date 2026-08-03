@@ -1,0 +1,134 @@
+---
+/**
+ * Experience card — blueprint §4.4 and §5.
+ *
+ * The confidential treatment is the point of this component. Blueprint §4.4
+ * turns the NDA into a professionalism signal rather than a gap, so a
+ * confidential entry renders an explicit CONFIDENTIAL badge and a note saying
+ * the work is described at CV level. Silence would read as an absence; the
+ * stated boundary reads as discipline.
+ */
+import type { Status } from '../schemas/constitution';
+import StatusBadge from './StatusBadge.astro';
+
+interface Props {
+  role: string;
+  organisation: string;
+  from: string;
+  to: string;
+  bullets: string[];
+  confidential?: boolean;
+  note?: string;
+  /** See SectionHeader: a prop named `as` breaks prop typing in this toolchain. */
+  level?: 'h3' | 'h4';
+}
+
+const {
+  role,
+  organisation,
+  from,
+  to,
+  bullets,
+  confidential = false,
+  note,
+  level: Tag = 'h3',
+} = Astro.props;
+
+const CONFIDENTIAL: Status = 'CONFIDENTIAL';
+---
+
+<article class="experience-card">
+  <div class="head">
+    <div>
+      <Tag>{role}</Tag>
+      <p class="org">{organisation}</p>
+    </div>
+    <p class="period">{from} – {to}</p>
+  </div>
+
+  {
+    confidential && (
+      <p class="confidential">
+        <StatusBadge status={CONFIDENTIAL} />
+        <span class="confidential-note">Client work — described at CV level</span>
+      </p>
+    )
+  }
+
+  <ul class="bullets">
+    {bullets.map((bullet) => <li>{bullet}</li>)}
+  </ul>
+
+  {note && <p class="note">{note}</p>}
+</article>
+
+<style>
+  .experience-card {
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+
+  h3,
+  h4 {
+    font-size: var(--text-md);
+  }
+
+  .org {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    margin-block-start: var(--space-1);
+  }
+
+  .period {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .confidential {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-3);
+  }
+
+  .confidential-note {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+
+  .bullets {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding-inline-start: var(--space-4);
+  }
+
+  .bullets li {
+    font-size: var(--text-sm);
+    line-height: var(--leading-body);
+  }
+
+  .note {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+</style>

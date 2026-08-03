@@ -1,0 +1,51 @@
+---
+/**
+ * Stat block — blueprint §5: mono number, caption, qualifier.
+ *
+ * The qualifier is not optional in this component, mirroring
+ * `qualifiedMetricSchema`: a stat block exists to display a measurement, and
+ * constitution rule 2 says a measurement without its date is not publishable.
+ * Making the prop required means the omission is a type error at the call
+ * site, not a missing line a reviewer has to notice.
+ */
+interface Props {
+  value: string;
+  caption: string;
+  qualifier: string;
+}
+
+const { value, caption, qualifier } = Astro.props;
+---
+
+<div class="stat-block">
+  <p class="value">{value}</p>
+  <p class="caption">{caption}</p>
+  <p class="qualifier">{qualifier}</p>
+</div>
+
+<style>
+  .stat-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .value {
+    font-family: var(--font-mono);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-medium);
+    color: var(--text);
+    line-height: var(--leading-heading);
+  }
+
+  .caption {
+    color: var(--text);
+    font-size: var(--text-sm);
+  }
+
+  .qualifier {
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+  }
+</style>

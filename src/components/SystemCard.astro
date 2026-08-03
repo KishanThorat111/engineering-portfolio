@@ -1,0 +1,121 @@
+---
+/**
+ * System card — blueprint §5: badge, title, one-line problem, 3 stack tags,
+ * arrow link. Hover lifts 2px and turns the border accent.
+ *
+ * Accessibility: the whole card is a click target, but there is exactly one
+ * link in the accessible tree — the heading link, stretched over the card with
+ * a pseudo-element. Wrapping the entire card in an anchor would force screen
+ * readers to announce the badge, problem, and every stack tag as part of the
+ * link text.
+ */
+import type { Status } from '../schemas/constitution';
+import StatusBadge from './StatusBadge.astro';
+
+interface Props {
+  title: string;
+  status: Status;
+  statusDetail?: string;
+  problem: string;
+  stack: string[];
+  href: string;
+}
+
+const { title, status, statusDetail, problem, stack, href } = Astro.props;
+
+/** Blueprint §5 fixes the card at three tags; the full stack lives on the case study. */
+const shownStack = stack.slice(0, 3);
+---
+
+<article class="system-card">
+  <StatusBadge status={status} detail={statusDetail} />
+  <h3><a href={href}>{title}</a></h3>
+  <p class="problem">{problem}</p>
+  <ul class="stack">
+    {shownStack.map((tag) => <li>{tag}</li>)}
+  </ul>
+  <span class="arrow" aria-hidden="true">Read the engineering →</span>
+</article>
+
+<style>
+  .system-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+    background: var(--bg-raised);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-6);
+    height: 100%;
+    transition:
+      border-color var(--duration-micro) var(--ease-out),
+      transform var(--duration-micro) var(--ease-out);
+  }
+
+  .system-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  /* The card must show focus when the heading link inside it is focused,
+     otherwise keyboard users get a focus ring on invisible stretched text. */
+  .system-card:focus-within {
+    border-color: var(--accent);
+  }
+
+  h3 {
+    font-size: var(--text-md);
+    margin: 0;
+  }
+
+  h3 a {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  /* Stretched link: one anchor, whole-card hit area. */
+  h3 a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius);
+  }
+
+  .problem {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .stack {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+  }
+
+  .stack li {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .arrow {
+    margin-block-start: auto;
+    padding-block-start: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--accent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .system-card:hover {
+      transform: none;
+    }
+  }
+</style>
