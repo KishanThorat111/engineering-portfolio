@@ -115,3 +115,60 @@ the work.
 
 Phase 2 — The Constitution Becomes Code (T5–T6). Open with the Phase 2 contract from
 `docs/IMPLEMENTATION_HANDOFF.md` §4. Read this log first.
+
+---
+
+## Phase 1 addendum — first CI incident, and a correction · 3 August 2026
+
+Appended rather than edited into the entry above: this log is append-only, and the first
+diagnosis recorded here was wrong. Both facts belong in the record.
+
+### What happened
+
+The Phase 1 push (`ff8571e`) failed CI immediately. Both jobs died at the first real step,
+`npm ci`, before any gate ran. The gates were never the problem — nothing had reached them.
+
+**First diagnosis — wrong.** `npm ci` under npm 10 reproduced an error locally, so the
+failure was attributed to CI's Node 22 runners bundling npm 10 against an npm 11 lockfile.
+Node 24 was pinned in `.nvmrc` (`6bc7b82`). CI failed again, identically. The pin fixed
+nothing.
+
+**Actual root cause.** `package-lock.json` was incomplete. It had been built up
+incrementally — `npm install`, then `npm install astro@^7.1.6`, then `npm audit fix` — and
+the resulting file never recorded the top-level `@emnapi/core` and `@emnapi/runtime`
+entries that `@napi-rs/wasm-runtime` and `@img/sharp-wasm32` require. The strict installer
+named exactly those two packages; that message was evidence about the lockfile, not about
+the npm version, and it was misread the first time. Deleting `node_modules` and
+`package-lock.json` and regenerating from `package.json` produced a complete tree
+(`e977057`). Run `30828044611` is green: every step of both jobs succeeded, including
+Lighthouse.
+
+### Why local verification missed it
+
+`npm run verify` passed on this machine throughout, because `node_modules` already held the
+packages the lockfile failed to record. A clean install had nothing to fall back on. **Local
+green proved the source was correct; it could not prove the lockfile was complete — only a
+clean install from the lockfile alone can do that.** This is the same class of gap the
+portfolio's own content publishes rather than hides: a documented mechanism that had never
+actually been executed end to end.
+
+### Standing rules from this incident (later phases: inherit)
+
+1. **A phase is not done when local gates pass — it is done when remote CI passes.** Push,
+   then verify the run's job and step conclusions before declaring completion or writing a
+   Definition-of-Done claim.
+2. **Never hand-edit or incrementally patch `package-lock.json` into a shipping state.**
+   After any dependency change, regenerate from a deleted lockfile and confirm a clean
+   install reproduces the tree.
+3. **Read an installer's error as evidence about the artifact it names**, not about the
+   nearest environmental difference. The environment difference (npm 10 vs 11) was real,
+   visible, and causally irrelevant.
+
+### Correction to the entry above
+
+The Phase 1 entry's verification record stated the gates were verified locally. That was
+true and remains true, but it was insufficient as a completion standard — remote CI was not
+green when the entry was written. The Definition of Done is now met: run `30828044611` is
+green on `e977057`. The Node 24 pin stays (active LTS, matches the development machine, and
+Cloudflare Pages reads `.nvmrc`, so dev/CI/host share one runtime) — kept on its own merits,
+credited with nothing.
