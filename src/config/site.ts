@@ -15,10 +15,15 @@ export const SITE = {
     'enterprise AI workflow automation for a UK client.',
   email: 'kishanthorat111@outlook.com',
   /**
-   * Published because it is the contact detail on the ratified CV source and a
-   * CV without one is materially weaker for the recruiter journey. It lives
-   * here rather than in page markup so the owner can withdraw it from the site
-   * and the PDF together, in one edit.
+   * PRINT ONLY — deliberately absent from the rendered web page, present in
+   * the downloadable PDF. Do not "fix" this by showing it on /cv.
+   *
+   * The rule is that the site and the PDF must state identical *claims*;
+   * contact routing is not a claim. A recruiter who downloads the CV gets the
+   * number they need, while a public web page does not display a personal
+   * mobile to every passer-by and scraper. The split is implemented in
+   * src/pages/cv.astro with a `print-only` class, and the PDF is captured
+   * under print emulation, so it picks the number up automatically.
    */
   phone: '+91 95386 65107',
   linkedin: 'https://linkedin.com/in/kishanthorat',
