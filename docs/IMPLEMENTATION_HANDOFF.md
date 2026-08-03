@@ -1,6 +1,7 @@
 # IMPLEMENTATION HANDOFF — PLANNING → CLAUDE CODE
 **Project:** kishanthorat.dev — evidence-first engineering portfolio
-**Version:** 1.0 · 3 August 2026 · **Planning is permanently closed after this document.**
+**Version:** 1.1 · 3 August 2026 · **Planning is permanently closed after this document.**
+**v1.1 amendment record (pre-implementation audit):** repository executed as `engineering-portfolio` and seeded with `/docs`; contracts amended for the as-executed repo name, Pages-first deployment with later domain binding, Windows line-ending hygiene, the Phase 6 lessons-approval unblock rule, and the Phase 8 launch checklist. No strategic decision changed.
 **Authority chain:** `PORTFOLIO_IMPLEMENTATION_BLUEPRINT.md` (the contract) → `ENGINEERING_IDENTITY_REPORT.md` (the why) → three `PROJECT_KNOWLEDGE_BASE_*.md` files (content source only). This document adds no strategy; it transfers it.
 
 ---
@@ -15,9 +16,9 @@
 
 **Long-term maintainability & engineering quality — the history is content.** The blueprint makes the repository a public exhibit ("exhibit zero"): its commit history, CI configuration, and docs are part of the evidence. A fresh repo's first commit is the foundation of the new identity; the old repo's history is the 2025 template era. Those two stories must not share a git log.
 
-**Migration complexity — trivially low, in the right direction.** Nothing moves except five planning documents into `/docs`. The only continuity obligations are external and already specified: the old Azure Static Web App becomes a 301 redirect at launch (Blueprint T19), and the old GitHub repo is **archived** with a one-line honest README ("Personal portfolio, 2024–2025. Superseded by github.com/KishanThorat111/portfolio"). Archiving, not deleting — the constitution favors honest history over erased history.
+**Migration complexity — trivially low, in the right direction.** Nothing moves except five planning documents into `/docs`. The only continuity obligations are external and already specified: the old Azure Static Web App becomes a 301 redirect at launch (Blueprint T19), and the old GitHub repo is **archived** with a one-line honest README ("Personal portfolio, 2024–2025. Superseded by github.com/KishanThorat111/engineering-portfolio").  Archiving, not deleting — the constitution favors honest history over erased history. *(v1.1 as-executed note: the owner has instead made the old repository **private** — accepted; it removes the counter-evidence even more conservatively. If it is ever re-publicized, apply the archive-plus-README treatment above.)*
 
-**Repository:** `KishanThorat111/portfolio` · public · MIT · default branch `main` · deploys to Cloudflare Pages on `kishanthorat.dev`.
+**Repository:** `KishanThorat111/engineering-portfolio` (as-executed name) · public · MIT · default branch `main` · deploys via Cloudflare Pages; custom domain `kishanthorat.dev` bound when purchased — optional in Phase 1, a hard launch blocker by Phase 8.
 
 ---
 
@@ -27,9 +28,11 @@ Claude Code sessions are fresh contexts. Philosophy transfer therefore runs thro
 
 1. **`CLAUDE.md`** at the repo root — Claude Code reads it automatically at session start. It carries the standing role, the constitution, and the behavioral rules (§3 below). This is how every future session inherits the planning conversation without the planning conversation.
 2. **`docs/PHASE_LOG.md`** — append-only. Every phase ends by recording: what shipped, notable engineering decisions made inside the boundaries, any deviations from the blueprint (with reasons), and open `OWNER-INPUT` markers. Each new session reads it before touching code. This is the project's memory between instances.
-3. **`/docs`** — the five planning documents. The blueprint is cited by section (§) in every phase contract instead of being restated.
+3. **`/docs`** — the seven planning documents (incl. `CV_SOURCE.md`). The blueprint is cited by section (§) in every phase contract instead of being restated.
 
 **Session protocol for the owner:** one phase per Claude Code session, in order. Open each session by pasting the phase contract from §4 verbatim. Do not proceed to phase N+1 until phase N's Definition of Done is verified and `PHASE_LOG.md` is updated. Never run phases in parallel.
+
+**As-executed state at v1.1 (pre-Phase-1 audit):** repo live and seeded with the seven docs in a single initial commit; Claude Code ready in VS Code on Windows. Phase 0 items still open — none block Phases 1–2: **domain** (Phase 1 ships on the Pages URL; hard-required by Phase 8), **headshot** (bites in Phase 3), **sanitized gallery screenshots** (bite in Phases 4–5), **lessons approval** (bites in Phase 6 — see its contract), **GitHub pins + profile README** (text delivered in Phase 1; owner applies any time before launch).
 
 ---
 
@@ -90,9 +93,10 @@ Each contract below is ready to paste as the opening message of its Claude Code 
 ```
 You are starting implementation of a fully planned project. Before writing
 anything: read docs/PORTFOLIO_IMPLEMENTATION_BLUEPRINT.md end to end, then
-docs/ENGINEERING_IDENTITY_REPORT.md §V and §IX. The five planning documents
-are in ./docs (I have placed them there). Planning is closed; you are the
-principal engineer executing it.
+docs/ENGINEERING_IDENTITY_REPORT.md §V and §IX. The seven planning
+documents are already committed in ./docs — verify their presence; never
+re-create or modify them. Planning is closed; you are the principal
+engineer executing it.
 
 MISSION — by the end of this session, the foundation is LIVE: a real domain
 serving a real hero, from a repository whose hygiene is itself evidence.
@@ -107,6 +111,9 @@ BUILD (blueprint T1–T4):
    session and forever.
 2. Scaffold: Astro 5 + TypeScript strict, Prettier, MIT license, README
    (intent, stack, run instructions — engineer's voice, no marketing).
+   Include .editorconfig and .gitattributes enforcing LF line endings —
+   this is a Windows dev machine and a public repo that must stay
+   diff-clean.
 3. Design tokens per blueprint §5 (tokens.css, self-hosted subset Inter +
    JetBrains Mono, font-display: swap), global + prose styles.
 4. Layout shell: header/nav (desktop + mobile), footer, skip link,
@@ -115,15 +122,21 @@ BUILD (blueprint T1–T4):
    validation, and scripts/copy-check.mjs enforcing the banned-word lists
    from blueprint Ruling 1 + §3.4 against BUILT HTML. Lighthouse CI
    included but warn-only until Phase 8.
-6. Deploy to Cloudflare Pages on kishanthorat.dev with the real Home hero:
-   the locked claim + sub-line + status chips from blueprint §1 — no
-   placeholder anywhere.
-7. Create docs/PHASE_LOG.md and write the Phase 1 entry.
+6. Deploy via a Cloudflare Pages project with the real Home hero: the
+   locked claim + sub-line + status chips from blueprint §1 — no
+   placeholder anywhere. Bind kishanthorat.dev if the owner confirms it
+   is purchased; otherwise ship on the *.pages.dev URL and record an
+   OWNER-INPUT for domain binding (hard requirement by Phase 8).
+7. Create docs/PHASE_LOG.md and write the Phase 1 entry. It must record
+   the as-executed deviations: repo named engineering-portfolio (update
+   any references accordingly) and the old Portfolio repo made private
+   rather than publicly archived.
 
 BOUNDARIES — do not build content collections, components beyond the shell,
 or any page beyond the hero and 404; those are later phases.
 
-DONE WHEN — domain serves the hero on mobile and desktop; mobile nav works;
+DONE WHEN — the deployed URL (custom domain or *.pages.dev) serves the
+hero on mobile and desktop; mobile nav works;
 prefers-reduced-motion verified; CI green including the copy gate; commit
 history is clean conventional commits; PHASE_LOG entry written.
 ```
@@ -307,6 +320,9 @@ BUILD:
    cross-link from Lesson 1 to the Electrical readiness programme.
    If docs/PHASE_LOG.md shows the owner has not confirmed the lessons,
    build the structure, insert OWNER-INPUT, and halt those blocks.
+   Unblock rule: if the owner's opening message for this session states
+   "Lessons approved as drafted", treat blueprint §4.5 wording as
+   confirmed and publish both.
 
 DONE WHEN — every decision card traces to a cited source; OPS360 content
 diff-checks against CV wording (nothing beyond it); lessons render or halt
@@ -378,8 +394,11 @@ BUILD:
 3. Launch ops — production DNS final; the old Azure Static Web App
    replaced by a single-file 301 to kishanthorat.dev (produce the file +
    exact deploy instructions for the owner); owner checklist for LinkedIn/
-   GitHub profile updates and archiving the old repo with its honest
-   one-line README.
+   GitHub profile updates. The old Portfolio repo is already private —
+   no archive action needed; note in MAINTENANCE.md that if it is ever
+   re-publicized it gets the honest superseded-by README. Domain binding
+   to kishanthorat.dev must be COMPLETE in this phase — it is a launch
+   blocker, not an OWNER-INPUT.
 4. Handover — MAINTENANCE.md: add-a-system walkthrough, status-change
    procedure, local gate commands, and the quarterly review checklist
    (statuses current? qualifiers current? links alive? log reviewed?).
@@ -397,3 +416,5 @@ live, truthful, and operable. Project closed.
 ## 5. Closing Note
 
 Phase count: eight — chosen so every session ends deployed and verifiable, the flagship case study gets undivided attention before the template is replicated, and no session mixes strategic content work with mechanical hardening. The blueprint remains the contract; this document is only its delivery mechanism. **Planning is now permanently closed.**
+
+**v1.1 supersedes v1.0.** Replace `docs/IMPLEMENTATION_HANDOFF.md` in the repository with this file and commit it (`docs: amend implementation handoff to v1.1 post-audit`) before opening the Phase 1 session — the contracts reference this document by path, and the repo must carry the version being executed.
