@@ -1,0 +1,71 @@
+/*
+ * Design tokens — blueprint §5, verbatim values.
+ * Single dark theme; a light theme is deliberately out of scope for the core
+ * build. Accent colours carry meaning (status), never mood — see blueprint §5.
+ */
+:root {
+  /* Colour */
+  --bg: #0b0e14; /* near-black blue-slate */
+  --bg-raised: #12161f; /* cards, code, chips */
+  --border: #232936;
+  --text: #e8eaf0;
+  --text-muted: #9aa3b2;
+  --accent: #4ade80; /* production green — links, LIVE badge, focus states */
+  --accent-warm: #fbbf24; /* amber — PRE-LAUNCH badge, caution notes */
+  --accent-danger: #f87171; /* limitations markers only, sparingly */
+
+  /* Typography */
+  --font-sans:
+    'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  --font-mono:
+    'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono',
+    monospace;
+
+  /* Type scale (rem) — blueprint §5 */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.125rem;
+  --text-lg: 1.375rem;
+  --text-xl: 1.75rem;
+  --text-2xl: 2.25rem;
+  --text-3xl: 3rem;
+
+  --leading-body: 1.65;
+  --leading-heading: 1.15;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 650; /* variable-font weight — Inter only */
+
+  /* Spacing — 4px base scale (4–96px) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-24: 6rem;
+
+  /* Layout */
+  --max-width: 1120px;
+  --prose-width: 720px;
+  --measure: 72ch;
+
+  /* Shape — 6px radius and 1px borders everywhere; elevation via border + bg
+     shift, not shadows (blueprint §5). */
+  --radius: 6px;
+  --border-width: 1px;
+
+  /* Motion — blueprint §6. Confirms, never performs. */
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --duration-micro: 150ms;
+  --duration-transition: 180ms;
+  --duration-entrance: 200ms;
+
+  /* Focus ring — 2px accent, always visible on focus */
+  --focus-ring: 2px solid var(--accent);
+}

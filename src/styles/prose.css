@@ -1,0 +1,58 @@
+/*
+ * Prose styles for long-form content columns — case studies and narrative
+ * pages. Measure ≤72ch inside a 720px column (blueprint §5).
+ */
+.prose {
+  max-width: min(var(--prose-width), var(--measure));
+}
+
+.prose > * + * {
+  margin-block-start: var(--space-4);
+}
+
+.prose h2 {
+  font-size: var(--text-xl);
+  margin-block-start: var(--space-12);
+}
+
+.prose h3 {
+  font-size: var(--text-lg);
+  margin-block-start: var(--space-8);
+}
+
+.prose ul,
+.prose ol {
+  padding-inline-start: var(--space-6);
+}
+
+.prose li + li {
+  margin-block-start: var(--space-2);
+}
+
+.prose code {
+  font-size: 0.9em;
+  background: var(--bg-raised);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.1em 0.35em;
+}
+
+.prose pre {
+  background: var(--bg-raised);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  overflow-x: auto;
+}
+
+.prose pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.prose blockquote {
+  border-inline-start: 2px solid var(--border);
+  padding-inline-start: var(--space-4);
+  color: var(--text-muted);
+}
