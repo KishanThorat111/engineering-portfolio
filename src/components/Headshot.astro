@@ -1,0 +1,45 @@
+---
+/**
+ * Responsive headshot pipeline — blueprint §5 ("one real headshot on /about")
+ * and §7.9 (AVIF/WebP with srcset).
+ *
+ * `Picture` emits AVIF and WebP sources with a JPEG fallback, at three widths,
+ * with width and height attributes so the image reserves its space and cannot
+ * shift the layout as it loads (CLS budget, §7.9).
+ *
+ * The component takes the image as a prop rather than importing a fixed path,
+ * so it compiles today with no asset present. /about is laid out to read
+ * correctly without it; see the OWNER-INPUT marker there for the two lines
+ * that switch it on once the file exists.
+ */
+import { Picture } from 'astro:assets';
+
+interface Props {
+  src: ImageMetadata;
+  /** Describes the person, not the file — this is content, not decoration. */
+  alt: string;
+}
+
+const { src, alt } = Astro.props;
+---
+
+<Picture
+  class="headshot"
+  src={src}
+  alt={alt}
+  formats={['avif', 'webp']}
+  fallbackFormat="jpg"
+  widths={[240, 360, 480]}
+  sizes="(min-width: 768px) 240px, 55vw"
+  loading="eager"
+/>
+
+<style>
+  .headshot {
+    width: 100%;
+    max-width: 15rem;
+    height: auto;
+    border-radius: var(--radius);
+    border: var(--border-width) solid var(--border);
+  }
+</style>

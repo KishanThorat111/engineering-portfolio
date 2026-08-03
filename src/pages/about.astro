@@ -1,0 +1,194 @@
+---
+/**
+ * /about — the career-transfer narrative, blueprint §1.
+ *
+ * What is deliberately NOT here: the AI-assisted ownership statement. Blueprint
+ * §3.3 gives it exactly one appearance on the whole site, on /engineering, and
+ * Phase 6 owns it. Repeating it here would weaken it in both places.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+import { SITE } from '../config/site';
+
+const facts = [
+  { label: 'Based in', value: SITE.location },
+  { label: 'Availability', value: SITE.availability },
+  { label: 'Languages', value: SITE.languages.join(', ') },
+];
+---
+
+<BaseLayout
+  title={`About — ${SITE.name}`}
+  description="How an electrical engineering degree, operations supervision, and teaching became a software career spent operating production systems."
+>
+  <section class="intro">
+    <div class="container">
+      <p class="kicker">About</p>
+      <h1>I came to software from somewhere else, and it shows in how I build.</h1>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="container about-layout">
+      <div class="body-copy prose">
+        <p>
+          I studied electrical and electronics engineering, and then spent four years not writing
+          software. I supervised operations, and I taught. Both left marks. Running operations is
+          where I learned that a system is not finished when it works — it is finished when someone
+          can keep it running on a bad day. Teaching is where the documentation habit came from: if
+          you cannot explain a thing plainly, you do not yet understand it.
+        </p>
+
+        <p>
+          I moved into software deliberately, over 2022 and 2023, not as a pivot away from something
+          but towards this. The first work was freelance full-stack delivery for a UK company,
+          building and shipping applications end to end. From November 2025 I have been delivering
+          enterprise AI workflow automation for a UK client, on an operations platform used across
+          their teams.
+        </p>
+
+        <p>
+          Alongside that, since February 2026, I have designed, built, and run three multi-tenant
+          SaaS platforms as the sole engineer on each: architecture, security, tenant isolation,
+          payments, compliance, deployment, and the operations afterwards. One is in daily use
+          inside a hospital. One takes real money through payment code I wrote and carry. One is
+          pre-launch, and says so.
+        </p>
+
+        <p>
+          That last part matters more to me than the count. Anyone can ship something. Staying on
+          the hook for it — being the person who finds out first when it breaks — is a different
+          job, and it is the one I have chosen.
+        </p>
+
+        <h2>Away from the keyboard</h2>
+        <p>
+          I speak four languages, and I competed in acrobatic yoga to national level, reaching the
+          semi-finals of India's Got Talent in 2016 — which turns out to be decent training for
+          staying composed while people watch you work. I also built an offline-capable donations
+          app for my community's Ganesh Chaturthi festival, because the alternative was a
+          spreadsheet and a lot of shouting.
+        </p>
+      </div>
+
+      <aside class="side">
+        {
+          /*
+           * The headshot pipeline is built and waiting in
+           * src/components/Headshot.astro. This page reads correctly without an
+           * image, so nothing here is a gap to be filled with a grey box.
+           */
+        }
+        <!-- OWNER-INPUT: one owned headshot photograph — plain background, shoulders-up,
+             at least 480px on the short edge, JPEG or PNG. Save it as
+             src/assets/headshot.jpg, then switch it on with two lines: add
+             `import headshot from '../assets/headshot.jpg';` and
+             `import Headshot from '../components/Headshot.astro';` to this page's
+             frontmatter and render `<Headshot src={headshot} alt="Kishan Thorat" />`
+             here. The image must be owned, not hotlinked. -->
+
+        <dl class="facts">
+          {
+            facts.map((fact) => (
+              <div class="fact">
+                <dt>{fact.label}</dt>
+                <dd>{fact.value}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </aside>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="container">
+      <SectionHeader kicker="Next" title="The engineering is the evidence" />
+      <p class="body-copy narrow">
+        The systems above are described in full, including what is wrong with them.
+        <a href="/cv">The CV</a> has the short version, and there is
+        <a href="/cv.pdf" download>a PDF</a> if you would rather read it offline.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .intro {
+    padding-block: var(--space-16) var(--space-4);
+  }
+
+  @media (min-width: 768px) {
+    .intro {
+      padding-block: var(--space-24) var(--space-8);
+    }
+  }
+
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-block-end: var(--space-4);
+  }
+
+  h1 {
+    font-size: var(--text-xl);
+    max-width: 26ch;
+  }
+
+  @media (min-width: 768px) {
+    h1 {
+      font-size: var(--text-2xl);
+    }
+  }
+
+  .band {
+    padding-block: var(--space-8) var(--space-12);
+  }
+
+  .about-layout {
+    display: grid;
+    gap: var(--space-12);
+    align-items: start;
+  }
+
+  @media (min-width: 900px) {
+    .about-layout {
+      grid-template-columns: minmax(0, 1fr) 15rem;
+      gap: var(--space-16);
+    }
+  }
+
+  .body-copy h2 {
+    font-size: var(--text-lg);
+  }
+
+  .facts {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    border-block-start: var(--border-width) solid var(--border);
+    padding-block-start: var(--space-4);
+  }
+
+  .fact dt {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+
+  .fact dd {
+    margin: 0;
+    margin-block-start: var(--space-1);
+    font-size: var(--text-sm);
+  }
+
+  .narrow {
+    max-width: var(--measure);
+  }
+</style>
