@@ -24,6 +24,7 @@
  *   npm run build && npm run cv:pdf
  *   npm run cv:pdf -- --check    (regenerate twice, prove the hashes match)
  */
+import { Buffer } from 'node:buffer';
 import { createServer } from 'node:http';
 import { readFile, writeFile, stat } from 'node:fs/promises';
 import { createHash } from 'node:crypto';

@@ -213,8 +213,17 @@ export const dateQualifierSchema = publishedText()
  */
 export const qualifiedMetricSchema = z
   .object({
-    /** The measurement as it renders, e.g. "256 CI-gated tests". */
+    /** The measurement as it renders, e.g. "500,000". */
     value: publishedText(),
+    /**
+     * What the number counts, e.g. "Default monthly AI token budget per
+     * organisation". Required, because `StatBlock` cannot render a figure
+     * without saying what it measures, and a number floating free of its unit
+     * is the kind of impressive-looking noise this site exists not to publish.
+     * Added in Phase 4: the schema previously could not supply everything its
+     * own component required.
+     */
+    caption: publishedText(),
     /** When it was true, e.g. "Electrical, as of Jul 2026". */
     qualifier: dateQualifierSchema,
     /** Where a reviewer can verify it. */

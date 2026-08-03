@@ -103,12 +103,14 @@ export const previewLimitations = [
 /** Real measurements, parsed through the schema that forbids an undated number. */
 export const previewMetrics = [
   qualifiedMetricSchema.parse({
-    value: '256 CI-gated tests',
+    value: '256',
+    caption: 'CI-gated tests passing at the readiness audit',
     qualifier: 'Electrical platform, as of Jul 2026',
     source: { document: 'KB:ELES', ref: '§17 Testing — 256 passing at the audit' },
   }),
   qualifiedMetricSchema.parse({
-    value: '17 work packages',
+    value: '17',
+    caption: 'Work packages in the production-readiness programme',
     qualifier: 'Electrical readiness programme, as of Jul 2026',
     source: { document: 'KB:ELES', ref: '§1 — the WP1–WP17 hardening programme' },
   }),

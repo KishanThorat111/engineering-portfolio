@@ -131,11 +131,7 @@ const chips = (await getCollection('evidenceChips')).sort((a, b) => a.data.order
       <div class="row row-wide">
         {
           previewMetrics.map((metric) => (
-            <StatBlock
-              value={metric.value}
-              caption="Measured at audit"
-              qualifier={metric.qualifier}
-            />
+            <StatBlock value={metric.value} caption={metric.caption} qualifier={metric.qualifier} />
           ))
         }
       </div>
