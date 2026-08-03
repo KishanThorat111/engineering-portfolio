@@ -1,0 +1,37 @@
+{
+  "name": "engineering-portfolio",
+  "description": "Source for kishanthorat.dev — an evidence-first engineering portfolio.",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": "Kishan Thorat",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KishanThorat111/engineering-portfolio.git"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "gate:copy": "node scripts/copy-check.mjs",
+    "gate:links": "node scripts/link-check.mjs",
+    "gate:html": "html-validate \"dist/**/*.html\"",
+    "verify": "npm run check && npm run build && npm run gate:copy && npm run gate:links && npm run gate:html"
+  },
+  "dependencies": {
+    "astro": "^7.1.6"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.0",
+    "@fontsource-variable/inter": "^5.2.0",
+    "@fontsource-variable/jetbrains-mono": "^5.2.0",
+    "html-validate": "^10.0.0",
+    "prettier": "^3.4.0",
+    "prettier-plugin-astro": "^0.14.0",
+    "typescript": "^5.7.0"
+  }
+}

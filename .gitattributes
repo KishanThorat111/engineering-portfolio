@@ -1,0 +1,13 @@
+# Normalise every text file to LF — this is a Windows dev machine and a public
+# repository whose history must stay diff-clean across platforms.
+* text=auto eol=lf
+
+# Binary assets — never normalised.
+*.woff2 binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.avif binary
+*.webp binary
+*.ico binary
+*.pdf binary

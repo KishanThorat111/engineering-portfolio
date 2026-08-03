@@ -1,0 +1,14 @@
+# Build output and dependencies
+dist/
+.astro/
+node_modules/
+package-lock.json
+
+# Planning documents are frozen source material — never reformatted.
+docs/
+
+# CLAUDE.md is verbatim from the implementation handoff — never reformatted.
+CLAUDE.md
+
+# Binary font assets
+public/fonts/
