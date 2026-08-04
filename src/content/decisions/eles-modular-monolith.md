@@ -16,6 +16,7 @@ tradeoff: >-
   stops one module reaching into another's tables. The decision was made binding instead:
   adding a queue, an event bus, a cache server, or a second service now requires a new
   architecture record, not a pull request.
+featured: true
 source:
   document: 'KB:ELES'
   ref: '§18 ADR 0002 and §20 Charter §5'

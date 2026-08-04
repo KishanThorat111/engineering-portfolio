@@ -16,6 +16,7 @@ tradeoff: >-
   infrastructure guarantees, so it is defended by tests instead: one regression file per
   tenant-owned resource, each asserting that another organisation gets a not-found rather than
   a forbidden, so the API never even confirms a resource exists.
+featured: true
 source:
   document: 'KB:ELES'
   ref: '§18 ADR 0003 and §10 the tenant-scoping contract'

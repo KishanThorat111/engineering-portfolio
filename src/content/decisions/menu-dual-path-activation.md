@@ -16,6 +16,7 @@ tradeoff: >-
   so activation runs inside a transaction and every write it touches has to be safe to attempt
   twice. That is more care than a single path would need, spent on the part of the system that
   handles other people's money.
+featured: true
 source:
   document: 'KB:MENU'
   ref: '§3.4 payment activation flow and §8.5 payment security'

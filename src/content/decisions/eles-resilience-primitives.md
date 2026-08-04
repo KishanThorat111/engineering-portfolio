@@ -15,6 +15,7 @@ tradeoff: >-
   Behaviour that fires at every call site is harder to reason about at any one of them, and the
   client extension covers per-model operations rather than raw queries, so the coverage is
   broad rather than total. Knowing exactly where it does not reach is part of the cost.
+featured: true
 source:
   document: 'KB:ELES'
   ref: '§18 ADR 0004 and §11 circuit breakers and scheduler locks'

@@ -15,6 +15,7 @@ tradeoff: >-
   A hand-written classifier is a maintenance surface: every new question shape someone tries
   either matches a pattern or silently costs money. It is a running cost in attention, paid
   to keep the running cost in currency near zero.
+featured: true
 source:
   document: 'KB:WTMS'
   ref: '§12 — SQL_PATTERNS classifier, VERTEX_AI_ENABLED kill switch, AiUsageLog'

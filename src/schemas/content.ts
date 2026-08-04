@@ -162,6 +162,16 @@ export const decisionSchema = z
     /** Which system it belongs to, by collection id, when it is system-specific. */
     system: z.string().optional(),
 
+    /**
+     * Also shown on /engineering as a decision record (blueprint §4.5c asks
+     * for six: the four architecture records plus two cross-system calls).
+     *
+     * A flag on the entry rather than a list of ids in the page, so the two
+     * places a decision appears read one source and cannot disagree about
+     * which six they are — constitution rule 10. Added in Phase 6.
+     */
+    featured: z.boolean().default(false),
+
     source: sourceSchema,
     order: z.number().int().nonnegative(),
   })
@@ -176,7 +186,21 @@ export const decisionSchema = z
  */
 export const lessonSchema = z
   .object({
+    /** The admission, in one line and the first person. */
     title: publishedText({ min: 10 }),
+
+    /**
+     * What actually happened, specifically. Added in Phase 6 alongside `why`,
+     * because a lesson rendered through the decision card needs all four of
+     * its rows — and because "what I did" and "why it seemed reasonable" are
+     * the parts that separate a lesson from a confession. Both required: the
+     * schema tightened, nothing was relaxed.
+     */
+    whatHappened: claimText({ min: 20 }),
+
+    /** Why it looked like the right call at the time. */
+    why: claimText({ min: 20 }),
+
     cost: claimText({ min: 20 }),
     ruleChanged: claimText({ min: 20 }),
 

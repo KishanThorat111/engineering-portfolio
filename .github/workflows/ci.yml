@@ -50,6 +50,9 @@ jobs:
       - name: Token contrast (WCAG 2.2 AA)
         run: npm run gate:contrast
 
+      - name: Confidential-content parity against the CV
+        run: npm run gate:confidential
+
   lighthouse:
     name: Lighthouse (warn-only until Phase 8)
     runs-on: ubuntu-latest

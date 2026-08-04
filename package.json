@@ -21,8 +21,9 @@
     "gate:links": "node scripts/link-check.mjs",
     "gate:html": "html-validate \"dist/**/*.html\"",
     "gate:contrast": "node scripts/contrast-check.mjs",
+    "gate:confidential": "node scripts/confidential-parity.mjs",
     "cv:pdf": "node scripts/cv-pdf.mjs",
-    "verify": "npm run check && npm run build && npm run gate:copy && npm run gate:links && npm run gate:html && npm run gate:contrast"
+    "verify": "npm run check && npm run build && npm run gate:copy && npm run gate:links && npm run gate:html && npm run gate:contrast && npm run gate:confidential"
   },
   "dependencies": {
     "astro": "^7.1.6"

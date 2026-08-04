@@ -14,6 +14,7 @@ tradeoff: >-
   once, and a restore drill found exactly that — every storage operation refused, which would
   mean no offsite backup and failing uploads at the same time. Cheap to start, and the coupling
   is the bill.
+featured: true
 source:
   document: 'KB:ELES'
   ref: '§18 ADR 0001 and §14 backup and disaster recovery'
