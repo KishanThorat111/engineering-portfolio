@@ -1,0 +1,256 @@
+---
+/**
+ * /engineering — blueprint §4.5. The page where judgement is the content.
+ *
+ * Three things here appear exactly once on the whole site: the AI-assisted
+ * ownership statement, and the two lessons. Repeating any of them would make
+ * all three weaker.
+ *
+ * The six decision records are the same collection entries the case studies
+ * render, selected by their `featured` flag — one source, two places, no way
+ * for them to disagree (constitution rule 10).
+ */
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+import DecisionCard from '../components/DecisionCard.astro';
+import { SITE } from '../config/site';
+import { PILLARS } from '../config/pillars';
+
+const decisions = (await getCollection('decisions'))
+  .filter((decision) => decision.data.featured)
+  .sort((a, b) => a.data.order - b.data.order);
+
+const lessons = (await getCollection('lessons')).sort((a, b) => a.data.order - b.data.order);
+---
+
+<BaseLayout
+  title={`How I work — ${SITE.name}`}
+  description="Principles with evidence behind them, the architecture decisions that shaped three platforms, and two things I got wrong and what changed because of them."
+>
+  <section class="intro">
+    <div class="container">
+      <p class="kicker">How I work</p>
+      <h1>Judgement is the part worth reading</h1>
+      <p class="lede">
+        Anyone can list technologies. What is harder to fake is why a system is shaped the way it
+        is, what each decision cost, and what happened the last time the call was wrong.
+      </p>
+    </div>
+  </section>
+
+  <!-- The five pillars, each with one concrete thing behind it. -->
+  <section class="band">
+    <div class="container">
+      <SectionHeader kicker="Principles" title="Five things, and the evidence for each" />
+      <ol class="pillars">
+        {
+          PILLARS.map((pillar, index) => (
+            <li data-reveal style={`--reveal-delay: ${Math.min(index * 60, 240)}ms`}>
+              <h3>{pillar.title}</h3>
+              <p class="pillar-line">{pillar.line}</p>
+              <p class="pillar-evidence">{pillar.evidence}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </section>
+
+  <!-- The AI ownership statement. Its single appearance on the site. -->
+  <section class="band">
+    <div class="container">
+      <SectionHeader kicker="Method" title="How AI fits into this" />
+      <blockquote class="ownership" data-reveal>
+        <p>
+          I use AI tools to accelerate implementation; architecture, security, tenant isolation,
+          compliance, and production operations are decisions I make and own.
+        </p>
+      </blockquote>
+      <div class="prose body-copy narrow" data-reveal>
+        <p>
+          That is worth stating plainly rather than leaving to be inferred, because the obvious
+          question about a timeline like mine is how much of it was typed by something else. The
+          answer that matters is not how the code was written but who is accountable when it
+          misbehaves at two in the morning — and for every system on this site, that is me.
+        </p>
+        <p>
+          The evidence for the distinction is on the case-study pages: the decisions with their
+          rejected alternatives, the limitations, and the parts that are wrong and still running.
+          Those are not outputs. They are positions.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Six decision records, rendered from the same entries the case studies use. -->
+  <section class="band">
+    <div class="container">
+      <SectionHeader kicker="Decisions" title="Six calls worth defending" />
+      <p class="section-note">
+        Four are the recorded architecture decisions from the pre-launch platform; two are
+        cross-cutting calls from the platforms already running. Each cites the document it came
+        from.
+      </p>
+      <div class="decision-list">
+        {
+          decisions.map((decision, index) => (
+            <div data-reveal style={`--reveal-delay: ${Math.min(index * 60, 180)}ms`}>
+              <DecisionCard
+                title={decision.data.title}
+                decision={decision.data.decision}
+                why={decision.data.why}
+                tradeoff={decision.data.tradeoff}
+                aged={decision.data.aged}
+              />
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- The two lessons. Rendered through the decision card, using its AGED row. -->
+  <section class="band">
+    <div class="container">
+      <SectionHeader kicker="Lessons" title="Two I got wrong" />
+      <p class="section-note">
+        Both of these are still true of systems described elsewhere on this site. They are here
+        because a portfolio with no failures in it is not a portfolio of a person who has shipped
+        anything.
+      </p>
+      <div class="decision-list">
+        {
+          lessons.map((lesson, index) => (
+            <div
+              class="lesson"
+              data-reveal
+              style={`--reveal-delay: ${Math.min(index * 60, 120)}ms`}
+            >
+              <DecisionCard
+                title={lesson.data.title}
+                decision={lesson.data.whatHappened}
+                why={lesson.data.why}
+                tradeoff={lesson.data.cost}
+                aged={lesson.data.ruleChanged}
+              />
+              {lesson.data.crossLink && (
+                <p class="cross-link">
+                  <a href={lesson.data.crossLink.href}>{lesson.data.crossLink.label} →</a>
+                </p>
+              )}
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .intro {
+    padding-block: var(--space-16) var(--space-8);
+  }
+
+  @media (min-width: 768px) {
+    .intro {
+      padding-block: var(--space-24) var(--space-12);
+    }
+  }
+
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-block-end: var(--space-4);
+  }
+
+  h1 {
+    font-size: var(--text-xl);
+    max-width: 22ch;
+  }
+
+  @media (min-width: 768px) {
+    h1 {
+      font-size: var(--text-2xl);
+    }
+  }
+
+  .lede {
+    margin-block-start: var(--space-6);
+    max-width: var(--measure);
+    color: var(--text-muted);
+    font-size: var(--text-md);
+  }
+
+  .band {
+    padding-block: var(--space-8) var(--space-12);
+  }
+
+  .section-note {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    max-width: var(--measure);
+    margin-block-end: var(--space-6);
+  }
+
+  .narrow {
+    max-width: var(--measure);
+  }
+
+  .pillars {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .pillars h3 {
+    font-size: var(--text-md);
+  }
+
+  .pillar-line {
+    margin-block-start: var(--space-2);
+    color: var(--text);
+    font-size: var(--text-sm);
+    max-width: var(--measure);
+  }
+
+  .pillar-evidence {
+    margin-block-start: var(--space-3);
+    padding-inline-start: var(--space-4);
+    border-inline-start: 2px solid var(--accent);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    max-width: var(--measure);
+  }
+
+  .ownership {
+    margin: 0 0 var(--space-8);
+    padding: var(--space-6);
+    background: var(--bg-raised);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius);
+    max-width: var(--measure);
+  }
+
+  .ownership p {
+    font-size: var(--text-md);
+    line-height: var(--leading-body);
+  }
+
+  .decision-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .cross-link {
+    margin-block-start: var(--space-3);
+    font-size: var(--text-sm);
+  }
+</style>
