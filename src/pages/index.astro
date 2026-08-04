@@ -114,6 +114,9 @@ const stagger = (index: number) => `--reveal-delay: ${Math.min(index * 60, 240)}
               {currentRole.data.organisation} · {currentRole.data.from} – {currentRole.data.to}
             </p>
             <p>{currentRole.data.bullets[0]}</p>
+            <p class="section-link">
+              <a href="/experience">The rest of the experience →</a>
+            </p>
           </div>
         </div>
       </section>
@@ -134,6 +137,9 @@ const stagger = (index: number) => `--reveal-delay: ${Math.min(index * 60, 240)}
           ))
         }
       </ul>
+      <p class="section-link body-copy" data-reveal>
+        <a href="/engineering">The evidence for each, plus what I got wrong →</a>
+      </p>
     </div>
   </section>
 
@@ -261,6 +267,11 @@ const stagger = (index: number) => `--reveal-delay: ${Math.min(index * 60, 240)}
     color: var(--text-muted);
     font-size: var(--text-sm);
     max-width: 46ch;
+  }
+
+  .section-link {
+    margin-block-start: var(--space-6);
+    font-size: var(--text-sm);
   }
 
   .closing-actions {
