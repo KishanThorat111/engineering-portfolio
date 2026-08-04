@@ -613,3 +613,96 @@ Phase 6 — The Narrative Layer (T14–T15). Open with the Phase 6 contract from
 owner's opening message says "Lessons approved as drafted", blueprint §4.5 wording is
 confirmed and both lessons publish; otherwise build the structure, insert OWNER-INPUT, and
 halt those blocks.
+
+---
+
+## Phase 6 — The Narrative Layer (Blueprint T14–T15) · 4 August 2026
+
+### A note on how this session opened
+
+The session was opened with the **Phase 4 contract pasted twice**, not the Phase 6 one.
+Phases 4 and 5 were both already shipped and CI-green, and re-running that contract would
+have regressed Phase 5's phone-number fix back to print-only CSS — a refactor of a shipped
+phase, which `CLAUDE.md` forbids. I stopped, reported the state with evidence, and asked.
+The owner confirmed Phase 6 and, in the same exchange, that **the two Lessons are approved as
+drafted** — the documented unblock condition. Both lessons are therefore published in
+blueprint §4.5 wording.
+
+### Shipped
+
+- **`/experience`** — the confidential-client card, Avant Data, the earlier-career line, and
+  the more-systems strip.
+- **`/engineering`** — five pillars with evidence, the AI ownership statement, six decision
+  records, and both lessons with the AGED treatment.
+- **`scripts/confidential-parity.mjs`** — a new CI gate holding Ruling 4 in place.
+- Two schema extensions (`decisions.featured`, `lessons.whatHappened` + `lessons.why`), the
+  completed navigation, and Home's two remaining section links.
+
+### Verification record
+
+- Remote CI green.
+- **The parity gate was proven by breaking it**: adding six words naming the client platform
+  to one confidential bullet failed the build with that sentence quoted back. Reverted
+  uncommitted.
+- **`"founder"` appears zero times across all eleven built pages**, including in negations —
+  checked directly against built HTML, since `/engineering` is the highest-risk page for it.
+- **Verified in a browser at 390px**: both pages zero horizontal overflow, one `h1` each.
+  `/engineering` renders 5 pillars with 5 evidence lines, exactly 1 ownership statement, 8
+  decision cards (6 featured + 2 lessons), exactly 2 AGED rows, and 1 cross-link resolving to
+  `/systems/electrical-platform`. `/experience` renders 2 role cards, 1 CONFIDENTIAL badge
+  with its note, 3 more-systems cards, 1 community label.
+- **Home's role snapshot appeared on content alone** — no edit to the page was needed, exactly
+  as Phase 3 wired it.
+- Budgets: heaviest page unchanged at 10.8KB gz; `/engineering` 8.3KB gz, `/experience`
+  5.3KB gz. Still **zero bundled JS**.
+- All six gates pass; `format:check` clean; `npm audit` 0 vulnerabilities.
+
+### What Phase 7 inherits
+
+1. **`scripts/confidential-parity.mjs` is a gate, not a formality.** It fails if it finds *no*
+   confidential bullets, because a markup change that makes it check nothing is worse than one
+   that makes it fail. If `ExperienceCard`'s markup changes, fix the selector — do not relax
+   the gate.
+2. **`decisions.featured` selects the six records on `/engineering`.** The machine layer should
+   read the same flag rather than re-deriving the set, or `profile.json` and the page will
+   disagree about which decisions are the headline ones.
+3. **The pillars live in `src/config/pillars.ts` with both a one-line form and an evidence
+   line.** Home uses the first, `/engineering` the second. Phase 7's machine layer should read
+   this module, not scrape either page.
+4. **CV facts remain in `src/config/cv.ts`; the phone remains in `content/print-contact.json`,**
+   which nothing under `src/` imports. The machine layer must not publish the phone.
+5. **`/dev/components` is still excluded twice** — page-level `noindex` and `Disallow: /dev/`.
+   Phase 7 owns the full robots and sitemap work and must preserve both, and must exclude
+   `/dev/` from the sitemap.
+6. **Eleven public routes now exist**: `/`, `/about`, `/cv`, `/experience`, `/engineering`,
+   `/systems`, three case studies, `/404`, plus `/dev/components` which is not public.
+
+### Content decisions worth knowing
+
+- **Both lessons publish in blueprint §4.5 wording**, extended to fill the decision card's four
+  rows. The added "why" rows are the substance: for the test-suite lesson, that each individual
+  decision to defer was defensible and the accumulation was not; for the purge lesson, that
+  every visible artefact said the behaviour existed and the only missing part was the one that
+  does anything.
+- **Neither lesson is softened by its cross-link.** Lesson 1 links to the readiness programme
+  that followed, but its cost row still says the hospital platform has no regression net today.
+  The cross-link is a sequel, not a retraction.
+- **The client and platform behind the confidential engagement are named in the CV and not on
+  the site.** Ruling 4 forbids customer names; narrowing is always permitted.
+- **The more-systems strip is config, not collection content**, so it cannot leak onto
+  `/systems` or Home beside the three platforms with full case studies.
+
+### OWNER-INPUT — open items
+
+Phase 6 adds **none**. Total remains **thirteen**: one headshot and twelve gallery screenshots
+across the three case studies.
+
+Otherwise unchanged: domain and Cloudflare Pages project still gate a live URL; GitHub profile
+rehabilitation any time before launch. **The lessons-confirmation item is now closed** — the
+owner approved them as drafted this session.
+
+### Next session
+
+Phase 7 — Machines & Discovery (T16–T17). Open with the Phase 7 contract from
+`docs/IMPLEMENTATION_HANDOFF.md` §4. Read this log first, especially items 2–5 above: the
+machine layer must read the same modules the pages read, or rule 10 breaks.
