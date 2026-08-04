@@ -1,0 +1,210 @@
+---
+/**
+ * /experience — blueprint §4.4.
+ *
+ * The confidential card is the point of this page as much as the content is.
+ * An NDA-bound engagement described at CV level, and labelled as such, reads
+ * as someone who can be trusted with a boundary. The same engagement described
+ * vaguely with no explanation reads as a gap.
+ */
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+import ExperienceCard from '../components/ExperienceCard.astro';
+import { SITE } from '../config/site';
+import { CV_EARLIER_CAREER } from '../config/cv';
+import { MORE_SYSTEMS } from '../config/more-systems';
+
+const roles = (await getCollection('experience')).sort((a, b) => a.data.order - b.data.order);
+---
+
+<BaseLayout
+  title={`Experience — ${SITE.name}`}
+  description="Enterprise AI workflow automation for a UK client, freelance full-stack delivery, and the earlier career that shaped how I operate systems."
+>
+  <section class="intro">
+    <div class="container">
+      <p class="kicker">Experience</p>
+      <h1>Where the work has been, and what it was</h1>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="container">
+      <div class="role-list">
+        {
+          roles.map((role, index) => (
+            <div data-reveal style={`--reveal-delay: ${Math.min(index * 60, 120)}ms`}>
+              <ExperienceCard
+                role={role.data.role}
+                organisation={role.data.organisation}
+                from={role.data.from}
+                to={role.data.to}
+                bullets={role.data.bullets}
+                confidential={role.data.confidential}
+                note={role.data.note}
+              />
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="container">
+      <SectionHeader kicker="Before software" title="What transferred" />
+      <div class="prose body-copy narrow" data-reveal>
+        <p>{CV_EARLIER_CAREER}</p>
+        <p>
+          Both halves of that stuck. Supervising operations is where I learned that a system is not
+          finished when it works, and teaching is where the habit of writing things down came from.
+          The parts of this portfolio a reader is most likely to find unusual — the disclosed
+          limitations, the decision records, the charter — come from those two jobs rather than from
+          any of the software ones.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="container">
+      <SectionHeader kicker="Also built" title="Smaller things, still shipped" />
+      <p class="strip-note">
+        No case studies behind these — they are real work at a smaller scale, and saying so is more
+        useful than presenting three platforms and three side projects as one list.
+      </p>
+      <ul class="strip">
+        {
+          MORE_SYSTEMS.map((system, index) => (
+            <li data-reveal style={`--reveal-delay: ${Math.min(index * 60, 120)}ms`}>
+              <article class="strip-card">
+                <h3>{system.title}</h3>
+                {system.community && <p class="community">Community project</p>}
+                <p class="strip-summary">{system.summary}</p>
+                <ul class="strip-stack">
+                  {system.stack.map((tag) => (
+                    <li>{tag}</li>
+                  ))}
+                </ul>
+              </article>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .intro {
+    padding-block: var(--space-16) var(--space-8);
+  }
+
+  @media (min-width: 768px) {
+    .intro {
+      padding-block: var(--space-24) var(--space-12);
+    }
+  }
+
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-block-end: var(--space-4);
+  }
+
+  h1 {
+    font-size: var(--text-xl);
+    max-width: 24ch;
+  }
+
+  @media (min-width: 768px) {
+    h1 {
+      font-size: var(--text-2xl);
+    }
+  }
+
+  .band {
+    padding-block: var(--space-8) var(--space-12);
+  }
+
+  .role-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .narrow {
+    max-width: var(--measure);
+  }
+
+  .strip-note {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    max-width: var(--measure);
+    margin-block-end: var(--space-6);
+  }
+
+  .strip {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  @media (min-width: 768px) {
+    .strip {
+      grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    }
+  }
+
+  .strip-card {
+    height: 100%;
+    background: var(--bg-raised);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .strip-card h3 {
+    font-size: var(--text-base);
+  }
+
+  .community {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent-warm);
+  }
+
+  .strip-summary {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .strip-stack {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: auto 0 0;
+    padding-block-start: var(--space-3);
+  }
+
+  .strip-stack li {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-1) var(--space-2);
+  }
+</style>
