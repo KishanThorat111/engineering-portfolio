@@ -10,7 +10,12 @@
  */
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Button from '../components/Button.astro';
+import JsonLd from '../components/JsonLd.astro';
+import { profilePageSchema } from '../lib/structured-data';
 import { SITE } from '../config/site';
+
+const description =
+  'Curriculum vitae: software engineer taking systems from design through to operated production.';
 import {
   CV_CERTIFICATIONS,
   CV_EARLIER_CAREER,
@@ -21,10 +26,11 @@ import {
 } from '../config/cv';
 ---
 
-<BaseLayout
-  title={`CV — ${SITE.name}`}
-  description="Curriculum vitae: software engineer taking systems from design through to operated production."
->
+<BaseLayout title={`CV — ${SITE.name}`} description={description}>
+  <Fragment slot="head">
+    <JsonLd data={profilePageSchema(Astro.site!, '/cv', `${SITE.name} — CV`, description)} />
+  </Fragment>
+
   <div class="container cv-page">
     <div class="cv-actions no-print">
       <Button href="/cv.pdf" download>Download as PDF</Button>

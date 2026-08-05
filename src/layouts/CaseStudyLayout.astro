@@ -32,6 +32,8 @@ import StatusBadge from '../components/StatusBadge.astro';
 import DecisionCard from '../components/DecisionCard.astro';
 import LimitationNote from '../components/LimitationNote.astro';
 import StatBlock from '../components/StatBlock.astro';
+import JsonLd from '../components/JsonLd.astro';
+import { softwareApplicationSchema } from '../lib/structured-data';
 
 interface Props {
   entry: CollectionEntry<'systems'>;
@@ -81,6 +83,14 @@ const title = `${system.title} — case study`;
 ---
 
 <BaseLayout title={`${title} | Kishan Thorat`} description={system.summary}>
+  {
+    /* SoftwareApplication, with operating status and limitations stated as the
+      page states them — never a tidier version for machines. */
+  }
+  <Fragment slot="head">
+    <JsonLd data={softwareApplicationSchema(Astro.site!, entry)} />
+  </Fragment>
+
   <article class="case-study">
     <!-- 1. Header -->
     <header class="cs-header">

@@ -7,13 +7,37 @@ import '../styles/motion.css';
 import SkipLink from '../components/SkipLink.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import JsonLd from '../components/JsonLd.astro';
+import { ogSlugFor } from '../lib/og-cards';
+import { personSchema } from '../lib/structured-data';
 
 interface Props {
   title: string;
   description: string;
+  /**
+   * Set on the component-gallery route, which is excluded from search. Every
+   * public page leaves it alone.
+   */
+  noindex?: boolean;
 }
 
-const { title, description } = Astro.props;
+const { title, description, noindex = false } = Astro.props;
+
+/*
+ * Absolute URLs come from the configured production origin (blueprint §7.4),
+ * never from the request. A canonical that varies by the host it was fetched
+ * from is not a canonical.
+ */
+const origin = Astro.site;
+if (!origin) {
+  throw new Error(
+    'BaseLayout: astro.config.mjs has no `site` configured, so canonical and Open Graph URLs ' +
+      'cannot be absolute. Set it before building.',
+  );
+}
+
+const canonical = new URL(Astro.url.pathname, origin).href;
+const ogImage = new URL(`/og/${ogSlugFor(Astro.url.pathname)}.png`, origin).href;
 ---
 
 <!doctype html>
@@ -24,7 +48,38 @@ const { title, description } = Astro.props;
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="theme-color" content="#0B0E14" />
+    <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+    {
+      /* A page excluded from discovery gets no share card. Emitting one would
+         mean generating an image nobody can reach, and the machine-parity gate
+         would rightly object to an og:image with no file behind it. */
+      !noindex && (
+        <Fragment>
+          <meta property="og:type" content="website" />
+          <meta property="og:site_name" content="Kishan Thorat" />
+          <meta property="og:locale" content="en_GB" />
+          <meta property="og:url" content={canonical} />
+          <meta property="og:title" content={title} />
+          <meta property="og:description" content={description} />
+          <meta property="og:image" content={ogImage} />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+          <meta property="og:image:alt" content={`${title} — Open Graph card`} />
+
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={title} />
+          <meta name="twitter:description" content={description} />
+          <meta name="twitter:image" content={ogImage} />
+        </Fragment>
+      )
+    }
+
+    {/* Person, site-wide. Pages add their own node alongside it. */}
+    <JsonLd data={personSchema(origin)} />
     <link
       rel="preload"
       href="/fonts/inter-latin-wght-normal.woff2"

@@ -38,11 +38,8 @@ const chips = (await getCollection('evidenceChips')).sort((a, b) => a.data.order
 <BaseLayout
   title="Component gallery — internal preview"
   description="Internal preview of every design-system component in every state. Not part of the public site."
+  noindex
 >
-  <Fragment slot="head">
-    <meta name="robots" content="noindex, nofollow" />
-  </Fragment>
-
   <div class="container gallery">
     <header class="gallery-head">
       <p class="kicker">Internal preview</p>

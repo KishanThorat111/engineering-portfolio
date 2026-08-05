@@ -8,7 +8,12 @@
  */
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SectionHeader from '../components/SectionHeader.astro';
+import JsonLd from '../components/JsonLd.astro';
+import { profilePageSchema } from '../lib/structured-data';
 import { SITE } from '../config/site';
+
+const description =
+  'How an electrical engineering degree, operations supervision, and teaching became a software career spent operating production systems.';
 
 const facts = [
   { label: 'Based in', value: SITE.location },
@@ -17,10 +22,11 @@ const facts = [
 ];
 ---
 
-<BaseLayout
-  title={`About — ${SITE.name}`}
-  description="How an electrical engineering degree, operations supervision, and teaching became a software career spent operating production systems."
->
+<BaseLayout title={`About — ${SITE.name}`} description={description}>
+  <Fragment slot="head">
+    <JsonLd data={profilePageSchema(Astro.site!, '/about', `About ${SITE.name}`, description)} />
+  </Fragment>
+
   <section class="intro">
     <div class="container">
       <p class="kicker">About</p>

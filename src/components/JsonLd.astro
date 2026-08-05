@@ -1,0 +1,21 @@
+---
+/**
+ * Emits a JSON-LD block.
+ *
+ * The `<` escape is not decorative. A closing-tag sequence appearing inside
+ * JSON string data would end the script element early and turn the rest of the
+ * document into markup, so every `<` is escaped to its unicode form — which is
+ * still valid JSON and still parses identically for a consumer.
+ *
+ * Nothing here asserts a fact the pages do not already state. The structured
+ * data is a second rendering of the same content, never an enrichment of it.
+ */
+interface Props {
+  data: Record<string, unknown>;
+}
+
+const { data } = Astro.props;
+const json = JSON.stringify(data).replace(/</g, '\\u003c');
+---
+
+<script type="application/ld+json" is:inline set:html={json} />
