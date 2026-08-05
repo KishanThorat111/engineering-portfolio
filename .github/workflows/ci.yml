@@ -53,6 +53,9 @@ jobs:
       - name: Confidential-content parity against the CV
         run: npm run gate:confidential
 
+      - name: Machine/human parity — profile.json against the pages
+        run: npm run gate:machine
+
   lighthouse:
     name: Lighthouse (warn-only until Phase 8)
     runs-on: ubuntu-latest
