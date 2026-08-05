@@ -41,6 +41,7 @@
     "playwright-core": "^1.49.0",
     "prettier": "^3.4.0",
     "prettier-plugin-astro": "^0.14.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "wrangler": "^4.119.0"
   }
 }

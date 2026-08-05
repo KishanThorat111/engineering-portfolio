@@ -1,0 +1,63 @@
+{
+  // Cloudflare Workers static assets — deployment config for this site.
+  //
+  // WHY THIS FILE EXISTS
+  // Blueprint §7.4 originally specified Cloudflare Pages, where the build
+  // output directory was set in a dashboard field. The planning authority has
+  // amended that to Workers static assets: Cloudflare has merged Pages into
+  // Workers for new projects, so the output directory is now declared here, in
+  // a file committed to the repository, and read by `wrangler deploy`.
+  //
+  // Same vendor, same free tier, same git-driven builds, and `dist/` is
+  // unchanged. What changed is that deployment configuration is now version
+  // controlled rather than living in a dashboard nobody can review — which is
+  // an improvement for a repository that is itself an exhibit.
+  //
+  // Every value below was checked against the installed wrangler's own
+  // config-schema.json rather than recalled. See docs/PHASE_LOG.md.
+  "$schema": "node_modules/wrangler/config-schema.json",
+
+  // This exact name determines the deployed hostname and must match the
+  // Cloudflare project. A different value here creates a SECOND Worker rather
+  // than updating the existing one, which is why it is not "engineering-
+  // portfolio" to match the repository.
+  "name": "portfolio",
+
+  // Pins the Workers runtime behaviour to a known date. Deliberately a few
+  // days behind today so it can never be ahead of the runtime the deploy
+  // lands on.
+  "compatibility_date": "2026-08-01",
+
+  "assets": {
+    // Astro's build output, unchanged by this amendment.
+    "directory": "./dist",
+
+    // WHY force-trailing-slash
+    //
+    // Astro emits directory-style URLs — /about/index.html — and every
+    // canonical this site publishes carries a trailing slash, verified in
+    // Phase 7 against built output: /about/, /systems/menu-platform/, and so
+    // on. This setting redirects /about to /about/, so the URL actually served
+    // is the URL the page declares canonical.
+    //
+    // "auto-trailing-slash" would serve both forms with a 200 and no redirect,
+    // leaving two live URLs for every page while the canonical names only one.
+    // That is a real problem for this site specifically: it publishes a
+    // machine-readable profile and a sitemap, and a CI gate asserts the machine
+    // layer and the human pages cannot disagree. Two URLs per page for one
+    // canonical is exactly that disagreement, arriving through the front door.
+    "html_handling": "force-trailing-slash",
+
+    // WHY 404-page
+    //
+    // This site ships a real, styled 404 at dist/404.html with working
+    // navigation. This setting serves that file for any unmatched path,
+    // instead of a generic Cloudflare error page.
+    //
+    // "single-page-application" would be wrong twice over: it serves
+    // index.html for unmatched paths, so a mistyped URL would render the home
+    // page with a 200 — telling both a visitor and a crawler that a page
+    // exists when it does not. This is a static multi-page site, not an SPA.
+    "not_found_handling": "404-page",
+  },
+}
