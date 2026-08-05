@@ -22,11 +22,16 @@
     "gate:html": "html-validate \"dist/**/*.html\"",
     "gate:contrast": "node scripts/contrast-check.mjs",
     "gate:confidential": "node scripts/confidential-parity.mjs",
+    "gate:machine": "node scripts/machine-parity.mjs",
     "cv:pdf": "node scripts/cv-pdf.mjs",
-    "verify": "npm run check && npm run build && npm run gate:copy && npm run gate:links && npm run gate:html && npm run gate:contrast && npm run gate:confidential"
+    "verify": "npm run check && npm run build && npm run gate:copy && npm run gate:links && npm run gate:html && npm run gate:contrast && npm run gate:confidential && npm run gate:machine"
   },
   "dependencies": {
-    "astro": "^7.1.6"
+    "@astrojs/sitemap": "^3.7.0",
+    "@fontsource/inter": "^5.2.0",
+    "astro": "^7.1.6",
+    "satori": "^0.12.0",
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.0",
