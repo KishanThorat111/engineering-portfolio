@@ -706,3 +706,117 @@ owner approved them as drafted this session.
 Phase 7 — Machines & Discovery (T16–T17). Open with the Phase 7 contract from
 `docs/IMPLEMENTATION_HANDOFF.md` §4. Read this log first, especially items 2–5 above: the
 machine layer must read the same modules the pages read, or rule 10 breaks.
+
+---
+
+## Phase 7 — Machines & Discovery (Blueprint T16–T17) · 5 August 2026
+
+### Shipped
+
+- **`/api/profile.json`** — static, `schemaVersion: 1`, built by `src/lib/profile.ts`, which
+  reads the same collections and config modules the pages render.
+- **JSON-LD** — 16 blocks: `Person` site-wide, `ProfilePage` on `/about` and `/cv`,
+  `SoftwareApplication` per case study.
+- **Open Graph cards** — 10, generated at build with satori + sharp, byte-identical run to run.
+- **Full meta pass** — canonical, description, OG and Twitter tags on every public page.
+- **`/llms.txt`**, an auto-discovered **sitemap**, and **`robots.txt`** moved to a generated
+  route so its `Sitemap:` line derives from the configured origin.
+- **A seventh CI gate** — `scripts/machine-parity.mjs`, 21 checks.
+
+### Verification record
+
+- Remote CI green on `762b4ae` (run `30995285882`), **every step confirmed executed** at job
+  level rather than inferred from the run conclusion — including the new parity gate.
+- **The parity gate was proven, and proving it was instructive.** Editing a system's status in
+  its content file did *not* fail the gate, because both layers read that file and changed
+  together. That is rule 10 working: a content edit cannot create divergence. The proof had to
+  tamper with one layer alone — rewriting `statusLabel` in the built `profile.json` while
+  leaving the pages untouched — which failed naming both divergences, the badge and the
+  JSON-LD. Reverted by rebuilding.
+- **The gate caught a real defect on its first run**: the noindex component gallery was
+  advertising an `og:image` that was never generated. Fixed by giving noindex pages no share
+  card at all.
+- Built output inspected directly: 11 canonicals, 10 OG images, 6 JSON-LD `@id`s, 9 sitemap
+  entries, 9 absolute URLs in `profile.json`, 11 in `llms.txt` — all on the configured origin,
+  with **zero** surviving references to any previous origin anywhere in `dist`.
+- All JSON-LD validated as parsing with required properties present.
+- Budgets: largest page 11.6KB gz (budget 90KB). Still **zero bundled JS**.
+
+### ⚠ THE ORIGIN IS WRONG AND PHASE 8 MUST FIX IT FIRST
+
+**`astro.config.mjs` currently reads `https://kishanthorat-portfolio.pages.dev`. That host
+does not exist.** A DNS lookup returns NXDOMAIN, while `engineering-portfolio.pages.dev` and
+`api.github.com` resolve and return 200 from the same shell seconds later. `*.pages.dev` is
+not wildcard-resolved, so NXDOMAIN means no Pages project answers to that name.
+
+The origin was supplied by the owner as confirmed-loading and was pushed without first
+checking that it resolved. **That was the mistake: one `curl` before the push would have
+caught it.** Everything downstream is internally consistent and locally verified, and every
+gate passes — but every canonical, OG URL, sitemap entry, JSON-LD `@id`, and absolute URL in
+`profile.json` currently points at a host that does not answer.
+
+Eight hostname variants were probed and verified by content rather than guessed; the two that
+resolved belong to other people. The correct hostname is still unknown and is an owner input.
+
+**No CI gate can catch this class of error**, and that is worth understanding rather than
+patching over. Every gate checks *internal consistency against whatever origin is configured*.
+Reachability is a property of the network, not the artifact. Phase 8's launch checklist needs
+an explicit "fetch the deployed site and confirm it serves the artifacts" step, because
+passing CI and being reachable are two different claims.
+
+### What Phase 8 inherits
+
+1. **Fix the origin first, before anything else.** It is one line in `astro.config.mjs`,
+   marked PROVISIONAL in capitals with the swap instructions beside it. Change it, rebuild,
+   re-run all seven gates, re-inspect built output, and then **fetch the deployed site** and
+   confirm `/api/profile.json`, `/llms.txt`, `/sitemap-index.xml`, and at least one
+   `/og/*.png` return 200 over the network.
+2. **The ratified production domain is `kishanthorat.com`, and it is not purchased.** Note the
+   conflict: blueprint §7.4 names `kishanthorat.dev` as primary with `.com` redirecting to it,
+   and the Phase 8 contract in `IMPLEMENTATION_HANDOFF.md` §4 repeats `.dev`. The planning
+   authority ratified `.com` during Phase 7. **Use `.com`; treat the blueprint and handoff
+   wording as superseded.** This is recorded in `astro.config.mjs` too, so whoever does the
+   swap meets it there rather than discovering it mid-launch.
+3. **Nothing else hardcodes a host.** That is why the swap is one line, and it is why
+   `robots.txt` moved out of `public/` — its `Sitemap:` line had a literal hostname that would
+   have gone stale silently. Every rule in it was preserved verbatim.
+4. **OWNER-INPUT markers: 13.** One headshot on `/about`; five hospital screenshots, four menu,
+   three electrical. Unchanged by this phase. All are launch blockers under the Phase 8
+   contract, and all are surfaced by `scripts/copy-check.mjs` on every run.
+5. **Lighthouse has still only ever scored a local build.** It has run warn-only in CI since
+   Phase 1 against `dist` on a CI runner — never against the deployed site, never enforcing.
+   Phase 8 turns the thresholds on (≥95 performance, accessibility pass, ≥95 SEO on home and
+   the flagship). Expect the first enforcing run to be the first time these numbers have
+   meant anything, and budget for it failing.
+6. **The machine-parity gate reads the origin from the artifact**, not from a constant, so it
+   keeps working across the swap without edits.
+7. **Seven gates now run in CI**: dependency audit, typecheck, build, copy, links, HTML
+   validation, contrast, confidential parity, machine parity. A new page must satisfy all of
+   them; `npm run verify` runs the same set locally.
+
+### Content and design decisions worth knowing
+
+- **Nothing in the machine layer asserts anything the pages do not say.** `creativeWorkStatus`
+  carries the same status label the badge renders, so the pre-launch platform reads
+  `PRE-LAUNCH (Q3 2026)` to a machine exactly as it does to a person, and the disclosed
+  limitations travel into both `profile.json` and the structured data.
+- **`profile.json` carries its own disclosure block** — that figures are dated, that
+  unpublished figures are unpublished and not zero, and that one engagement is described only
+  at CV level. A machine reader gets the site's honesty rules, not just its claims.
+- **The phone number is absent and structurally unreachable**: it lives outside `src/`, so
+  nothing that builds a page or a payload can import it.
+- **OG chips render in Inter, not the mono face** the design system uses for status badges. At
+  the size a share card is seen the distinction is invisible, and it avoids a second font
+  package. Recorded as a deliberate deviation.
+- **Four dependencies added**, each justified in its commit: `@astrojs/sitemap` (auto-discovery
+  beats a hand-maintained route list), `satori` (converts glyphs to paths so cards do not
+  depend on fonts installed on the rasterising machine), `sharp` (pinned `^0.35.3` — the 0.34
+  line carries libvips advisories the audit gate refused), and `@fontsource/inter` (the site's
+  variable woff2 is rejected by satori's parser twice over; both failures were reproduced
+  before choosing this).
+
+### Next session
+
+Phase 8 — Hardening, Launch, Handover (T18–T20). Open with the Phase 8 contract from
+`docs/IMPLEMENTATION_HANDOFF.md` §4. **Read item 1 above first — the site currently emits URLs
+for a host that does not exist, and that is the first thing to fix.**
