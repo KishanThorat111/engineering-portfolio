@@ -35,10 +35,10 @@ building it against imagined data would produce a beautiful thing wired to nothi
 - **Self-hosted, subset variable fonts** — Inter and JetBrains Mono
 - **Cloudflare Workers static assets** — deployment config is committed (`wrangler.jsonc`),
   not held in a dashboard
-- **GitHub Actions CI** — seven gates: dependency audit, typecheck, build, banned words
-  against built output, internal links, HTML validation, token contrast, confidential-content
-  parity against the CV, and machine/human parity. Lighthouse is warn-only until launch
-  hardening.
+- **GitHub Actions CI** — ten checks, every one of which can fail the build: dependency
+  audit, formatting, typecheck, build, banned words against built output, internal links,
+  HTML validation, token contrast, confidential-content parity against the CV, and
+  machine/human parity. Lighthouse is warn-only until launch hardening.
 
 ## Run
 
