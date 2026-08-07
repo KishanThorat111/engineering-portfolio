@@ -2,9 +2,14 @@
 #
 # Every push to main passes these gates before it can deploy. The gates encode
 # the Truth Constitution rather than promising it: the copy gate greps BUILT
-# HTML for banned identity and hype words (Ruling 1, §3.4), the link gate makes
-# dead internal links a build failure, and the dependency audit applies the
-# lesson this portfolio publishes — known CVEs must never reach main silently.
+# output — the pages people read and the artifacts machines read — for banned
+# identity and hype words (Ruling 1, §3.4), the link gate makes dead internal
+# links a build failure, and the dependency audit applies the lesson this
+# portfolio publishes: known CVEs must never reach main silently.
+#
+# The gates run at the repository root against the composed `dist/` that every
+# workspace builds into, so they keep covering the whole deployed surface as
+# surfaces are added rather than needing one copy per workspace.
 #
 # Lighthouse runs warn-only until Phase 8 hardening flips it to enforcing.
 name: CI
@@ -31,6 +36,12 @@ jobs:
 
       - name: Dependency audit (production, high+)
         run: npm audit --omit=dev --audit-level=high
+
+      # Formatting was verified by hand before every commit until now, which
+      # means it was verified by memory. It is deterministic and cheap, so it
+      # belongs here rather than in a habit.
+      - name: Formatting
+        run: npm run format:check
 
       - name: Typecheck
         run: npm run check

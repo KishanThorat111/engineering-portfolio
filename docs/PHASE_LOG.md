@@ -820,3 +820,152 @@ passing CI and being reachable are two different claims.
 Phase 8 — Hardening, Launch, Handover (T18–T20). Open with the Phase 8 contract from
 `docs/IMPLEMENTATION_HANDOFF.md` §4. **Read item 1 above first — the site currently emits URLs
 for a host that does not exist, and that is the first thing to fix.**
+
+---
+
+## P0 — Foundation split (Dossier §13) · 8 August 2026
+
+### A note on the numbering, before anything else
+
+`docs/MASTER_IMPLEMENTATION_DOSSIER.md` arrived after the seven entries above and sits above
+every other document in this repository. It restarts the roadmap at **P0** while the entries
+above run **Phase 1–7** under the original eight-phase plan. Both numberings are correct in
+their own context and neither is renumbered, because this log is append-only and a log that
+rewrites its own history is worth nothing here of all places.
+
+From this entry on, dossier phases are written `P0`–`P8`. The old scheme's Phase 7 (Machines
+& Discovery) and the dossier's P7 (Fast lane and machine layer) are different phases with the
+same digit; the prefix is what distinguishes them. `CLAUDE.md` records this so a fresh session
+meets it before it meets the log.
+
+### Shipped
+
+- **The monorepo split.** `apps/static` (the Astro surface, moved whole with `git mv` so
+  history follows the files), `apps/experience` and `services/api` as real directories with
+  READMEs stating what lands there, when, and what blocks it. npm workspaces at the root.
+- **Root `dist/` is the composed deployment artifact**, and each workspace builds into it.
+- **The copy gate now covers the machine layer** — `/api/profile.json`, `/llms.txt`,
+  `robots.txt`, and the sitemaps — and fails when it finds nothing to scan.
+- **The origin defect is fixed**: the site had been emitting every canonical, OG URL, sitemap
+  entry, JSON-LD `@id`, and machine-layer URL for a host that does not exist.
+- A formatting step in CI, `.wrangler/` gitignored, `CLAUDE.md` rewritten against the dossier,
+  and `README.md` corrected — it claimed Astro 5, Cloudflare Pages, and a domain that returns
+  NXDOMAIN.
+
+### Verification record
+
+- **Byte-identical, measured rather than asserted.** Every one of the 34 built files was
+  SHA-256 hashed before the split and after it: `diff` exits 0 across all 34. The comparison
+  was itself proven capable of failing — appending a single byte to `dist/llms.txt` produced a
+  hash mismatch and a non-zero exit, so the exit-0 result is a measurement and not a silence.
+- **The dependency tree was regenerated from nothing**, per the Phase 1 rule: `node_modules`
+  and `package-lock.json` deleted, fresh `npm install`, then `node_modules` deleted again and
+  `npm ci` verified to reproduce the tree. **The rebuild after regeneration is still
+  byte-identical to the pre-split baseline**, which is the useful result: the split changed
+  where the code lives and changed nothing about what deploys.
+- The regeneration moved `astro` 7.1.6 → 7.2.0, `wrangler` 4.119.0 → 4.120.0, `prettier`
+  3.4 → 3.9.6, all inside existing ranges. Two things follow, and both were checked rather
+  than assumed. Astro 7.2.0 produces output identical to 7.1.6 for this site — that is the
+  byte-identity result above, and it is evidence about this site, not a claim about the
+  release. And **the full-tree audit is now clean**: `npm audit` reports 0 vulnerabilities
+  where wrangler 4.119.0 carried a high-severity advisory through miniflare → undici. Dossier
+  §15's "wrangler dev-tree advisories" open item is closed by arithmetic, not by argument.
+- **The widened copy gate was proven by breaking it, four ways**, each reverted:
+  `founder` injected into `dist/llms.txt` → *"banned identity word"*, exit 1;
+  `world-class` injected into `dist/api/profile.json` → *"banned hype word"*, exit 1;
+  an empty `dist/` → *"nothing to scan … Either way it is not a pass"*, exit 1;
+  clean run afterwards → OK. **The gate as it stood before this phase passed all three of the
+  failing cases**, which is the reason to record it: it was reporting success for work it was
+  not doing.
+- All seven gates green locally, `format:check` clean, `npm audit` clean at both production
+  and full-tree scope.
+
+### The defect this phase found, and how
+
+Phase 7 recorded that `astro.config.mjs` named a host that returned NXDOMAIN, and left fixing
+it to Phase 8. What that entry could not know is that **the site was live the whole time**.
+`https://portfolio.kishanthorat.workers.dev/` returns 200 and serves this site's own home
+page — verified by fetching it and reading the HTML back, not by trusting the name.
+
+So the live artifact was healthy and every URL inside it was wrong. `/llms.txt` — the file
+written specifically for the agent readers the dossier names as the tertiary audience — was
+directing every one of its eleven links at nothing. That is the worst possible place for this
+particular failure: the machine layer is this site's signature, and it was the part that was
+broken.
+
+The origin now reads `https://portfolio.kishanthorat.workers.dev`, confirmed against the
+network before the change was made. Rebuilt output carries **zero** surviving references to
+the dead host: 11 canonicals, 10 OG URLs, 9 sitemap entries, 11 `llms.txt` URLs, and 6 of
+`profile.json`'s 9 absolute URLs on the new origin (the other three are GitHub and LinkedIn),
+plus the `Sitemap:` line in `robots.txt`.
+
+**The rule this confirms, in the dossier's own words (§9.7): reachability and correctness are
+different claims.** Every gate in this repository checks internal consistency against whatever
+origin is configured. None of them can check that the origin answers. One `curl` can.
+
+### Engineering decisions — later phases inherit these
+
+1. **The deployment artifact is the repository-root `dist/`, not `apps/static/dist`.** One
+   Cloudflare Worker serves one assets directory, so the origin a visitor reaches is a single
+   composed tree; from P5 it carries both surfaces. Building into a shared root `dist/` also
+   meant `wrangler.jsonc`, `lighthouserc.json`, and every gate kept pointing at the path they
+   already pointed at, so the split could not change what deploys. **P4 must have the
+   experience app build into this same tree**, not beside it.
+2. **The truth gates stay at the repository root**, because they validate the composed
+   artifact rather than any one workspace. Two of them read source rather than output —
+   `contrast-check` reads `apps/static/src/styles/tokens.css` and `cv-pdf` writes
+   `apps/static/public/cv.pdf` — and those two literals are the only places the layout is
+   written down in `scripts/`. A third consumer justifies a shared path module; two do not.
+3. **`content/banned.json` lives at the repository root and is imported across the workspace
+   boundary** by `apps/static/src/schemas/constitution.ts`. The four-level relative import is
+   visible and intended: rule 5 binds every surface, so the list cannot belong to whichever
+   surface needed it first. The experience app and the API read this same file.
+4. **Minified JavaScript is deliberately outside the copy gate**, and that has a consequence
+   P4 must design around. Bundled third-party code contains `owner` and `clients` as
+   identifiers in volumes that would drown the signal. **The experience app's visitor-facing
+   copy must therefore reach the build as data — one content module emitted as JSON — not as
+   literals scattered through a bundle.** That is also what rule 10 requires of it, so the
+   gate and the constitution are asking for the same shape.
+5. **Workspace dependencies are declared where they are used.** `astro`, `satori`, `sharp`,
+   and the fonts belong to `apps/static`; `wrangler`, `prettier`, `html-validate`, and
+   `playwright-core` are root tools. `apps/experience` and `services/api` have no
+   `package.json` yet, which is why the workspace globs are `apps/*` and `services/*` — npm
+   matches package manifests, not directories, so an empty directory is simply not a workspace
+   yet.
+6. **`npm run cv:pdf` still never enters CI** (Phase 3 decision 9 stands). It now writes to
+   `apps/static/public/cv.pdf`.
+
+### Deviations and things deliberately not done
+
+- **Nothing was pushed.** The site is live, and the Cloudflare Workers build command lives in
+  a dashboard this repository cannot read. If it is anything other than `npm run build` from
+  the repository root, the first push after this split fails the deploy. That is an owner
+  input, recorded below, and it is the reason this phase stops at a verified local state
+  rather than declaring itself done — the completion standard is remote CI green, and remote
+  CI has not run.
+- **`profile.json` emits its own URLs without trailing slashes** (`/cv`, not `/cv/`) while
+  canonicals carry them and the Worker 307-redirects to the slashed form. Not a factual
+  disagreement, so the parity gate is right not to fail; it is a URL-normalisation nit worth
+  tidying in P7 when that surface is revisited.
+- **No test framework was added.** It is P1's decision to make against a real service, and
+  adding one here with nothing to test would be scaffolding, not testing. Recorded because
+  the absence is deliberate and this repository's own published lesson is about exactly this.
+
+### OWNER-INPUT — open items
+
+Unchanged at **thirteen** markers (one headshot, twelve gallery screenshots); P0 added none
+and resolved none. Beyond the markers:
+
+1. **Confirm the Cloudflare deploy configuration** before the first push after this split:
+   build command `npm run build`, root directory `/`, output `dist`. One dashboard field.
+2. **The VM** — still the owner's action, and it gates P1 entirely.
+3. **`kishanthorat.com`** — ratified, not purchased. P8 swaps the origin and re-verifies.
+4. **Hospital telemetry permissions** — unanswered, and it ceilings the estate layer in P6.
+
+### Next session
+
+P1 — Control plane. Blocked on the VM. Read this entry's decisions 1 and 3 first, and the
+adversarial review that opened this session for the two items awaiting a ruling: the
+relationship between the demo's Postgres RLS and the `orgId` row-scoping the real platforms
+actually run on, and whether the session-audit-log take-away leads with a shareable link
+rather than an email.
