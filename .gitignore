@@ -3,6 +3,10 @@ node_modules/
 dist/
 .astro/
 
+# Wrangler's local working directory — deployment CONFIG is committed
+# (wrangler.jsonc); this is scratch state and must never be.
+.wrangler/
+
 # Logs
 npm-debug.log*
 

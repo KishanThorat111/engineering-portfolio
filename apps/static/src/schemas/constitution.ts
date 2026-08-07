@@ -12,13 +12,19 @@
  *
  * The gate ordering matters. These schemas fail at content-authoring time with
  * a message naming the field and the rule. `scripts/copy-check.mjs` is the
- * backstop that greps BUILT HTML, catching anything that reaches a page by a
+ * backstop that greps BUILT output, catching anything that reaches a page by a
  * route the schemas do not cover (hardcoded markup, component copy). Both read
  * the SAME banned-word list — `content/banned.json` — so the two layers can
  * never drift apart into disagreeing definitions of the same rule.
+ *
+ * That list lives at the REPOSITORY root, not inside this workspace, and the
+ * three-level import below is the visible consequence. It is deliberate: rule 5
+ * binds every surface this repository publishes, so the list cannot belong to
+ * whichever surface happened to need it first. When the experience app and the
+ * API arrive they read this same file.
  */
 import { z } from 'astro/zod';
-import bannedList from '../../content/banned.json';
+import bannedList from '../../../../content/banned.json';
 
 /* ------------------------------------------------------------------ *
  * Status vocabulary — blueprint §4.0 item 1 and §5

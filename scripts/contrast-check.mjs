@@ -13,7 +13,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const css = readFileSync(resolve('src/styles/tokens.css'), 'utf8');
+const css = readFileSync(resolve('apps/static/src/styles/tokens.css'), 'utf8');
 
 /** Pull `--name: #rrggbb;` declarations out of the token file. */
 const tokens = Object.fromEntries(

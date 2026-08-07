@@ -32,7 +32,7 @@ import { extname, join, resolve } from 'node:path';
 import { chromium } from 'playwright-core';
 
 const DIST = resolve('dist');
-const OUTPUT = resolve('public/cv.pdf');
+const OUTPUT = resolve('apps/static/public/cv.pdf');
 const CHECK = process.argv.includes('--check');
 
 /**

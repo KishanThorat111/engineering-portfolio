@@ -1,0 +1,27 @@
+{
+  "name": "@portfolio/static",
+  "description": "The static fast lane, SEO surface, machine layer, and degraded-mode fallback. Dossier §6.2.",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.0",
+    "@fontsource/inter": "^5.2.0",
+    "astro": "^7.1.6",
+    "satori": "^0.12.0",
+    "sharp": "^0.35.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.0",
+    "@fontsource-variable/inter": "^5.2.0",
+    "@fontsource-variable/jetbrains-mono": "^5.2.0",
+    "typescript": "^5.7.0"
+  }
+}

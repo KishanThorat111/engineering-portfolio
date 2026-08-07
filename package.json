@@ -1,6 +1,6 @@
 {
   "name": "engineering-portfolio",
-  "description": "Source for kishanthorat.dev — an evidence-first engineering portfolio.",
+  "description": "Source for kishanthorat.com — an evidence-first engineering portfolio and a live, attackable demonstration system.",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,11 +10,15 @@
     "type": "git",
     "url": "https://github.com/KishanThorat111/engineering-portfolio.git"
   },
+  "workspaces": [
+    "apps/*",
+    "services/*"
+  ],
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "check": "astro check",
+    "dev": "npm run dev --workspace apps/static",
+    "build": "npm run build --workspace apps/static",
+    "preview": "npm run preview --workspace apps/static",
+    "check": "npm run check --workspace apps/static",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "gate:copy": "node scripts/copy-check.mjs",
@@ -26,22 +30,11 @@
     "cv:pdf": "node scripts/cv-pdf.mjs",
     "verify": "npm run check && npm run build && npm run gate:copy && npm run gate:links && npm run gate:html && npm run gate:contrast && npm run gate:confidential && npm run gate:machine"
   },
-  "dependencies": {
-    "@astrojs/sitemap": "^3.7.0",
-    "@fontsource/inter": "^5.2.0",
-    "astro": "^7.1.6",
-    "satori": "^0.12.0",
-    "sharp": "^0.35.3"
-  },
   "devDependencies": {
-    "@astrojs/check": "^0.9.0",
-    "@fontsource-variable/inter": "^5.2.0",
-    "@fontsource-variable/jetbrains-mono": "^5.2.0",
     "html-validate": "^10.0.0",
     "playwright-core": "^1.49.0",
     "prettier": "^3.4.0",
     "prettier-plugin-astro": "^0.14.0",
-    "typescript": "^5.7.0",
     "wrangler": "^4.119.0"
   }
 }

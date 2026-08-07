@@ -7,8 +7,9 @@ package-lock.json
 # Planning documents are frozen source material — never reformatted.
 docs/
 
-# CLAUDE.md is verbatim from the implementation handoff — never reformatted.
+# CLAUDE.md is hand-wrapped to stay dense enough to read at a glance in every
+# session's context window. Reformatting it would reflow that away.
 CLAUDE.md
 
-# Binary font assets
-public/fonts/
+# Binary font assets and their upstream licence text, which ships verbatim.
+apps/static/public/fonts/

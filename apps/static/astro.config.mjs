@@ -27,6 +27,23 @@ import sitemap from '@astrojs/sitemap';
  */
 export default defineConfig({
   site: 'https://kishanthorat-portfolio.pages.dev',
+
+  /*
+   * The deployment artifact is the repository-root `dist/`, not this
+   * workspace's own folder, and that is deliberate.
+   *
+   * One Cloudflare Worker serves one assets directory (wrangler.jsonc), so the
+   * origin that a visitor reaches is a single composed tree. From Phase 5 that
+   * tree carries two surfaces — this static app and the experience bundle —
+   * under one host, sharing one set of truth gates. Root `dist/` is therefore
+   * the composed deployment artifact, and each workspace builds into it.
+   *
+   * The practical consequence today: `wrangler.jsonc`, `lighthouserc.json`,
+   * and every gate in `scripts/` keep pointing at the same path they pointed
+   * at before the monorepo split, so the split could not change what deploys.
+   */
+  outDir: '../../dist',
+
   integrations: [
     sitemap({
       /*
