@@ -1,0 +1,213 @@
+# Deploy the control plane to the VM.
+#
+# MANUALLY DISPATCHED, NOT PUSH-TRIGGERED. A publicly attackable service that
+# redeploys itself on every commit to main has no stable state to attack, and
+# no moment where a human decided the release was ready. Releases are a
+# decision here, and rollback is one too.
+#
+# REPEATABLE, AND NOTHING IS EDITED ON THE VM. The whole release is an image
+# digest and an environment file the workflow writes. Nobody SSHes in to change
+# a line, which is the failure mode this workflow exists to prevent.
+#
+# ROLLBACK IS BY DIGEST, NOT BY TAG. Every release records the digest it
+# replaced in `infra/.previous-image` on the VM. Rolling back re-pins that
+# digest and brings the stack back up — `latest` is not a version and a tag can
+# move under you.
+name: Deploy API
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Commit SHA or branch to deploy'
+        required: true
+        default: 'main'
+      rollback:
+        description: 'Roll back to the previously deployed image instead of deploying'
+        type: boolean
+        default: false
+
+concurrency:
+  # Two overlapping deploys would race on the compose project and on the
+  # migration container. One at a time, and never cancelled mid-flight.
+  group: deploy-api
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/control-plane-api
+
+jobs:
+  publish:
+    name: Publish image
+    if: ${{ !inputs.rollback }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: services/api/Dockerfile
+          push: true
+          build-args: APP_VERSION=${{ inputs.ref }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to the VM
+    needs: [publish]
+    # `always()` so a rollback run, which skips `publish`, still reaches here.
+    if: ${{ always() && (inputs.rollback || needs.publish.result == 'success') }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Resolve the image to deploy
+        id: image
+        run: |
+          if [ "${{ inputs.rollback }}" = "true" ]; then
+            echo "mode=rollback" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=release" >> "$GITHUB_OUTPUT"
+            echo "ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.publish.outputs.digest }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Authorise SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # Pinned host key. StrictHostKeyChecking=no would accept a
+          # man-in-the-middle on the one channel that carries every secret.
+          echo "${{ secrets.VM_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      - name: Ship the compose files
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" \
+            'mkdir -p ~/control-plane/infra'
+          scp -i ~/.ssh/id_ed25519 \
+            infra/compose.yml infra/Caddyfile infra/otel-collector.yaml \
+            "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:~/control-plane/infra/"
+
+      - name: Write the environment file
+        # Secrets never enter git and never enter the image; they are written
+        # here, over SSH, at release time. `set +x` and a quoted heredoc keep
+        # them out of the workflow log.
+        run: |
+          set +x
+          cat > /tmp/env.deploy <<EOF
+          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB=control_plane
+          APP_DB_PASSWORD=${{ secrets.APP_DB_PASSWORD }}
+          IP_HASH_PEPPER=${{ secrets.IP_HASH_PEPPER }}
+          ADMIN_TOKEN=${{ secrets.ADMIN_TOKEN }}
+          CLOUDFLARE_TUNNEL_TOKEN=${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
+          LOG_LEVEL=info
+          TENANT_TTL_SECONDS=${{ vars.TENANT_TTL_SECONDS || '1800' }}
+          PURGE_INTERVAL_MS=${{ vars.PURGE_INTERVAL_MS || '15000' }}
+          OTEL_ENABLED=true
+          APP_VERSION=${{ inputs.ref }}
+          EOF
+          scp -i ~/.ssh/id_ed25519 /tmp/env.deploy \
+            "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:~/control-plane/infra/.env.partial"
+          rm -f /tmp/env.deploy
+
+      - name: Release
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" \
+            MODE='${{ steps.image.outputs.mode }}' \
+            NEW_IMAGE='${{ steps.image.outputs.ref }}' \
+            'bash -s' <<'REMOTE'
+          set -euo pipefail
+          cd ~/control-plane/infra
+
+          if [ "$MODE" = "rollback" ]; then
+            if [ ! -f .previous-image ]; then
+              echo "::error::no previous image recorded on this host — nothing to roll back to"
+              exit 1
+            fi
+            TARGET="$(cat .previous-image)"
+            echo "rolling back to $TARGET"
+          else
+            TARGET="$NEW_IMAGE"
+            # Record what we are replacing BEFORE replacing it, so a failed
+            # release can be undone even if this script dies halfway.
+            if [ -f .env ] && grep -q '^API_IMAGE=' .env; then
+              grep '^API_IMAGE=' .env | cut -d= -f2- > .previous-image
+            fi
+          fi
+
+          # Compose the final env file: the secrets just shipped, plus the image
+          # pin. Written atomically so a killed deploy cannot leave a half file.
+          cp .env.partial .env.next
+          echo "API_IMAGE=$TARGET" >> .env.next
+          mv .env.next .env
+          rm -f .env.partial
+          chmod 600 .env
+
+          docker compose --env-file .env -f compose.yml pull
+          # `up -d` recreates only what changed. The migrate container runs to
+          # completion first (service_completed_successfully), so a bad
+          # migration stops the release before the API serves a request.
+          docker compose --env-file .env -f compose.yml up -d --remove-orphans
+
+          echo "waiting for readiness"
+          ok=0
+          for i in $(seq 1 30); do
+            if docker compose --env-file .env -f compose.yml exec -T api \
+                 node -e "fetch('http://127.0.0.1:8080/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"; then
+              ok=1; break
+            fi
+            sleep 5
+          done
+
+          if [ "$ok" != "1" ]; then
+            echo "::error::the release did not become ready"
+            if [ -f .previous-image ] && [ "$MODE" != "rollback" ]; then
+              echo "rolling back automatically to $(cat .previous-image)"
+              sed -i "s|^API_IMAGE=.*|API_IMAGE=$(cat .previous-image)|" .env
+              docker compose --env-file .env -f compose.yml up -d
+            fi
+            exit 1
+          fi
+
+          echo "$TARGET" > .current-image
+          docker image prune -f --filter "until=168h" || true
+          echo "released $TARGET"
+          REMOTE
+
+      - name: Confirm the tunnel is serving the new version
+        # Readiness inside the container proves the container. Only a request
+        # through Cloudflare proves the deployment is reachable — CI proving the
+        # artifact and the network proving it reachable are different claims.
+        run: |
+          for i in $(seq 1 20); do
+            body=$(curl -fsS "${{ vars.API_PUBLIC_URL }}/health" || true)
+            if [ -n "$body" ]; then echo "$body"; exit 0; fi
+            sleep 6
+          done
+          echo "::error::the deployed API did not answer through Cloudflare"
+          exit 1

@@ -1,0 +1,140 @@
+# Control-plane CI.
+#
+# Separate from ci.yml on purpose. That workflow gates the static surface and
+# runs on every push; this one needs Postgres and Redis service containers and
+# only has anything to say when the API changes. Keeping them apart means a
+# content edit does not wait on a database, and an API change cannot go green
+# because the static gates passed.
+#
+# The suite runs against a REAL PostgreSQL with the REAL migrations applied.
+# That is not incidental — the isolation tests assert that the database refuses
+# cross-tenant reads, and a mocked database would only prove the mock refuses
+# them. This is the ELES pattern: DB-integration tests against a real Postgres
+# service container in CI.
+name: API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'services/api/**'
+      - 'infra/**'
+      - '.github/workflows/api.yml'
+      - 'package.json'
+      - 'package-lock.json'
+  pull_request:
+    paths:
+      - 'services/api/**'
+      - 'infra/**'
+      - '.github/workflows/api.yml'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  test:
+    name: Build & control-plane tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-bookworm
+        env:
+          POSTGRES_USER: cpadmin
+          POSTGRES_PASSWORD: devpassword
+          POSTGRES_DB: control_plane
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U cpadmin -d control_plane"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:7-bookworm
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+
+    env:
+      DATABASE_ADMIN_URL: postgres://cpadmin:devpassword@127.0.0.1:5432/control_plane
+      DATABASE_URL: postgres://demo_app:ciapppassword@127.0.0.1:5432/control_plane
+      APP_DB_PASSWORD: ciapppassword
+      REDIS_URL: redis://127.0.0.1:6379
+      IP_HASH_PEPPER: ci-pepper-value-at-least-16-chars
+      ADMIN_TOKEN: ci-admin-token-at-least-24-characters
+      OTEL_ENABLED: 'false'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Dependency audit (production, high+)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Typecheck
+        run: npm run check --workspace @portfolio/api
+
+      - name: Build
+        run: npm run build --workspace @portfolio/api
+
+      - name: Migrate
+        run: node services/api/dist/db/migrate.js
+
+      - name: Control-plane tests (real Postgres, real RLS)
+        run: npm test --workspace @portfolio/api
+
+      # The suite asserts RLS is enabled and forced, but a suite can only assert
+      # what it thinks to check. This asks the database directly, in CI, so a
+      # policy that silently stopped applying fails here even if every test
+      # somehow still passed on layer 1 alone.
+      - name: Assert RLS is enabled and forced on every tenant-owned table
+        run: |
+          missing=$(PGPASSWORD=devpassword psql -h 127.0.0.1 -U cpadmin -d control_plane -tAc \
+            "SELECT string_agg(relname, ',') FROM pg_class
+              WHERE relname IN ('tenant','tenant_credential','demo_record','audit_event','tenant_budget')
+                AND NOT (relrowsecurity AND relforcerowsecurity);")
+          if [ -n "$missing" ]; then
+            echo "::error::RLS not enabled+forced on: $missing"
+            exit 1
+          fi
+          echo "RLS enabled and forced on all five tenant-owned tables."
+
+      - name: Assert the application role cannot bypass RLS
+        run: |
+          bypass=$(PGPASSWORD=devpassword psql -h 127.0.0.1 -U cpadmin -d control_plane -tAc \
+            "SELECT rolbypassrls OR rolsuper FROM pg_roles WHERE rolname='demo_app';")
+          if [ "$bypass" != "f" ]; then
+            echo "::error::demo_app can bypass RLS — isolation layer 2 is not enforced"
+            exit 1
+          fi
+          echo "demo_app has neither BYPASSRLS nor superuser."
+
+  image:
+    name: Build the container image
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      # Build-only on PRs and pushes. Publishing and deploying is deploy-api.yml,
+      # which is manually dispatched — an attackable public service should not
+      # redeploy itself because a comment changed.
+      - name: Build
+        run: |
+          docker build -f services/api/Dockerfile \
+            --build-arg APP_VERSION="${GITHUB_SHA::7}" \
+            -t control-plane-api:${GITHUB_SHA::7} .
+
+      - name: The image must contain migrations, not just a migration runner
+        run: |
+          count=$(docker run --rm --entrypoint sh control-plane-api:${GITHUB_SHA::7} \
+            -c 'ls dist/db/migrations/*.sql | wc -l')
+          if [ "$count" -lt 1 ]; then
+            echo "::error::the built image carries no migrations"
+            exit 1
+          fi
+          echo "image carries $count migration(s)"
