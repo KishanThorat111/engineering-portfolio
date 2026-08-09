@@ -1,0 +1,37 @@
+{
+  "name": "@portfolio/api",
+  "description": "The control plane. Real tenants, real isolation, real lifecycle. Dossier §7.",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/copy-sql.mjs",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "start": "node --import ./dist/telemetry/register.js dist/index.js",
+    "start:worker": "node --import ./dist/telemetry/register.js dist/worker/index.js",
+    "migrate": "node dist/db/migrate.js",
+    "test": "node --test --test-concurrency=1 \"test/**/*.test.js\""
+  },
+  "dependencies": {
+    "@fastify/rate-limit": "^11.2.0",
+    "@fastify/sensible": "^6.0.5",
+    "@fastify/under-pressure": "^9.1.0",
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/auto-instrumentations-node": "^0.79.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.221.0",
+    "@opentelemetry/resources": "^2.10.0",
+    "@opentelemetry/sdk-node": "^0.221.0",
+    "@opentelemetry/semantic-conventions": "^1.43.0",
+    "fastify": "^5.11.3",
+    "fastify-plugin": "^6.0.0",
+    "ioredis": "^6.0.0",
+    "pg": "^8.23.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "@types/pg": "^8.21.0",
+    "typescript": "^5.7.0"
+  }
+}
