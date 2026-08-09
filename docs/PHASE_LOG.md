@@ -969,3 +969,94 @@ adversarial review that opened this session for the two items awaiting a ruling:
 relationship between the demo's Postgres RLS and the `orgId` row-scoping the real platforms
 actually run on, and whether the session-audit-log take-away leads with a shareable link
 rather than an email.
+
+### P0 closing note — rulings, and the completion evidence · 9 August 2026
+
+Appended rather than edited into the entry above, per the append-only rule. The entry above
+was written before the push and before the product architect's rulings; both are recorded
+here so the record shows what was known when.
+
+#### Rulings received
+
+- **The demo implements both isolation layers.** Server-derived `orgId` scoping matching
+  ADR-0003 — what the hospital, menu, and electrical platforms actually run — and Postgres
+  RLS beneath it. The membrane inspector at the §2.5 peak shows **both**, labelled honestly:
+  the production pattern, and the RLS layer disclosed as stronger than what those platforms
+  have. **Dossier §7.1 and §16.2 are amended accordingly.** As originally written, the peak
+  would have shown a mechanism the engineer does not operate, to an audience selected for
+  being able to tell.
+- **The signed permalink is the primary take-away.** Email is demoted to opt-in behind an
+  explicit confirmation click and is never the default path. §2.8 and §2.10 amended.
+- **Five demonstrations = the four stations plus the break-out.** P2 builds five endpoints,
+  not six. §2.6 amended to say so explicitly.
+- The four decisions recorded in the entry above all stand: root `dist/` as the composed
+  artifact, gates at the repository root, `content/banned.json` at the root imported across
+  the workspace boundary, and the origin swapped now rather than at P8.
+- **A1–A14 approved.** Five of them are **binding on the phases that own them, not
+  optional**, and a later session may not quietly drop them:
+  - **A4** — the experience app's visitor-facing copy reaches the build as data, one content
+    module emitted as JSON, never as literals scattered through a bundle. *(P4)*
+  - **A5** — P4's fixtures **are** the §6.3 degraded-mode payload: recorded real traces
+    shipped in the static bundle, so they cannot rot unseen. *(P4, consumed P5)*
+  - **A6** — the arrival beat's PoP and RTT are served from the Cloudflare edge, so beat 1
+    is real even when the live plane is unreachable. *(P5)*
+  - **A11** — model-budget exhaustion is a designed, honest state, not an error. *(P2)*
+  - **A14** — the signed session-receipt permalink. *(P2, surfaced P5)*
+
+#### Carried forward as design constraints, not notes
+
+Three risks are now constraints that later phases design against rather than acknowledge:
+
+1. **The single-VM failure mode.** When the demo is down, the portfolio actively argues
+   against its own central claim. Degradation must fail *closed* into honest degraded mode,
+   and the fallback must live where it survives the VM being gone.
+2. **Presence must be non-identifying by construction, not by policy.** §2.3 makes other
+   visitors visible; no configuration mistake may make a visitor identifiable or correlatable.
+3. **The peak beat is the most expensive frame in the experience**, arriving at the moment
+   the visitor is paying the most attention. Budget it as the worst case, not the average.
+
+#### Accepted as a real defect — P8
+
+The live origin sends **no** `Content-Security-Policy`, `Strict-Transport-Security`,
+`X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, or `X-Frame-Options` —
+all six confirmed absent by fetching the headers, not by reading configuration. For a site
+whose subject is security engineering this is the wrong detail for a reader to find, and
+Phase 8's ≥95 best-practices threshold will fail on it. **The delivery mechanism must be
+verified against the installed wrangler's own config schema before one is chosen**, not
+recalled — Workers static assets and Pages do not handle this identically.
+
+#### The push, and the two claims that had to be proved separately
+
+The Cloudflare build configuration was confirmed by the owner as `npm run build` with root
+directory `/`, which was the only thing holding the push. Pushed `15b3331..ff03cfc`.
+
+**CI — proved at step level, not by the run's conclusion.** Run `31308900821` on `ff03cfc`:
+**26 steps across both jobs, 26 success, 0 skipped, 0 non-success.** The zero-skipped count
+is the load-bearing part — a skipped step is a gate that ran nothing while the run still
+reports green. The new formatting step executed and passed, which is what proves it is wired
+in rather than merely declared.
+
+**Reachability — proved by fetching, because CI cannot make this claim (§9.7).** All ten
+probed paths return 200 with correct content types: `/`, `/api/profile.json`, `/llms.txt`,
+`/sitemap-index.xml`, `/sitemap-0.xml`, `/robots.txt`, `/og/home.png`, `/cv.pdf`, `/about/`,
+`/systems/hospital-operations/`. A missing path still returns a real **404**; `/about` still
+**307**s to `/about/`. The sitemap carries nine entries, all on the live origin, with `/dev/`
+absent from it and the gallery still `noindex, nofollow`.
+
+**That the deploy actually landed was proved by content, not by a cache header.** The first
+responses came back `CF-Cache-Status: HIT`, and query-string busting does not force origin
+for static assets — so cache status could not settle it. Byte comparison could:
+**seven served artifacts are SHA-256 identical to the local build of `ff03cfc` on a clean
+tree** — `/`, `/llms.txt`, `/api/profile.json`, `/robots.txt`, `/sitemap-0.xml`,
+`/og/home.png`, and `/systems/hospital-operations/`. A cached copy of the previous build
+would have carried the dead host; zero occurrences of it survive anywhere on the live origin,
+against 11 in `llms.txt` and 6 in `profile.json` now naming the origin that answers.
+
+**P0 is complete.** Remote CI is green at step level and the deployed artifact is verified
+reachable and byte-correct.
+
+#### Next session
+
+P1 — Control plane. **Still blocked on the VM**, which remains the owner's action. Read the
+rulings above before the entry they amend, and note that P1 now owes two isolation layers
+rather than one.
