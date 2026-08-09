@@ -1060,3 +1060,171 @@ reachable and byte-correct.
 P1 — Control plane. **Still blocked on the VM**, which remains the owner's action. Read the
 rulings above before the entry they amend, and note that P1 now owes two isolation layers
 rather than one.
+
+---
+
+## P1 — Control plane (Dossier §13) · 9 August 2026
+
+### Shipped
+
+- **`services/api`** — Fastify 5 + TypeScript strict over PostgreSQL 17, Redis, a scheduled
+  purge worker, and OpenTelemetry. Fixed endpoint surface, no ORM, no arbitrary SQL.
+- **Both isolation layers, additive** (ruling A10): server-derived `orgId` scoping matching
+  ADR-0003, and genuine PostgreSQL row-level security beneath it.
+- **The real TTL lifecycle**: provision → seed → operate → expire → purge, where the purge is
+  a separate worker process on its own timer under a Postgres advisory lock.
+- **`infra/`** — Compose topology with no published ports, an internal-only network for
+  Postgres/Redis/collector, Caddy, cloudflared, and an OTel collector.
+- **CI** (`.github/workflows/api.yml`) running the suite against a real Postgres service
+  container, plus two direct database assertions about RLS.
+- **Deployment** (`.github/workflows/deploy-api.yml`) — manually dispatched, image pinned by
+  digest, secrets written at release time, automatic rollback on a failed health check.
+
+### The two layers, and how the distinction stays observable
+
+P2's peak depends on being able to show the difference between them, so they are built as two
+independently observable mechanisms rather than one defence with two names.
+
+Layer 1 is `tenant_id = $orgId` on every tenant-owned statement, where `orgId` comes from a
+verified credential and from nothing else. Layer 2 is RLS policies on all five tenant-owned
+tables, `FORCE` enabled, enforced against `demo_app` — a role with no `BYPASSRLS`, which owns
+nothing and cannot alter the schema.
+
+**The production platforms do not have layer 2, and the system says so** — in
+`/v1/tenants/me`, in the migration comments, and in the service README, so P2's inspector
+reads the disclosure rather than re-asserting it.
+
+`test/integration/tenant-isolation-rls-enforcement.test.js` removes layer 1 and asserts the
+database still refuses: a read with no org predicate, a bare `SELECT *` with no scope at all,
+a cross-tenant UPDATE, a cross-tenant DELETE, and an INSERT claiming another tenant.
+
+### Verification record
+
+- **52 tests, all passing**, against a real PostgreSQL with the real migrations applied.
+  Six suites, one file per tenant-owned resource in the ELES pattern: `demo_record`,
+  `audit_event`, `tenant_credential`, `tenant_budget`, the RLS-alone suite, and the lifecycle.
+- **The isolation suite was proven by breaking it, twice, both reverted.** Dropping `FORCE`
+  on `demo_record` failed one case. Disabling RLS on that table outright failed six. **And
+  with RLS disabled, the ordinary `demo_record` isolation suite still passed 5/5** — which is
+  the whole argument for the RLS-alone file: every other isolation test is satisfied by
+  layer 1 working, so a broken policy would hide behind a correct WHERE clause indefinitely.
+- **The lifecycle was proven end to end through curl** against the production-shaped stack,
+  with a 30-second TTL: provisioned a tenant with 8 seeded rows and a real key, attacked a
+  second tenant's record (403, `isolation.denied`), then waited. At t+30s the key returned
+  **410 `tenant.purged`** — purged by the worker, with no endpoint called. The worker's own
+  log recorded `"sweep complete","due":2,"purged":2,"failed":0`.
+- **Post-purge database state confirmed directly**: records 0, live credentials 0, audit
+  events retained, `purged_at` set. The audit trail reads `tenant.provision` →
+  `record.read/denied` → `tenant.purge`.
+- **No published ports.** Every container's port bindings are null and Postgres/Redis/worker/
+  collector sit on an `internal: true` network. Two host ports did answer during the check and
+  were traced to the owner's separately-running `electrical-db` and `electrical-caddy`
+  containers — a different stack on the same machine, not this one.
+- **109 spans reached the collector, 0 rejected**, including `lifecycle.purge_sweep`,
+  `lifecycle.purge_tenant`, and `pg.query` spans carrying the real SQL text.
+- The static surface is unregressed: all its gates green, `format:check` clean, `npm audit`
+  0 vulnerabilities at production scope.
+
+### Five defects found by running it, not by reading it
+
+Recorded because each was invisible to typechecking and to review.
+
+1. **`REVOKE ALL ON SCHEMA public FROM PUBLIC` broke both cross-tenant functions.**
+   `BYPASSRLS` exempts a role from *policies* and grants no table or schema privilege
+   whatsoever. Revoking PUBLIC's default silently removed `demo_definer`'s ability to resolve
+   names, so both `SECURITY DEFINER` functions failed with **42P01 — relation does not
+   exist**, not "permission denied", because a role that cannot see a schema cannot resolve
+   names inside it. Authentication would have failed closed and the purge worker would have
+   found no work, on a schema that migrated cleanly.
+2. **The denial audit row was rolled back by the throw that denied the request.** The 403 was
+   raised from inside `withTenant`, which rolls the transaction back — including the audit
+   insert written moments earlier. Every blocked break-in logged nothing. §2.5 ends with the
+   visitor reading the entry for their own attempt and there would have been none. Denial
+   paths now commit, then signal.
+3. **A purged tenant got a generic 401 instead of 410.** The purge revokes credentials and
+   `auth_resolve_credential` filtered revoked rows out, so "your tenant reached its TTL and
+   was destroyed" was indistinguishable from "unknown key". The function now returns
+   revocation state and the caller decides; tenant status is checked before revocation
+   precisely because the purge causes both.
+4. **Every authenticated audit row recorded the same actor.** The public ref was parsed out of
+   the API key by splitting on `_` — but the ref itself contains one, so
+   `dmo_tnt_AbC123_<secret>` yielded `dmo_tnt` for every tenant alive. It typechecked and
+   never threw. The ref now comes from the database and the parsing is gone.
+5. **The OTel collector was rejecting every span.** A `file` exporter could not create its
+   output directory in the distroless image, and because a failing exporter fails the batch,
+   the pipeline dropped everything — including spans bound for the debug exporter. The API
+   was emitting real spans the whole time and nothing was landing. Compounded by
+   `telemetry.logs.level: warn`, which silences the debug exporter's own output, so the
+   collector looked clean while receiving nothing.
+
+### Engineering decisions — later phases inherit these
+
+1. **`pg` directly, not Prisma.** RLS needs explicit control of the transaction boundary and
+   the session setting, and P2's inspector has to show the real query plan, which means owning
+   the SQL. The production platforms use Prisma; this service does not, and that is a
+   deliberate divergence, not drift.
+2. **`withTenant()` is the only doorway to tenant-owned data**, and it uses `SET LOCAL` via
+   `set_config(..., true)`. A plain `SET` would persist on a pooled connection and leak one
+   tenant's scope into the next tenant's query — the classic way RLS is defeated by its own
+   plumbing. No other code may set `app.current_org`.
+3. **Exactly two cross-tenant capabilities exist**, both fixed-signature `SECURITY DEFINER`
+   functions owned by `demo_definer` (`NOLOGIN`, `BYPASSRLS`, owns nothing else). Adding a
+   third is an architecture decision, not a per-PR call.
+4. **The purge runs inside the tenant's own RLS scope.** The narrow hatch finds work; it never
+   does work. A bug in the purge cannot reach another tenant's rows.
+5. **Audit rows survive the purge**, deliberately, because §2.8 and A14 have the visitor
+   leaving with them. P2's permalink reads `/v1/audit`.
+6. **The demo answers 403 on a cross-tenant read; the ELES production suite asserts 404.**
+   Both are right. Production must not confirm existence; the demo must be *seen* refusing,
+   and a 404 is indistinguishable from a typo. §2.5 locks the 403. The response says which is
+   which so no reader infers the hospital behaves this way. Enumeration is bounded by ids
+   being uuids.
+7. **The rate limiter fails open when Redis is down**, weighed rather than defaulted: A13 puts
+   Cloudflare's limiter in front, so failing open degrades from two layers to one rather than
+   none — and failing closed would turn a Redis blip into a total outage, which is the
+   single-VM constraint. `/health/ready` reports it honestly, and health is never rate limited.
+8. **A11's foundation is `exhausted_at` being a column.** Exhaustion is a representable state,
+   so P2 implements "the model budget is spent" as a designed outcome with no schema change.
+   `consumeTokens` clamps and stamps in SQL so two concurrent calls cannot both see headroom.
+9. **A timer, not a cron library or a Redis queue.** The work is idempotent, discovery is one
+   indexed query, and the advisory lock already makes concurrent workers safe — ADR-0004's
+   reasoning about not adding infrastructure Postgres already provides.
+10. **Migrations were iterated before first release.** `001` and `002` were amended three
+    times against a disposable local database and have never run anywhere else. **That ends
+    here**: from the first deployment, a change to the schema or to either function is a new
+    migration, never an edit.
+
+### Deviations and things deliberately not done
+
+- **Nothing was deployed.** The VM is provisioned but this session has no host, user, SSH key,
+  known-hosts entry, or tunnel token, and none can be invented. Everything up to the deploy is
+  proven locally against the real production-shaped topology; the deploy itself is one
+  `workflow_dispatch` once the secrets exist. Listed below.
+- **No durable trace backend.** The collector receives and prints spans; choosing where they
+  are stored depends on what P3's fanout needs to query, and picking early would mean picking
+  wrongly. Recorded rather than quietly deferred.
+- **Cloudflare edge rate limiting is not configured** — it is a dashboard rule, not repository
+  state. A13 holds in the architecture and in Fastify's reasoning; the edge half is an owner
+  action listed below.
+- **No P2 functionality.** No payments, fraud, AI routing, or rate-limit demonstration. The
+  budget model and the idempotency keyspace exist as foundations and nothing consumes them.
+
+### OWNER-INPUT — open items
+
+Static-surface markers unchanged at **thirteen**. P1 adds five, all deployment credentials:
+
+1. **`VM_HOST`, `VM_USER`, `VM_SSH_KEY`, `VM_SSH_KNOWN_HOSTS`** as GitHub Actions secrets.
+   The known-hosts entry is not optional — the workflow pins it rather than accepting any
+   host key, because that channel carries every other secret.
+2. **`CLOUDFLARE_TUNNEL_TOKEN`** from Zero Trust → Networks → Tunnels.
+3. **`POSTGRES_USER`, `POSTGRES_PASSWORD`, `APP_DB_PASSWORD`, `IP_HASH_PEPPER`,
+   `ADMIN_TOKEN`** — `openssl rand -base64 36` each. Production refuses to boot without the
+   pepper and the admin token.
+4. **`API_PUBLIC_URL`** as an Actions variable, for the post-deploy reachability check.
+5. **A Cloudflare edge rate-limiting rule** in front of the tunnel hostname (A13).
+
+### Next session
+
+P2 — Proof engine. Five demonstrations as real endpoints emitting real spans and audit
+records: the break-out plus the four stations. Read decisions 1–6 above first, and note that
+the break-out's endpoint already exists and already denies — P2 makes it inspectable.
