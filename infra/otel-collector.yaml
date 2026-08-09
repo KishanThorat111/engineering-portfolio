@@ -1,0 +1,67 @@
+# OpenTelemetry collector.
+#
+# P1's job is that real spans are produced, exported, and land somewhere they
+# can be read. The trace STORE that P5 queries to render a walkable trace is a
+# P2/P3 decision — it depends on what the fanout needs — so this configuration
+# deliberately stops at "received and retained in a readable form" rather than
+# committing the project to a backend before the requirement is known.
+#
+# What it must not become is a sink that silently drops everything while the
+# API reports spans as exported, so the debug exporter is on and the health
+# extension is enabled.
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  # Bounded memory: a collector that OOMs takes the container with it and the
+  # API starts failing exports into a void.
+  memory_limiter:
+    check_interval: 2s
+    limit_mib: 192
+    spike_limit_mib: 48
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+
+exporters:
+  # Spans land in `docker compose logs otel-collector`, which Docker already
+  # captures and rotates. Verbosity is normal rather than detailed so a busy
+  # demo does not drown the log.
+  #
+  # A `file` exporter was here first and had to be removed, which is worth
+  # recording. The collector image is distroless and runs unprivileged, so it
+  # could not create its output directory — and because a failing exporter fails
+  # the batch, the pipeline rejected EVERY span, including the ones bound for
+  # the debug exporter. The API was emitting real spans the whole time and the
+  # collector was dropping all of them, while nothing in the API looked wrong.
+  #
+  # Choosing a durable trace store is P2's decision, because it depends on what
+  # the fanout in P3 needs to query. P1's obligation is that the spans are real
+  # and that they arrive — not to pick the backend early and wrongly.
+  debug:
+    verbosity: normal
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [debug]
+  telemetry:
+    logs:
+      # info, not warn. The debug exporter writes spans at info level, so `warn`
+      # silences the very output that proves spans are arriving — the collector
+      # would run clean and show nothing, which is indistinguishable from
+      # receiving nothing.
+      level: info

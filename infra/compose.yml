@@ -1,0 +1,188 @@
+# The control plane, as it runs on the VM.
+#
+# NETWORK SHAPE — THIS IS THE SECURITY BOUNDARY, SO READ IT FIRST
+# There are two networks. `edge` carries the tunnel and Caddy. `internal` is
+# marked `internal: true`, which means Docker gives it no route off the host at
+# all — Postgres, Redis, and the collector sit there and are literally
+# unroutable from outside, not merely unmapped.
+#
+# NOTHING publishes a port. Not the API, not Postgres, not Redis. The only path
+# in is cloudflared, which makes an OUTBOUND connection to Cloudflare and pulls
+# requests back down it. The VM's firewall can deny all inbound and this still
+# works, which is the property dossier §7.3 is asking for: no inbound ports open.
+#
+#   internet → Cloudflare (WAF, edge rate limiting — A13) → tunnel → Caddy → api
+#
+# Compose file for the VM. Local development uses compose.dev.yml, which adds
+# the port mappings this file deliberately omits.
+
+name: control-plane
+
+x-api-env: &api-env
+  NODE_ENV: production
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  API_PORT: 8080
+  DATABASE_URL: postgres://demo_app:${APP_DB_PASSWORD:?APP_DB_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-control_plane}
+  DATABASE_ADMIN_URL: postgres://${POSTGRES_USER:-cpadmin}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-control_plane}
+  APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+  REDIS_URL: redis://redis:6379
+  IP_HASH_PEPPER: ${IP_HASH_PEPPER:?IP_HASH_PEPPER is required}
+  ADMIN_TOKEN: ${ADMIN_TOKEN:?ADMIN_TOKEN is required}
+  TENANT_TTL_SECONDS: ${TENANT_TTL_SECONDS:-1800}
+  PURGE_INTERVAL_MS: ${PURGE_INTERVAL_MS:-15000}
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+  OTEL_ENABLED: ${OTEL_ENABLED:-true}
+  APP_VERSION: ${APP_VERSION:-0.0.0-dev}
+
+services:
+  postgres:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    networks: [internal]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cpadmin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-control_plane}
+      # scram-sha-256 rather than the md5 default.
+      POSTGRES_INITDB_ARGS: '--auth-host=scram-sha-256 --auth-local=scram-sha-256'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-cpadmin} -d ${POSTGRES_DB:-control_plane}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  redis:
+    image: redis:7-bookworm
+    restart: unless-stopped
+    networks: [internal]
+    # No persistence. Everything in Redis here is derivable or disposable —
+    # rate-limit counters, idempotency keys, presence. Postgres is the system of
+    # record; a Redis that survived restarts would only give stale state
+    # somewhere to hide.
+    command:
+      [
+        'redis-server',
+        '--save',
+        '',
+        '--appendonly',
+        'no',
+        '--maxmemory',
+        '256mb',
+        '--maxmemory-policy',
+        'allkeys-lru',
+      ]
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Runs migrations to completion, then exits. The API and worker wait on it
+  # having succeeded, so a release with a bad migration never starts serving.
+  migrate:
+    image: ${API_IMAGE:-control-plane-api:local}
+    networks: [internal]
+    environment: *api-env
+    command: ['node', 'dist/db/migrate.js']
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
+  api:
+    image: ${API_IMAGE:-control-plane-api:local}
+    restart: unless-stopped
+    # Internal only. Caddy bridges both networks and reaches the API over
+    # `internal`, so the API has no reason to sit on `edge` — and a service that
+    # has no reason to be on a routable network should not be on one.
+    networks: [internal]
+    environment: *api-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    # Bounded so one runaway container cannot take the VM — and with it the
+    # static surface's origin — down with it.
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    security_opt: ['no-new-privileges:true']
+    read_only: true
+    tmpfs: ['/tmp']
+
+  worker:
+    image: ${API_IMAGE:-control-plane-api:local}
+    restart: unless-stopped
+    networks: [internal]
+    environment: *api-env
+    command: ['node', '--import', './dist/telemetry/register.js', 'dist/worker/index.js']
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    security_opt: ['no-new-privileges:true']
+    read_only: true
+    tmpfs: ['/tmp']
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.140.0
+    restart: unless-stopped
+    networks: [internal]
+    command: ['--config=/etc/otel/config.yaml']
+    volumes:
+      - ./otel-collector.yaml:/etc/otel/config.yaml:ro
+    security_opt: ['no-new-privileges:true']
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    networks: [internal, edge]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [api]
+    security_opt: ['no-new-privileges:true']
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    networks: [edge]
+    # Outbound only. This is what removes the need for any inbound port.
+    command:
+      [
+        'tunnel',
+        '--no-autoupdate',
+        'run',
+        '--token',
+        '${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN is required}',
+      ]
+    depends_on: [caddy]
+    security_opt: ['no-new-privileges:true']
+
+networks:
+  edge:
+  internal:
+    # No route off the host. Postgres and Redis cannot be reached from the
+    # internet even if a port mapping were added by mistake somewhere else.
+    internal: true
+
+volumes:
+  pgdata:
+  caddy-data:
+  caddy-config:

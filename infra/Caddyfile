@@ -1,0 +1,60 @@
+# Caddy sits between the tunnel and the API.
+#
+# NO TLS HERE, AND THAT IS CORRECT. Cloudflare terminates TLS at the edge and
+# cloudflared carries the request to this host over its own authenticated
+# outbound tunnel. There is no port on this machine for a browser to reach, so
+# there is no certificate for Caddy to obtain and no ACME challenge that could
+# succeed. Caddy's job here is routing, header hygiene, and keeping /internal
+# unreachable — not encryption. Turning on automatic HTTPS would fail on every
+# renewal attempt for a listener nobody can reach.
+
+{
+	admin off
+	auto_https off
+	servers {
+		# The client address arrives from cloudflared. Without this, every
+		# rate-limit bucket keys off the tunnel and the limiter protects nothing.
+		trusted_proxies static private_ranges
+	}
+}
+
+:80 {
+	log {
+		output stdout
+		format json
+	}
+
+	# The administrative purge trigger is not reachable from the internet. It is
+	# a debugging aid, it is guarded by a token, and it is still refused here —
+	# the token is the second lock, not the first.
+	@internal path /internal/*
+	respond @internal 404
+
+	# Security response headers. The static surface is missing these too and it
+	# is logged as a P8 defect there; there was no reason to ship the same gap
+	# twice.
+	header {
+		-Server
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		# A JSON API is never framed and never a document root.
+		X-Frame-Options DENY
+		Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		# HSTS is set at the Cloudflare edge, which is where TLS actually
+		# terminates. Setting it here would be advisory at best and misleading
+		# at worst.
+	}
+
+	handle {
+		reverse_proxy api:8080 {
+			health_uri /health
+			health_interval 10s
+			health_timeout 3s
+
+			# When the API is unreachable Caddy must return a real 5xx rather
+			# than a body that could be mistaken for a healthy response.
+			# Principle 12: degraded says so.
+			fail_duration 10s
+		}
+	}
+}

@@ -10,9 +10,14 @@ dist/
 # Logs
 npm-debug.log*
 
-# Environment
+# Environment. infra/.env holds the VM's real secrets and is written by the
+# deploy workflow at release time; infra/.env.example is the committed template.
 .env
 .env.*
+!.env.example
+!infra/.env.example
+infra/.previous-image
+infra/.current-image
 
 # OS noise
 .DS_Store

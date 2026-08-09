@@ -1,0 +1,53 @@
+# Local development and the integration test suite.
+#
+# STANDALONE, not an override of compose.yml, and deliberately so. The
+# production file's whole point is that it publishes no ports and routes
+# everything through a tunnel; this file has to publish ports so tests can
+# reach Postgres and the API from the host. Expressing that as an override
+# would mean the production file's security posture could be silently undone by
+# a merge, and the two would read as one thing that behaves as two.
+#
+# What must not drift between them is the IMAGE and the MIGRATIONS, and neither
+# lives here — both come from services/api. This file only decides who can
+# reach what.
+#
+#   docker compose -f infra/compose.dev.yml up -d
+
+name: control-plane-dev
+
+services:
+  postgres:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_USER: cpadmin
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: control_plane
+    ports:
+      # Bound to loopback, not 0.0.0.0 — a dev database should not be on the
+      # LAN because someone was on a coffee-shop network.
+      - '127.0.0.1:55432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U cpadmin -d control_plane']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-bookworm
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
+    ports:
+      - '127.0.0.1:56379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.140.0
+    command: ['--config=/etc/otel/config.yaml']
+    volumes:
+      - ./otel-collector.yaml:/etc/otel/config.yaml:ro
+    ports:
+      - '127.0.0.1:54318:4318'
+      - '127.0.0.1:53133:13133'
