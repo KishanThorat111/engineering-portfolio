@@ -22,3 +22,6 @@ infra/.current-image
 # OS noise
 .DS_Store
 Thumbs.db
+
+# Test output, captured every run so an intermittent failure is diagnosable.
+services/api/test-output.log

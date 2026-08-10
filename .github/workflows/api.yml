@@ -90,6 +90,19 @@ jobs:
       - name: Control-plane tests (real Postgres, real RLS)
         run: npm test --workspace @portfolio/api
 
+      # An intermittent failure is only worth anything if it can be read after
+      # the fact. One P2 run failed four cases and its output was gone by the
+      # time anyone looked; the runner now keeps every run's full output and
+      # this uploads it whenever the job fails.
+      - name: Keep the test output when something failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: control-plane-test-output-${{ github.run_id }}-${{ github.run_attempt }}
+          path: services/api/test-output.log
+          retention-days: 30
+          if-no-files-found: warn
+
       # The suite asserts RLS is enabled and forced, but a suite can only assert
       # what it thinks to check. This asks the database directly, in CI, so a
       # policy that silently stopped applying fails here even if every test
