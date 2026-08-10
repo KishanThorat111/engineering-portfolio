@@ -100,6 +100,7 @@ export const recordRoutes: FastifyPluginAsync = async (app) => {
         resourceId: recordId,
         correlationId: request.correlationId,
         ip: request.ip,
+        durationMs: Math.round(performance.now() - request.startedAt),
         detail: {
           reason: 'cross-tenant read refused',
           orgScopeHeld: true,
@@ -139,6 +140,7 @@ export const recordRoutes: FastifyPluginAsync = async (app) => {
           resourceType: 'demo_record',
           correlationId: request.correlationId,
           ip: request.ip,
+          durationMs: Math.round(performance.now() - request.startedAt),
           detail: { reason: 'per-tenant record cap reached', cap: env.TENANT_MAX_RECORDS },
         });
         return { kind: 'capped' as const };
@@ -160,6 +162,7 @@ export const recordRoutes: FastifyPluginAsync = async (app) => {
         resourceId: record.id,
         correlationId: request.correlationId,
         ip: request.ip,
+        durationMs: Math.round(performance.now() - request.startedAt),
       });
 
       return { kind: 'created' as const, record };

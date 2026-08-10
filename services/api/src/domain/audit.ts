@@ -29,6 +29,14 @@ export type AuditInput = {
   resourceId?: string | undefined;
   ip?: string | undefined;
   detail?: Record<string, unknown> | undefined;
+  /**
+   * Real elapsed milliseconds from the start of the request to this write.
+   *
+   * Motion is measurement (§3.6): the render draws packet speed from this, so
+   * omit it rather than estimate it. Undefined becomes NULL, and the renderer
+   * is required to treat NULL as "unmeasured" rather than "instant".
+   */
+  durationMs?: number | undefined;
 };
 
 /**
@@ -53,8 +61,8 @@ export async function writeAudit(tx: Tx, input: AuditInput): Promise<string> {
   const { rows } = await tx.query<{ id: string }>(
     `INSERT INTO audit_event
        (tenant_id, action, outcome, actor, resource_type, resource_id,
-        correlation_id, trace_id, span_id, ip_hash, detail)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        correlation_id, trace_id, span_id, ip_hash, detail, duration_ms)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      RETURNING id`,
     [
       input.orgId,
@@ -68,6 +76,7 @@ export async function writeAudit(tx: Tx, input: AuditInput): Promise<string> {
       spanId,
       hashIp(input.ip),
       JSON.stringify(input.detail ?? {}),
+      input.durationMs ?? null,
     ],
   );
 
@@ -87,13 +96,14 @@ export type AuditRow = {
   correlation_id: string;
   trace_id: string | null;
   span_id: string | null;
+  duration_ms: number | null;
   detail: Record<string, unknown>;
 };
 
 export async function listAudit(tx: Tx, orgId: string, limit: number): Promise<AuditRow[]> {
   const { rows } = await tx.query<AuditRow>(
     `SELECT id, occurred_at, action, outcome, actor, resource_type, resource_id,
-            correlation_id, trace_id, span_id, detail
+            correlation_id, trace_id, span_id, duration_ms, detail
        FROM audit_event
       WHERE tenant_id = $1
       ORDER BY occurred_at DESC, id DESC

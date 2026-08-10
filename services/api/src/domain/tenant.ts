@@ -88,6 +88,7 @@ export async function provisionTenant(opts: {
   correlationId: string;
   ip?: string | undefined;
   ttlSeconds?: number | undefined;
+  durationMs?: number | undefined;
 }): Promise<ProvisionResult> {
   const id = randomUUID();
   const publicRef = newPublicRef();
@@ -135,6 +136,7 @@ export async function provisionTenant(opts: {
       resourceId: id,
       correlationId: opts.correlationId,
       ip: opts.ip,
+      durationMs: opts.durationMs,
       detail: { seededRecords: count, ttlSeconds: ttl },
     });
 

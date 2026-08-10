@@ -106,6 +106,18 @@ const schema = z.object({
   /** The rate-limit station's own tight bucket, separate from the global one. */
   RATE_LIMIT_STATION_PER_MINUTE: z.coerce.number().int().positive().default(10),
 
+  /* --- P3, the live spine ---------------------------------------------- */
+
+  /*
+   * Bounded because every visitor to a public demo can open a socket and this
+   * is one VM. The ceilings are real, and when one is reached the gateway says
+   * so rather than accepting a connection it cannot serve.
+   */
+  LIVE_MAX_CONNECTIONS: z.coerce.number().int().positive().max(5_000).default(200),
+  LIVE_MAX_CONNECTIONS_PER_ADDRESS: z.coerce.number().int().positive().max(50).default(4),
+  LIVE_HEARTBEAT_MS: z.coerce.number().int().positive().default(20_000),
+  LIVE_PRESENCE_INTERVAL_MS: z.coerce.number().int().positive().default(10_000),
+
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().optional(),
   OTEL_SERVICE_NAME: z.string().default('control-plane-api'),
   OTEL_ENABLED: z

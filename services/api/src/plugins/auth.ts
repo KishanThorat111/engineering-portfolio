@@ -32,6 +32,8 @@ declare module 'fastify' {
     /** Set only by `requireTenant`. Never populated from client input. */
     tenant?: TenantIdentity;
     correlationId: string;
+    /** performance.now() at the earliest request hook. See server.ts. */
+    startedAt: number;
   }
 }
 

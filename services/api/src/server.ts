@@ -23,6 +23,7 @@ import { demoRoutes } from './routes/demos.js';
 import { demonstrationRoutes } from './routes/demonstrations.js';
 import { receiptRoutes } from './routes/receipt.js';
 import { normaliseCorrelationId } from './telemetry/correlation.js';
+import { registerGateway } from './live/gateway.js';
 
 export async function buildServer(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -52,6 +53,10 @@ export async function buildServer(): Promise<FastifyInstance> {
    */
   app.addHook('onRequest', async (request, reply) => {
     request.correlationId = normaliseCorrelationId(request.headers['x-correlation-id']);
+    // Motion is measurement. Captured at the earliest possible hook so the
+    // duration an audit row carries is a real elapsed time, not a fragment of
+    // one measured from wherever the handler happened to start.
+    request.startedAt = performance.now();
     void reply.header('x-correlation-id', request.correlationId);
   });
 
@@ -162,6 +167,9 @@ export async function buildServer(): Promise<FastifyInstance> {
   await app.register(demonstrationRoutes);
   await app.register(demoRoutes);
   await app.register(receiptRoutes);
+
+  // P3 — the live spine.
+  await registerGateway(app);
 
   return app;
 }

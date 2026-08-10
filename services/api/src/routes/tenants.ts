@@ -51,6 +51,7 @@ export const tenantRoutes: FastifyPluginAsync = async (app) => {
         label: parsed.data.label ?? 'demo tenant',
         correlationId: request.correlationId,
         ip: request.ip,
+        durationMs: Math.round(performance.now() - request.startedAt),
       });
 
       /*

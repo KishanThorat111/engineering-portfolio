@@ -121,6 +121,7 @@ export const demoRoutes: FastifyPluginAsync = async (app) => {
           actor: `tenant:${identity.publicRef}`,
           correlationId: request.correlationId,
           ip: request.ip,
+          durationMs: Math.round(performance.now() - request.startedAt),
           detail: { reason: 'HMAC signature verification failed' },
         }),
       );
@@ -383,6 +384,7 @@ export const demoRoutes: FastifyPluginAsync = async (app) => {
           actor: `tenant:${identity.publicRef}`,
           correlationId: request.correlationId,
           ip: request.ip,
+          durationMs: Math.round(performance.now() - request.startedAt),
         }),
       );
 
@@ -425,7 +427,7 @@ type Identity = { orgId: string; publicRef: string };
 
 async function runActivation(
   app: Parameters<FastifyPluginAsync>[0],
-  request: { correlationId: string; ip: string },
+  request: { correlationId: string; ip: string; startedAt: number },
   identity: Identity,
   input: {
     idempotencyKey: string;
@@ -456,6 +458,7 @@ async function runActivation(
           resourceId: activation.activation.id,
           correlationId: request.correlationId,
           ip: request.ip,
+          durationMs: Math.round(performance.now() - request.startedAt),
           detail: {
             path: via,
             idempotencyKey: input.idempotencyKey,

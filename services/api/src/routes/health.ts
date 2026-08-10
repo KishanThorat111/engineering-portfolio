@@ -57,7 +57,21 @@ export const healthRoutes: FastifyPluginAsync = async (app) => {
       timed(redisHealthy),
     ]);
 
-    const ready = postgres.ok && redis.ok;
+    /*
+     * The live spine counts. §6.3 has the experience fall back to recorded
+     * traces when the live plane is down, and a gateway whose PostgreSQL
+     * listener is disconnected is not delivering events — reporting "ready"
+     * while nothing fans out would be exactly the silent-degradation failure
+     * principle 12 forbids.
+     */
+    const spine = app.hasDecorator('liveSpine')
+      ? {
+          listenerConnected: app.liveSpine.listenerConnected(),
+          connections: app.liveSpine.connectionCount(),
+        }
+      : { listenerConnected: false, connections: 0 };
+
+    const ready = postgres.ok && redis.ok && spine.listenerConnected;
 
     // 503 when not ready. Cloudflare, Caddy, Compose healthchecks, and the
     // future experience all read the status code, not the body.
@@ -66,7 +80,19 @@ export const healthRoutes: FastifyPluginAsync = async (app) => {
       service: 'control-plane-api',
       version: process.env['APP_VERSION'] ?? '0.0.0-dev',
       time: new Date().toISOString(),
-      dependencies: { postgres, redis },
+      dependencies: {
+        postgres,
+        redis,
+        liveSpine: {
+          ok: spine.listenerConnected,
+          latencyMs: null,
+          error: spine.listenerConnected ? null : 'listener disconnected',
+        },
+      },
+      live: {
+        listenerConnected: spine.listenerConnected,
+        connections: spine.connections,
+      },
       // Stated explicitly so a consumer never has to infer it. §6.3 and A5:
       // when this is false the experience plays recorded real traces and says
       // it is doing so.
