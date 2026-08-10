@@ -1383,3 +1383,142 @@ other's events in real time. Note the binding constraint from the risk register:
 must be non-identifying by construction, not by policy** — and the audit and span data P3
 fans out already exist, so P3 transports what P2 produces rather than inventing a second
 event source.
+
+---
+
+## P3 — Live spine (Dossier §13) · 10 August 2026
+
+### Shipped
+
+- **`GET /v1/live`** — a WebSocket gateway carrying what the control plane is actually doing.
+- **Migration 004** — an `AFTER INSERT` trigger on `audit_event` that calls `pg_notify`, plus
+  `duration_ms` on the audit row.
+- **`src/live/`** — the Postgres listener, the presence model, per-connection pseudonyms, the
+  wire envelope P4 renders against, and the gateway.
+- **Failure-output capture** — `scripts/run-tests.mjs` retains every run's full output, and CI
+  uploads it as an artifact when the job fails.
+- The health contract now includes the spine: a disconnected listener makes `/health/ready`
+  return 503 with `livePlaneAvailable: false`.
+
+### The database is the event source, and that was the design decision
+
+P3 transports what P2 already produces. The obvious implementation — publish from the
+application after writing the audit row — is wrong twice. It can announce a write that then
+rolls back, which is the P1 bug in reverse. And it creates a **second emitter**: the row and
+the event become two statements that can disagree, which is exactly the divergence rule 10
+exists to prevent.
+
+So the trigger is on the table. PostgreSQL delivers `NOTIFY` **only on commit**, so an event
+cannot exist without a committed audit row and a committed row cannot fail to produce an
+event — by mechanism, not by discipline. It also removes the need for a broker on this path,
+since every replica listening to Postgres is notified directly.
+
+**Redis therefore carries presence, not fanout.** `KEY.presence` is used as reserved.
+`KEY.events` is not, and that is deliberate rather than an oversight: routing audit events
+through Redis pub/sub would reintroduce the possibility of an event with no row behind it.
+The key stays reserved for genuinely non-audit signals a later phase may need.
+
+### Presence: what is stored, in full
+
+A Redis sorted set of **random 128-bit per-connection ids** scored by last heartbeat, and a
+short-TTL key per active tenant. That is the entire dataset. No address, no user agent, no
+cookie, no session id outliving the socket, no join time, no link between the ephemeral id
+and a tenant. The id is generated in memory on connect and is unrecoverable once the socket
+closes. There is nothing to correlate because the correlating column does not exist.
+
+A ZSET rather than a counter, because a counter needs a decrement on disconnect and a
+decrement that never runs — killed process, dropped TCP — leaks the count upward forever. The
+world would then report people who are not there, which is faked liveness by accident, and
+principle 12 forbids that as firmly as faking it on purpose. A heartbeat-scored set can only
+ever be too low for a few seconds.
+
+**Other tenants appear under a per-connection pseudonym.** A random salt, held in memory for
+the life of one socket, hashes tenant ids into `vol_…` labels. Stable within a session so a
+volume stays itself; unrelated across sessions so nobody can be tracked. Proved: two watchers
+saw the same underlying event under `vol_4pSUURKBeins` and `vol_9UrFalwbkQvK`.
+
+### Verification record
+
+- **121 tests, all passing** (18 new). The live suite runs against a **real listening port and
+  real WebSockets** — `inject()` cannot upgrade a connection, and two in-process fakes sharing
+  a bus would prove nothing about the transport.
+- **Definition of done, proved through Caddy** against the production-shaped stack: three
+  independent clients, one acting over HTTP, the others watching. `POST /v1/records` → 201,
+  and both watchers received the event **41ms later**, same underlying event id. A 403
+  break-out arrived live as `record.read / denied`. An unauthenticated watcher saw the world
+  too (§2.3).
+- **Non-identifying, proved not asserted**: the actor's real id never appeared on either
+  socket; the two watchers saw different pseudonyms for it; a stranger's `correlationId` and
+  `traceId` came through as `null`; and the presence message has exactly five fields — `at`,
+  `connections`, `measured`, `type`, `windowSeconds` — asserted exhaustively so a future
+  addition of anything identifying fails the test.
+- **Motion is measurement, proved**: `durationMs=6` from a real measurement, commit-to-fanout
+  of **7ms** computed from two real timestamps, and the purge event — which no request timed
+  — carrying `durationMs: null` rather than 0. A test asserts that distinction specifically.
+- **A rolled-back audit write emits no event.** Asserted directly by inserting inside a
+  transaction and rolling it back.
+- **Every delivered event has a matching audit row by id.** Asserted across a session.
+- 269 spans reaching the collector, 0 rejected. P1 and P2 unregressed; the static surface
+  unregressed; `npm audit` 0 at both scopes; `format:check` clean.
+
+### The ruling task: failure output is now kept
+
+`npm test` runs through `scripts/run-tests.mjs`, which tees stdout and stderr to
+`test-output.log` with a header recording when the run happened and against which database.
+CI uploads it on failure with a 30-day retention.
+
+**Proved by breaking a test**: the log retained the full assertion diff, the file and line,
+and the stack. Reverted. The runner deliberately does **not** retry — a retry that goes green
+converts an intermittent defect into a tick, which is the opposite of the point.
+
+The P2 flake has not recurred in any run since. It stays open rather than closed.
+
+### The defect this phase found
+
+**Twelve live tests failed on the first run, and the product was right.** Tests one to four
+each opened a socket and left it open; the per-address ceiling is four; every connection from
+test five onward was correctly rejected with `live.too_many_from_origin`. The cap was doing
+precisely its job. The fix belonged in the tests — sockets now close after each case, which
+is also what a real browser does — and the cap kept its real default so the ceiling test
+still exercises it.
+
+### Engineering decisions — later phases inherit these
+
+1. **`src/live/envelope.ts` is the wire contract.** P4 renders against those types. A timing
+   that was not measured is `null`, and the renderer **must** treat null as unmeasured rather
+   than instant — drawing a fast packet for an untimed request is the decoration §1.3 rules
+   out.
+2. **Nothing is buffered or replayed.** A gap in the socket is a gap; events missed during a
+   disconnect remain in `audit_event` and a client that wants them reads `/v1/audit`. P5's
+   degraded mode reads `livePlaneAvailable`, it does not get a silent replay.
+3. **The pseudonym salt never leaves the process and is never persisted.** Any future feature
+   that needs a stable cross-session identity for another tenant is a product decision, not
+   an implementation one, because it undoes the anti-correlation property.
+4. **Subscriptions are `self` and `world` only.** `self` requires a credential on the socket.
+5. **Browsers cannot set headers on a WebSocket handshake**, so the key may arrive as a query
+   parameter and therefore may reach an access log. Accepted knowingly: the keys are
+   short-lived, single-tenant, and scoped to a plane with nothing real behind it. Recorded in
+   `gateway.ts` next to the code rather than only here.
+
+### An observation the owner should see
+
+The presence count is reported **honestly**, including when it is 1. The constraint asked that
+a visitor not be able to infer they are alone; principle 12 forbids inflating the number, and
+the principle wins. What keeps a quiet world from looking dead is that the event stream is not
+only other humans — scheduled purges and expiring tenants are genuinely happening and are
+genuinely broadcast. When the demo is quiet the visitor will correctly perceive quiet, and
+`measured: false` distinguishes "nobody is here" from "we cannot tell". If the product wants
+something stronger than that, it is a product decision and I have not taken it.
+
+### OWNER-INPUT — open items
+
+Unchanged. Static-surface markers at thirteen; P1's deployment credentials deferred by
+decision; P2's model provider and spend ceiling deferred by ruling. P3 adds none.
+
+### Next session
+
+P4 — Render layer. R3F scene, lattice, volumes, packets, camera, shaders, **against
+fixtures**, at 60fps on a mid-range device at tier 2. Binding: A5 makes those fixtures the
+degraded-mode payload rather than throwaway scaffolding, A4 requires visitor-facing copy to
+reach the build as data, and A8 keys quality tiers on sustained frame time rather than an
+initial probe. The wire contract to render against is `src/live/envelope.ts`.

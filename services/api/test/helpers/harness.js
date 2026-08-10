@@ -31,6 +31,23 @@ export async function startApi() {
   return app;
 }
 
+/**
+ * A server bound to a real port.
+ *
+ * `inject()` cannot perform a WebSocket upgrade, so the live-spine tests need a
+ * listening socket. Port 0 lets the OS choose, so parallel runs cannot collide.
+ */
+export async function startListeningApi() {
+  const app = await startApi();
+  await app.listen({ host: '127.0.0.1', port: 0 });
+  const address = app.server.address();
+  return {
+    app,
+    baseUrl: `http://127.0.0.1:${address.port}`,
+    wsUrl: `ws://127.0.0.1:${address.port}`,
+  };
+}
+
 export async function stopApi(app) {
   torndown = true;
   if (app) await app.close();

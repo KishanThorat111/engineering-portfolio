@@ -86,13 +86,54 @@ carrying the session's audit log, the predicate that blocked you, and the
 reproduction commands. It is stateless, so it keeps rendering after the tenant
 is purged. Email is opt-in behind a confirmation and is never the default path.
 
+## The live spine (P3)
+
+`GET /v1/live` is a WebSocket. It carries what the control plane is actually
+doing, as it happens.
+
+**The database is the event source.** An `AFTER INSERT` trigger on `audit_event`
+calls `pg_notify`, and PostgreSQL delivers notifications only on commit — so an
+event cannot exist without a committed audit row, and a committed row cannot
+fail to produce an event. Not by discipline, by mechanism. Publishing from the
+application would have created a second emitter that could disagree with the
+first, which is what rule 10 exists to prevent, and could announce a write that
+then rolled back.
+
+**Presence is non-identifying by construction.** The entire dataset is a Redis
+sorted set of random per-connection ids scored by heartbeat, plus a short-TTL
+key per active tenant. No address, no user agent, no cookie, no session that
+outlives the socket, no link between the ephemeral id and a tenant. Other
+tenants appear under a pseudonym derived from a random salt held in memory for
+the life of that one connection: stable within a session so a volume stays
+itself, and unrelated across sessions so nobody can be tracked. **Two watchers
+see the same tenant under different names.**
+
+**Motion is measurement.** Every event carries `durationMs` — a real measured
+server duration — or `null` when nothing measured it. Never zero as a stand-in.
+`occurredAt` is the database's commit-time value and `publishedAt` is when the
+gateway received the notification, so transport latency is a subtraction of two
+real numbers rather than an estimate.
+
+**Bounded, and honest when it is not working.** Connection ceilings overall and
+per address; an idle socket costs a heartbeat. A disconnected listener makes
+`/health/ready` report `livePlaneAvailable: false` and return 503 — a gap is a
+gap, and nothing is buffered and replayed as if it were live.
+
+| Message                     | Direction | Meaning                                 |
+| --------------------------- | --------- | --------------------------------------- |
+| `hello`                     | → client  | Protocol, identity, limits, disclosure  |
+| `subscribe` / `unsubscribe` | → server  | Scope `self` or `world`                 |
+| `event`                     | → client  | One committed audit row                 |
+| `presence`                  | → client  | Honest live count, or `measured: false` |
+| `ping`                      | → server  | Heartbeat                               |
+
 ## Running it locally
 
 ```sh
 npm run api:up        # Postgres, Redis, and an OTel collector on loopback
 npm run api:build
 npm run api:migrate
-npm run api:test      # 103 tests against a real database
+npm run api:test      # 121 tests against a real database and a real socket
 npm run api:down
 ```
 

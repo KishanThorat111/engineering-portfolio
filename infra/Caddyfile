@@ -45,6 +45,10 @@
 		# at worst.
 	}
 
+	# WebSocket upgrades pass through reverse_proxy unchanged in Caddy 2 — the
+	# Connection and Upgrade headers are hop-by-hop and handled natively, so no
+	# special matcher is needed. Recorded because its absence looks like an
+	# omission: /v1/live is a WebSocket endpoint and it works through this block.
 	handle {
 		reverse_proxy api:8080 {
 			health_uri /health
