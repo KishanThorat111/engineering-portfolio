@@ -1228,3 +1228,158 @@ Static-surface markers unchanged at **thirteen**. P1 adds five, all deployment c
 P2 — Proof engine. Five demonstrations as real endpoints emitting real spans and audit
 records: the break-out plus the four stations. Read decisions 1–6 above first, and note that
 the break-out's endpoint already exists and already denies — P2 makes it inspectable.
+
+---
+
+## P2 — Proof engine (Dossier §13) · 10 August 2026
+
+### A note on deployment timing
+
+The planning authority changed the deployment *timing* and nothing else: the complete
+P1→P5 system is built and integrated locally first, and the VM deployment happens once the
+implementation is finished. The architecture, the phase order, the demonstrations, and the
+real-backend requirement are unchanged. The production-shaped Docker Compose topology remains
+the integration environment, and P2 was exercised end to end against it.
+
+### Shipped
+
+Five demonstrations as real endpoints on the real P1 control plane — the four stations plus
+the break-out, per the ruling. Each writes a real audit row and emits a real OpenTelemetry
+span, and each is reproducible by curl.
+
+- **`/v1/demonstrations`** — the unauthenticated catalogue: what each proves, the curl that
+  reproduces it, the mechanism behind it. Stable ids; this is the contract P5 renders against.
+- **Isolation** — `/v1/demos/isolation/inspect/:id` peels the membrane open (§2.5): the live
+  policy predicate read from `pg_policies`, a real `EXPLAIN` plan, both layer results, the
+  branch that returned 403, and the honest disclosure about production parity.
+- **Payments** — `/v1/demos/payments/webhook` and `/verify`, HMAC-verified over the raw body,
+  converging on one idempotent activation; `/keys/:key` opens the key that decided it.
+- **Fraud** — `/v1/demos/fraud/evidence`, SHA-256 with a per-tenant unique constraint.
+- **AI cost** — `/v1/demos/ai/ask`, a fixed intent table answering from SQL at zero tokens,
+  escalating otherwise; `/intents` publishes the table.
+- **Limits** — `/v1/demos/limits/hammer` on its own tight bucket.
+- **The take-away (A14)** — `POST /v1/receipt` issues a stateless signed permalink; `GET
+  /r/:token` renders the session, the predicate that blocked you, and the reproduction
+  commands, and keeps working after the tenant is purged.
+- Migration `003`: `payment_activation` and `fraud_submission`, both under the same two
+  isolation layers, both destroyed by the purge.
+
+### Verification record
+
+- **103 tests, all passing** (51 new), against a real PostgreSQL with the real migrations.
+  One file per demonstration, alongside the P1 suites.
+- **Proved by breaking the mechanisms that do the work**, both reverted:
+  dropping `payment_activation_key_unique` → 6 payments cases fail, including the concurrent
+  one; dropping `fraud_submission_hash_unique` → 7 fraud cases fail. In both cases the
+  demonstration collapses without the constraint, which is the point: the database decides,
+  not the application.
+- **The five-demonstration CI gate was proved by deleting a demonstration** from the built
+  catalogue — the check reported `isolation,payments,fraud,ai-cost` and exited non-zero.
+  Reverted.
+- **All five proved end to end by curl** against the production-shaped stack (no published
+  ports, reached through Caddy the way the tunnel does):
+  - isolation → `403`, both layers refused, `qual` = `(tenant_id = app_current_org())`, and
+    the plan's `One-Time Filter` carrying the policy expanded by the planner.
+  - payments → four simultaneous signed webhooks returned exactly one `201 activated` and
+    three `200 replayed`, `replay_count` 3; a forged signature returned `401`.
+  - fraud → `201` then `409 rejected-duplicate` on the same bytes.
+  - ai-cost → `data-plane`, `tokensCharged: 0`, answer computed from the tenant's real rows;
+    then `model-plane`, `tokensCharged: 266`, budget decremented, provider absence disclosed.
+  - limits → ten `200`s then `429`s.
+  - receipt → rendered the session, the predicate, and the reproduction curl.
+- **109→more spans reaching the collector, 0 rejected**, including `demo.isolation.inspect`,
+  `demo.payments.activate`, `demo.fraud.submit`, `demo.ai.ask` with
+  `ai.route=model-plane ai.tokens_charged=266`.
+- **P1 is unregressed**: all 52 P1 tests still pass, plus a new one asserting the purge
+  destroys the two P2 tables. **The static surface is unregressed**: all its gates green.
+  `npm audit` 0 at production and full-tree scope; `format:check` clean.
+
+### The honesty decision at the AI station
+
+The model plane is a real HTTP call to a configured provider. No provider is configured
+locally, and the station **says so** — it does not synthesise a reply. The routing decision,
+the SQL, the token accounting, the span, and the audit record are real either way; the model's
+answer is the one thing absent and it is reported absent.
+
+This was the sharpest judgement call in P2. A stub that returned plausible prose would have
+made the station look finished and made every real number beside it suspect. Principle 12 is
+not suspended because a credential is missing.
+
+Two ceilings, not one. Per-tenant budgets stop one visitor exhausting the estate; a Redis
+day-keyed **estate-wide** ceiling stops the estate exhausting the owner's wallet, because
+every visitor to a public demo can spend real money here. When Redis is unavailable the
+global reservation **fails closed** — the opposite of the rate limiter's fail-open, and
+deliberately so: the failure with a bill attached is the one to refuse.
+
+### Defects found by running it
+
+1. **The rate limiter was keyed by IP, not by tenant.** `keyGenerator` read `request.tenant`,
+   but the limiter runs at `onRequest` and `requireTenant` runs in the handler — so the tenant
+   was always undefined and every authenticated request shared one bucket. Behind Cloudflare
+   that means one office exhausting everyone's budget: the exact failure keying by tenant was
+   meant to prevent. Now keyed by a hash of the bearer token, available at `onRequest` with no
+   database lookup.
+2. **Empty-string environment variables failed the boot.** Compose's `${VAR:-}` substitutes
+   an empty string, which Zod's `.optional()` reads as present-and-invalid — the API refused
+   to start with "MODEL_API_URL: Invalid URL" for a setting nobody had configured. Empty is
+   now treated as unset before parsing, which also makes a genuinely missing required value
+   report `Required` rather than a confusing format complaint.
+3. **A test file closed the shared pg pool between its own suites.** `stopApi` ends a module
+   singleton that cannot be revived, so the second `describe` 500'd on every request several
+   suites away from the cause. The harness now fails loudly with the reason instead.
+
+### Two corrections to my own assertions
+
+- I asserted the query plan would contain `app_current_org`. It does not — PostgreSQL expands
+  the function body, so the plan carries `current_setting('app.current_org'…)` as a
+  `One-Time Filter`. The real output is stronger evidence than the assertion I wrote, and the
+  test now checks for what the database actually emits.
+- The migration comment claimed a test asserted the P2 tables are purged. It did not, until I
+  wrote one. A comment describing a test that does not exist is worse than no comment.
+
+### An unresolved observation, recorded rather than smoothed over
+
+One suite run reported 4 failures. I could not reproduce it across four subsequent runs,
+including the identical command sequence, and I did not capture the failure output at the
+time. The Redis model-budget counter — the one piece of state that accumulates across runs —
+was at 3,171 of a 200,000 ceiling, so that is ruled out. The most likely cause is resource
+contention: both the dev stack and the production-shaped stack were running, and the pool's
+connection and statement timeouts are a deliberately tight 5s. **Production config was not
+loosened to quiet a test-environment symptom.** Flagged here so a future session that sees it
+again has the prior observation rather than discovering it fresh.
+
+### Engineering decisions — later phases inherit these
+
+1. **The catalogue's five ids are a contract.** `isolation`, `payments`, `fraud`, `ai-cost`,
+   `limits`. P5 renders against them and a CI gate fails if the set changes.
+2. **Denial paths commit their audit row, then throw.** The P1 rule, now applied in five more
+   places. Any new refusal must follow it.
+3. **The raw JSON body is retained** by a content-type parser so HMAC verification signs what
+   arrived. Re-serialising would break every genuine signature.
+4. **Every new tenant-owned table needs a line in the purge** and an assertion in
+   `tenant-lifecycle-purge.test.js`. Two exist; a third that is forgotten would outlive its
+   tenant.
+5. **The AI router never generates SQL.** Adding a question means adding a hand-written
+   parameterised statement to the intent table. There is no text-to-SQL path and there must
+   not be one.
+6. **The receipt is stateless and outlives the tenant.** P5's take-away UI reads `/r/:token`;
+   it must not assume the tenant still exists.
+
+### OWNER-INPUT — open items
+
+Static-surface markers unchanged at **thirteen**. P1's five deployment credentials remain
+open and are now deferred by decision rather than blocking. P2 adds two, neither blocking:
+
+1. **A model provider** (`MODEL_API_URL`, `MODEL_API_KEY`, `MODEL_NAME`) if the AI station
+   should return real model output. Without it the station is complete and honest about the
+   absence; with it, the escalation path returns a real answer.
+2. **`MODEL_DAILY_TOKEN_CEILING`** — currently 200,000/day estate-wide. This is a spending
+   decision, not an engineering one, and should be set deliberately before the demo is public.
+
+### Next session
+
+P3 — Live spine. WebSocket telemetry, presence, event fanout. Two browsers must see each
+other's events in real time. Note the binding constraint from the risk register: **presence
+must be non-identifying by construction, not by policy** — and the audit and span data P3
+fans out already exist, so P3 transports what P2 produces rather than inventing a second
+event source.

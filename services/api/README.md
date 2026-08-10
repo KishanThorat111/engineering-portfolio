@@ -62,13 +62,37 @@ exactly that.
 Caddy, guarded by a token, and calls the same sweep the scheduler calls. It is
 not what proves the lifecycle.
 
+## The five demonstrations (P2)
+
+`GET /v1/demonstrations` is the unauthenticated catalogue: what each one proves,
+the curl that reproduces it, and the mechanism behind it. Every one writes a
+real audit row and emits a real OpenTelemetry span.
+
+| #   | Demonstration            | Mechanism                                                                                                                                                                                                                                 |
+| --- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Isolation break-out**  | 403 on a cross-tenant read, then `/v1/demos/isolation/inspect/:id` returns the live policy predicate from `pg_policies` and a real `EXPLAIN` plan with the policy inlined as a One-Time Filter.                                           |
+| 2   | **Payments idempotency** | `INSERT ... ON CONFLICT DO NOTHING` on a unique constraint. Four simultaneous webhooks produce one activation and three counted replays. HMAC-SHA256 over the raw body, `timingSafeEqual`. Dual path: webhook and client-verify converge. |
+| 3   | **Duplicate photo**      | SHA-256 with a per-tenant unique constraint. The image is never stored.                                                                                                                                                                   |
+| 4   | **SQL-first AI routing** | A fixed intent table, each entry owning one hand-written parameterised statement. Matched → answered from SQL at zero tokens. Unmatched → escalates and decrements the budget. Exhaustion is a designed state, not an error.              |
+| 5   | **Rate limiting**        | Redis-backed, keyed per credential, behind Cloudflare's edge limiter.                                                                                                                                                                     |
+
+**The model plane is real but optional.** With `MODEL_API_URL`/`MODEL_API_KEY`
+set it makes a real call. Without them it says so — the routing decision, token
+accounting, span, and audit record are real either way, and the reply is
+reported absent rather than invented.
+
+**The take-away** (A14, §2.10): `POST /v1/receipt` issues a signed permalink
+carrying the session's audit log, the predicate that blocked you, and the
+reproduction commands. It is stateless, so it keeps rendering after the tenant
+is purged. Email is opt-in behind a confirmation and is never the default path.
+
 ## Running it locally
 
 ```sh
 npm run api:up        # Postgres, Redis, and an OTel collector on loopback
 npm run api:build
 npm run api:migrate
-npm run api:test      # 52 tests against a real database
+npm run api:test      # 103 tests against a real database
 npm run api:down
 ```
 
