@@ -253,6 +253,19 @@ export async function purgeTenant(tenantId: string, correlationId: string): Prom
     }
 
     const del = await tx.query(`DELETE FROM demo_record WHERE tenant_id = $1`, [tenantId]);
+    /*
+     * The P2 demonstration tables are tenant-owned and must die with the
+     * tenant. A new tenant-owned table that the purge does not know about would
+     * outlive its TTL — which is exactly the documented-but-never-executed
+     * retention failure this project publishes as a lesson, reintroduced by
+     * omission. tenant-lifecycle-purge.test.js asserts both are emptied.
+     */
+    const delPayments = await tx.query(`DELETE FROM payment_activation WHERE tenant_id = $1`, [
+      tenantId,
+    ]);
+    const delFraud = await tx.query(`DELETE FROM fraud_submission WHERE tenant_id = $1`, [
+      tenantId,
+    ]);
     const rev = await tx.query(
       `UPDATE tenant_credential SET revoked_at = now()
         WHERE tenant_id = $1 AND revoked_at IS NULL`,
@@ -274,6 +287,8 @@ export async function purgeTenant(tenantId: string, correlationId: string): Prom
       correlationId,
       detail: {
         deletedRecords: del.rowCount ?? 0,
+        deletedActivations: delPayments.rowCount ?? 0,
+        deletedSubmissions: delFraud.rowCount ?? 0,
         revokedCredentials: rev.rowCount ?? 0,
         note: 'Data destroyed on TTL by the scheduled worker. Audit history retained.',
       },

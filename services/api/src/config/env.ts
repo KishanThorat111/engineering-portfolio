@@ -57,6 +57,55 @@ const schema = z.object({
   /** Guards the administrative purge trigger, which is a debugging aid only. */
   ADMIN_TOKEN: z.string().min(24).optional(),
 
+  /* --- P2, the proof engine ------------------------------------------- */
+
+  /**
+   * HMAC secret for the payments demonstration's webhook signatures.
+   *
+   * Real verification with `timingSafeEqual`, matching the Menu platform's
+   * actual flow. A demonstration of payment security that skipped signature
+   * verification would be demonstrating the absence of it.
+   */
+  PAYMENT_WEBHOOK_SECRET: z.string().min(16).optional(),
+
+  /**
+   * Signs the session-receipt permalink (A14).
+   *
+   * Stateless: the token carries the tenant and an expiry and is verified by
+   * HMAC, so a receipt keeps rendering after the tenant's rows are gone —
+   * which is the point, since the audit history deliberately survives the purge.
+   */
+  RECEIPT_SIGNING_KEY: z.string().min(32).optional(),
+  RECEIPT_TTL_SECONDS: z.coerce.number().int().positive().default(604_800),
+
+  /** Bounds the fraud station's uploads. */
+  MAX_UPLOAD_BYTES: z.coerce.number().int().positive().max(2_097_152).default(524_288),
+
+  /**
+   * The model plane.
+   *
+   * Unset means no provider is configured, and the AI station says so rather
+   * than inventing an answer. The routing decision, the budget arithmetic, the
+   * span, and the audit record are real either way — what a missing provider
+   * removes is the model's reply, and principle 12 says we disclose that rather
+   * than fake it.
+   */
+  MODEL_API_URL: z.string().url().optional(),
+  MODEL_API_KEY: z.string().min(8).optional(),
+  MODEL_NAME: z.string().default('unconfigured'),
+  MODEL_TIMEOUT_MS: z.coerce.number().int().positive().default(8_000),
+
+  /**
+   * A11's global ceiling: the whole demo's model spend for one day, across
+   * every tenant. Per-tenant budgets stop one visitor exhausting the estate;
+   * this stops the estate exhausting the owner's wallet. Exhaustion is a
+   * designed, disclosed state at both levels.
+   */
+  MODEL_DAILY_TOKEN_CEILING: z.coerce.number().int().min(0).default(200_000),
+
+  /** The rate-limit station's own tight bucket, separate from the global one. */
+  RATE_LIMIT_STATION_PER_MINUTE: z.coerce.number().int().positive().default(10),
+
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().optional(),
   OTEL_SERVICE_NAME: z.string().default('control-plane-api'),
   OTEL_ENABLED: z
@@ -68,7 +117,23 @@ const schema = z.object({
 export type Env = z.infer<typeof schema>;
 
 function load(): Env {
-  const parsed = schema.safeParse(process.env);
+  /*
+   * An empty string means unset.
+   *
+   * Docker Compose's `${VAR:-}` idiom substitutes an empty string when the
+   * variable is absent, so an optional field arrives as "" rather than
+   * undefined — and `.optional()` reads that as present-and-invalid, failing
+   * the boot with "Invalid URL" for a setting nobody configured. Stripping
+   * empties first is what makes optional actually optional; it also makes a
+   * genuinely-missing required value report "Required" instead of a confusing
+   * length or format complaint.
+   */
+  const present: Record<string, string> = {};
+  for (const [key, value] of Object.entries(process.env)) {
+    if (typeof value === 'string' && value.trim() !== '') present[key] = value;
+  }
+
+  const parsed = schema.safeParse(present);
   if (!parsed.success) {
     const issues = parsed.error.issues
       .map((i) => `  ${i.path.join('.') || '(root)'}: ${i.message}`)
@@ -89,6 +154,11 @@ function load(): Env {
     const missing: string[] = [];
     if (!env.IP_HASH_PEPPER) missing.push('IP_HASH_PEPPER');
     if (!env.ADMIN_TOKEN) missing.push('ADMIN_TOKEN');
+    // Both demonstrations would be dishonest without their secret: an unsigned
+    // webhook proves nothing about signature verification, and an unsigned
+    // receipt permalink is a tenant-id-guessing game rather than a capability.
+    if (!env.PAYMENT_WEBHOOK_SECRET) missing.push('PAYMENT_WEBHOOK_SECRET');
+    if (!env.RECEIPT_SIGNING_KEY) missing.push('RECEIPT_SIGNING_KEY');
     if (missing.length > 0) {
       throw new Error(`Missing required production environment: ${missing.join(', ')}`);
     }

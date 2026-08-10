@@ -6,6 +6,7 @@
  * against a real database. Tests that mock the layer they are testing prove
  * only that the mock behaves as written.
  */
+import { createHash } from 'node:crypto';
 import Fastify, { type FastifyInstance } from 'fastify';
 import rateLimit from '@fastify/rate-limit';
 import sensible from '@fastify/sensible';
@@ -18,6 +19,9 @@ import { tenantRoutes } from './routes/tenants.js';
 import { recordRoutes } from './routes/records.js';
 import { auditRoutes } from './routes/audit.js';
 import { adminRoutes } from './routes/admin.js';
+import { demoRoutes } from './routes/demos.js';
+import { demonstrationRoutes } from './routes/demonstrations.js';
+import { receiptRoutes } from './routes/receipt.js';
 import { normaliseCorrelationId } from './telemetry/correlation.js';
 
 export async function buildServer(): Promise<FastifyInstance> {
@@ -49,6 +53,31 @@ export async function buildServer(): Promise<FastifyInstance> {
   app.addHook('onRequest', async (request, reply) => {
     request.correlationId = normaliseCorrelationId(request.headers['x-correlation-id']);
     void reply.header('x-correlation-id', request.correlationId);
+  });
+
+  /*
+   * Keep the raw JSON body alongside the parsed one.
+   *
+   * The payments webhook verifies an HMAC over the bytes that were actually
+   * sent. Re-serialising the parsed object would change key order and
+   * whitespace, so every genuine signature would fail — and so would every
+   * forged one, which looks like working security and is not. The signature has
+   * to be computed over what arrived.
+   */
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, (request, body, done) => {
+    const raw = typeof body === 'string' ? body : body.toString('utf8');
+    (request as { rawBody?: string }).rawBody = raw;
+    if (raw.length === 0) {
+      done(null, {});
+      return;
+    }
+    try {
+      done(null, JSON.parse(raw) as unknown);
+    } catch {
+      // Shaped like Fastify's own parse failure so the error handler treats
+      // it as a 400 rather than an unhandled 500.
+      done(Object.assign(new Error('invalid json'), { statusCode: 400 }), undefined);
+    }
   });
 
   await app.register(sensible);
@@ -93,9 +122,27 @@ export async function buildServer(): Promise<FastifyInstance> {
     // Namespaced so the limiter cannot collide with the idempotency and
     // presence keyspaces P2 and P3 will add.
     nameSpace: 'rl:',
-    // Prefer the tenant when there is one: a shared corporate NAT should not
-    // let one visitor exhaust everyone else's budget.
-    keyGenerator: (request) => request.tenant?.orgId ?? request.ip,
+    /*
+     * Key by credential when there is one, address otherwise.
+     *
+     * `request.tenant` is NOT usable here, and that was a real bug: the limiter
+     * runs at onRequest and `requireTenant` runs in the handler, so the tenant
+     * is always undefined at this point and every authenticated request was
+     * silently keyed by address. Behind Cloudflare that means one office
+     * exhausting everyone else's budget, which is the exact failure keying by
+     * tenant was meant to prevent.
+     *
+     * Hashing the bearer token gives a stable per-credential key at onRequest
+     * time with no database lookup — one key per tenant, in practice — and the
+     * hash keeps the credential itself out of Redis.
+     */
+    keyGenerator: (request) => {
+      const header = request.headers.authorization;
+      if (typeof header === 'string' && header.length > 16) {
+        return `cred:${createHash('sha256').update(header).digest('base64url').slice(0, 24)}`;
+      }
+      return `ip:${request.ip}`;
+    },
     addHeadersOnExceeding: { 'x-ratelimit-remaining': true },
     // Health must answer even while everything else is being throttled — it is
     // how the experience learns to degrade, and rate-limiting the truth-teller
@@ -110,6 +157,11 @@ export async function buildServer(): Promise<FastifyInstance> {
   await app.register(recordRoutes);
   await app.register(auditRoutes);
   await app.register(adminRoutes);
+
+  // P2 — the proof engine.
+  await app.register(demonstrationRoutes);
+  await app.register(demoRoutes);
+  await app.register(receiptRoutes);
 
   return app;
 }
