@@ -60,6 +60,8 @@ jobs:
       REDIS_URL: redis://127.0.0.1:6379
       IP_HASH_PEPPER: ci-pepper-value-at-least-16-chars
       ADMIN_TOKEN: ci-admin-token-at-least-24-characters
+      PAYMENT_WEBHOOK_SECRET: ci-webhook-secret-value
+      RECEIPT_SIGNING_KEY: ci-receipt-signing-key-at-least-32-chars
       OTEL_ENABLED: 'false'
 
     steps:
@@ -96,13 +98,36 @@ jobs:
         run: |
           missing=$(PGPASSWORD=devpassword psql -h 127.0.0.1 -U cpadmin -d control_plane -tAc \
             "SELECT string_agg(relname, ',') FROM pg_class
-              WHERE relname IN ('tenant','tenant_credential','demo_record','audit_event','tenant_budget')
+              WHERE relname IN ('tenant','tenant_credential','demo_record','audit_event',
+                                'tenant_budget','payment_activation','fraud_submission')
                 AND NOT (relrowsecurity AND relforcerowsecurity);")
           if [ -n "$missing" ]; then
             echo "::error::RLS not enabled+forced on: $missing"
             exit 1
           fi
-          echo "RLS enabled and forced on all five tenant-owned tables."
+          echo "RLS enabled and forced on every tenant-owned table."
+
+      # The five demonstrations are the product. A build where one of them
+      # quietly stopped existing would still pass every other check here.
+      - name: Assert all five demonstrations are still published
+        run: |
+          # The flag must precede -e: everything after -e becomes argv, so a
+          # trailing --input-type=module is passed to the script rather than to
+          # node, and the import fails for a reason that has nothing to do with
+          # the demonstrations.
+          node --input-type=module -e "
+            const { demonstrationRoutes } = await import('./services/api/dist/routes/demonstrations.js');
+            const seen = [];
+            await demonstrationRoutes({ get: (_p, h) => seen.push(h) }, {});
+            const body = await seen[0]({ protocol: 'http', host: 'ci' });
+            const ids = body.demonstrations.map((d) => d.id).join(',');
+            const expected = 'isolation,payments,fraud,ai-cost,limits';
+            if (ids !== expected) {
+              console.error('::error::demonstrations changed: ' + ids + ' (expected ' + expected + ')');
+              process.exit(1);
+            }
+            console.log('five demonstrations published: ' + ids);
+          "
 
       - name: Assert the application role cannot bypass RLS
         run: |

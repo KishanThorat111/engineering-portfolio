@@ -26,6 +26,14 @@ process.env.PURGE_INTERVAL_MS ??= '1000';
  */
 process.env.RATE_LIMIT_PROVISION_PER_HOUR ??= '10000';
 process.env.RATE_LIMIT_GLOBAL_PER_MINUTE ??= '10000';
+process.env.RATE_LIMIT_STATION_PER_MINUTE ??= '10000';
+
+/* P2 secrets. Fixed test values — production refuses to boot without real ones. */
+process.env.PAYMENT_WEBHOOK_SECRET ??= 'test-webhook-secret-value';
+process.env.RECEIPT_SIGNING_KEY ??= 'test-receipt-signing-key-at-least-32-chars';
+/* No model provider in tests: the AI station must report the absence honestly. */
+delete process.env.MODEL_API_URL;
+delete process.env.MODEL_API_KEY;
 // Off in tests: the suite asserts on database behaviour, and an exporter
 // retrying against a collector that may not be up adds noise and latency to
 // every case without testing anything.

@@ -20,6 +20,7 @@ import {
 } from '../helpers/harness.js';
 import { purgeTenant, dueTenantIds } from '../../dist/domain/tenant.js';
 import { runPurgeSweep } from '../../dist/worker/purge.js';
+import { signWebhookBody } from '../../dist/domain/payments.js';
 
 describe('tenant lifecycle — TTL purge', () => {
   let app;
@@ -83,6 +84,57 @@ describe('tenant lifecycle — TTL purge', () => {
       [tenant.orgId],
     );
     assert.equal(creds[0].n, 0, 'credentials must be revoked');
+  });
+
+  it('destroys the P2 demonstration tables too', async () => {
+    /*
+     * A tenant-owned table the purge does not know about would outlive its
+     * TTL — the documented-but-never-executed retention failure, reintroduced
+     * by omission. Every new tenant-owned table needs a line here.
+     */
+    const tenant = await provisionViaApi(app, 'purge-demos');
+
+    const raw = JSON.stringify({
+      idempotencyKey: 'evt_purge',
+      subscriptionRef: 'sub_purge',
+      amountMinor: 100,
+      currency: 'GBP',
+    });
+    await app.inject({
+      method: 'POST',
+      url: '/v1/demos/payments/webhook',
+      headers: {
+        ...auth(tenant.apiKey),
+        'content-type': 'application/json',
+        'x-signature': signWebhookBody(raw, process.env.PAYMENT_WEBHOOK_SECRET),
+      },
+      payload: raw,
+    });
+    await app.inject({
+      method: 'POST',
+      url: '/v1/demos/fraud/evidence',
+      headers: auth(tenant.apiKey),
+      payload: { label: 'to be purged', imageBase64: 'cHVyZ2UtbWU=' },
+    });
+
+    for (const table of ['payment_activation', 'fraud_submission']) {
+      const { rows } = await adminQuery(
+        `SELECT count(*)::int AS n FROM ${table} WHERE tenant_id = $1`,
+        [tenant.orgId],
+      );
+      assert.equal(rows[0].n, 1, `precondition: ${table} must hold a row before the purge`);
+    }
+
+    await expireTenant(tenant.orgId);
+    await runPurgeSweep({ trigger: 'scheduler' });
+
+    for (const table of ['payment_activation', 'fraud_submission']) {
+      const { rows } = await adminQuery(
+        `SELECT count(*)::int AS n FROM ${table} WHERE tenant_id = $1`,
+        [tenant.orgId],
+      );
+      assert.equal(rows[0].n, 0, `${table} must be destroyed with its tenant`);
+    }
   });
 
   it("the purged tenant's key stops working, with an honest reason", async () => {

@@ -5,6 +5,7 @@ import { closePool, pool, withTenant } from '../../dist/db/pool.js';
 import { closeRedis, connectRedis, redis } from '../../dist/redis/client.js';
 
 let migrated = false;
+let torndown = false;
 
 /** Migrations are idempotent and run once per process. */
 export async function ensureSchema() {
@@ -14,6 +15,16 @@ export async function ensureSchema() {
 }
 
 export async function startApi() {
+  if (torndown) {
+    // stopApi ends the shared pg pool, which is a module singleton and cannot
+    // be revived. Without this the symptom is every request 500ing with
+    // "Cannot use a pool after calling end on the pool", several suites away
+    // from the cause. One server per test file.
+    throw new Error(
+      'startApi() called after stopApi(): the pg pool is closed for this process. ' +
+        'Use one server per test file, with top-level before/after hooks.',
+    );
+  }
   await ensureSchema();
   const app = await buildServer();
   await app.ready();
@@ -21,6 +32,7 @@ export async function startApi() {
 }
 
 export async function stopApi(app) {
+  torndown = true;
   if (app) await app.close();
   await Promise.allSettled([closePool(), closeRedis()]);
 }
