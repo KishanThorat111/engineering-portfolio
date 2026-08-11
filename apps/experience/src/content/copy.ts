@@ -135,9 +135,95 @@ export const COPY = {
       'carries the same information the scene would have shown, from the same source.',
   },
 
+  /* --- P5: the arrival beat (§2.2) ------------------------------------ */
+  arrival: {
+    resolving: 'resolving edge',
+    tls: 'tls established',
+    provisioning: 'provisioning tenant',
+    ready: 'tenant live',
+    popUnknown: 'edge unknown',
+    popNote:
+      'That round trip was measured, not estimated. When the edge does not name a location, ' +
+      'this says unknown rather than guessing one.',
+    failed: 'The control plane did not answer. Nothing was provisioned.',
+  },
+
+  /* --- P5: the stations (§2.6). Invite, never instruct (§3.9). -------- */
+  stations: {
+    heading: 'Four capabilities, and a boundary',
+    lede:
+      'Each of these is a real mechanism you can attempt to defeat. Nothing below is a ' +
+      'simulation: every action writes an audit row and emits a span.',
+    isolation: {
+      name: 'Isolation',
+      invitation: "Another tenant's record is over there. Its identifier is on screen.",
+      action: 'Read it',
+      inspect: 'Open the membrane',
+      inspectNote:
+        'The live policy predicate, the real query plan, and the branch that returned 403 — ' +
+        'read from the running database, not described.',
+    },
+    payments: {
+      name: 'Payments',
+      invitation: 'Send the same activation twice, at the same moment.',
+      action: 'Fire it twice',
+      openKey: 'Open the idempotency key',
+      note:
+        'The race is resolved by a unique constraint, not by reading before writing. Between ' +
+        'that read and that write is where a duplicate charge lives.',
+    },
+    fraud: {
+      name: 'Fraud',
+      invitation: 'Submit the same photo twice.',
+      action: 'Submit twice',
+      note:
+        'Photo evidence is only evidence if the same photo cannot be submitted again. The ' +
+        'image itself is never stored — only its digest.',
+    },
+    ai: {
+      name: 'AI cost',
+      invitation: 'Ask something operational. Then ask something it cannot answer.',
+      operational: 'How many records do I have?',
+      creative: 'Write a haiku about hospital logistics',
+      note:
+        'The router matches a fixed table of intents, each owning one hand-written statement. ' +
+        'It never generates SQL from your question.',
+    },
+    limits: {
+      name: 'Limits',
+      invitation: 'Hammer it until it stops accepting.',
+      action: 'Send twenty',
+      note:
+        "Keyed per credential, so one visitor cannot shed another's requests. Cloudflare's " +
+        'edge limiter sits in front of this one.',
+    },
+  },
+
+  /* --- P5: the take-away (§2.10, A14) -------------------------------- */
+  takeAway: {
+    heading: 'Leave with the evidence',
+    body:
+      'A signed link carrying your session audit log, the predicate that blocked you, and ' +
+      'commands that reproduce the refusal. It keeps working after your tenant is purged.',
+    action: 'Get the link',
+    copied: 'Copied',
+    reproduce: 'Reproduce it yourself',
+  },
+
+  /* --- P5: the consequence beat (§2.8) -------------------------------- */
+  consequence: {
+    heading: 'This tenant expires',
+    body:
+      'A scheduled job destroys it on its TTL. Not a timer in this page — a worker on the ' +
+      'server, taking a Postgres advisory lock and deleting the rows.',
+    purged: 'Purged. The data is gone; the record of what happened to it is not.',
+  },
+
   actions: {
     skipToDocument: 'Skip the scene and read the document',
     backToSite: 'Back to the main site',
+    provision: 'Enter the system',
+    retry: 'Try again',
   },
 } as const;
 

@@ -16,6 +16,10 @@ import { create } from 'zustand';
 import type { LiveEvent } from '@contract';
 import type { SourceState } from '../live/source.ts';
 import type { Tier } from '../render/quality.ts';
+import type { BreakOutState } from '../beats/choreography.ts';
+import { NEUTRAL } from '../beats/choreography.ts';
+import type { EdgeReading } from '../live/api.ts';
+import type { Station } from '../router.ts';
 
 /** A tenant volume, derived entirely from events that mentioned it. */
 export type Volume = {
@@ -46,8 +50,32 @@ export type Packet = {
   toSlot: number;
 };
 
+/** The five-beat arc (§2.1). The world knows which beat it is in. */
+export type Beat = 'arrival' | 'recognition' | 'ownership' | 'confrontation' | 'consequence';
+
+/** The visitor's own tenant, once the control plane has really created one. */
+export type Tenant = {
+  orgId: string;
+  publicRef: string;
+  apiKey: string;
+  expiresAt: string;
+  seededRecords: number;
+};
+
 export type WorldState = {
   source: SourceState;
+  /* --- P5 fusion ---------------------------------------------------- */
+  beat: Beat;
+  /** Real edge PoP and RTT (A6). Null until measured; never guessed. */
+  edge: EdgeReading | null;
+  /** 0..1 cold-open assembly, paced by the REAL measured handshake. */
+  assembly: number;
+  tenant: Tenant | null;
+  /** Set when provisioning genuinely failed, shown verbatim. */
+  provisionError: string | null;
+  /** The locked break-out choreography's live state. */
+  breakOut: BreakOutState;
+  station: Station | null;
   tier: Tier;
   tierReason: string;
   reducedMotion: boolean;
@@ -59,6 +87,23 @@ export type WorldState = {
   /** The most recent denial, for the membrane flare. Cyan means this and only this. */
   lastDenialAt: number | null;
   frame: { p50: number; p95: number; fps: number };
+
+  setBeat: (beat: Beat) => void;
+  setEdge: (edge: EdgeReading) => void;
+  setAssembly: (assembly: number) => void;
+  setTenant: (tenant: Tenant | null) => void;
+  setProvisionError: (message: string | null) => void;
+  setBreakOut: (state: BreakOutState) => void;
+  /**
+   * Fires the locked §2.5 choreography.
+   *
+   * A counter rather than a boolean: a second refusal must replay the beat, and
+   * a boolean that is already true would silently swallow it. The driver in
+   * App.tsx watches this and builds the timeline.
+   */
+  breakOutTrigger: number;
+  runBreakOut: () => void;
+  setStation: (station: Station | null) => void;
 
   ingest: (event: LiveEvent) => void;
   setSource: (state: SourceState) => void;
@@ -105,6 +150,14 @@ function assignSlot(orgRef: string): number {
 
 export const useWorld = create<WorldState>((set) => ({
   source: { mode: 'connecting', presence: null, reason: null, recordedAt: null },
+  beat: 'arrival',
+  edge: null,
+  assembly: 0,
+  tenant: null,
+  provisionError: null,
+  breakOut: NEUTRAL,
+  breakOutTrigger: 0,
+  station: null,
   tier: 2,
   tierReason: 'initial',
   reducedMotion: false,
@@ -153,6 +206,15 @@ export const useWorld = create<WorldState>((set) => ({
         lastDenialAt: event.outcome === 'denied' ? now : state.lastDenialAt,
       };
     }),
+
+  setBeat: (beat) => set({ beat }),
+  setEdge: (edge) => set({ edge }),
+  setAssembly: (assembly) => set({ assembly }),
+  setTenant: (tenant) => set({ tenant }),
+  setProvisionError: (provisionError) => set({ provisionError }),
+  setBreakOut: (breakOut) => set({ breakOut }),
+  runBreakOut: () => set((s) => ({ breakOutTrigger: s.breakOutTrigger + 1 })),
+  setStation: (station) => set({ station }),
 
   setSource: (source) => set({ source }),
   setTier: (tier, tierReason) => set({ tier, tierReason }),
