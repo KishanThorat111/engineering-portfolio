@@ -1640,3 +1640,75 @@ choreography, and the four stations. Done when every visual state traces to a re
 event. Binding: A6 puts the arrival beat's PoP and RTT at the edge rather than the VM, A14's
 receipt already exists at `/v1/receipt`, GSAP arrives here for the locked slow-stop-hold-resume
 choreography, and decisions 2, 3 and 5 above must not be undone.
+
+---
+
+## P4 addendum — the Phase 1 lockfile incident, recurring · 11 August 2026
+
+Appended rather than edited into the entry above, because the entry above declared local
+verification complete and the push then failed. Both facts belong in the record.
+
+### What happened
+
+The P4 push (`4362390`) failed both workflows immediately, at `npm ci`, before any gate ran:
+
+```
+npm error `npm ci` can only install packages when your package.json and
+npm error package-lock.json are in sync.
+npm error Missing: @emnapi/runtime@1.11.3 from lock file
+```
+
+**The same package and the same failure mode as the Phase 1 incident**, which this repository
+publishes as one of its own lessons. The cause was the same as well: the lockfile was
+regenerated cleanly earlier in the phase and then patched incrementally by later `npm install`
+runs as `@react-three/postprocessing` was added and `gsap` was removed. Rule 9.1 was followed
+once and then not followed to the end.
+
+### The part that is new, and that changes the rule
+
+**`npm ci` passed on the development machine.** It was run, it succeeded, and it was not
+evidence.
+
+`@img/sharp-wasm32` requires `@emnapi/runtime` only on platforms where the wasm path is
+selected. Windows never needs the entry; Linux always does. So a lockfile can be genuinely
+complete for the machine that generated it and genuinely incomplete for the machine that runs
+CI, and a clean install locally cannot tell the two apart.
+
+Phase 1's rule was "local green proves the source was correct, not that the lockfile was
+complete — only a clean install from the lockfile alone can do that." That rule is now
+insufficient as written. The corrected form:
+
+> **A clean install proves the lockfile is complete for the platform that ran it.** After any
+> dependency change, regenerate the lockfile and verify `npm ci` on the platform CI uses, not
+> only on the development machine.
+
+### How it was fixed
+
+Diagnosed by reproducing the CI environment rather than guessing: the repository's manifests
+were mounted into a `node:24-bookworm-slim` container and `npm ci` was run there, which
+produced the error in one attempt. The lockfile was then regenerated **inside that container**,
+copied back, and `npm ci` verified on both platforms — 679 packages on Linux, 688 on Windows,
+no errors on either. The `@emnapi/core`, `@emnapi/runtime`, and `@emnapi/wasi-threads` entries
+are now recorded.
+
+Everything was re-verified on the regenerated tree before the second push: `npm run verify`
+exits 0, 121/121 control-plane tests, 10/10 render checks, formatting clean, audit clean.
+
+### Completion standard met
+
+Run `31487468329` (CI) — **26 steps, 26 success, 0 skipped, 0 non-success**.
+Run `31487468312` (API) — **24 steps, 23 success, 1 skipped**; the skip is the
+`if: failure()` test-output upload, correctly not running because nothing failed.
+
+Both verified at step level on `b00dfdb`, not inferred from the run conclusion.
+
+### Standing rule for P5 onward
+
+Dependencies change in every remaining phase. **Regenerate the lockfile in a Linux container
+and verify `npm ci` there before pushing**, every time. The one-line form:
+
+```sh
+docker run --rm -v "$PWD:/repo" node:24-bookworm-slim sh -c '…npm install…'
+```
+
+A local `npm ci` remains necessary and is no longer sufficient.
