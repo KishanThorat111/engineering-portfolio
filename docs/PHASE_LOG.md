@@ -1906,3 +1906,95 @@ recorded.
 P7 — Fast lane and machine layer: static surface reconciled, SEO, no-JS, low-power, agent
 layer. The static surface is already built and gated; P7 reconciles it with the live surface
 that now exists beside it, and must not undo decision 3 above.
+
+---
+
+## P7 — Fast lane and machine layer (Dossier §13) · 11 August 2026
+
+### The finding this phase existed to catch
+
+**The live surface was unreachable from the site.** It shipped across P4, P5 and P6, and
+nothing on the static surface pointed at it — the most unusual thing this portfolio has was
+also the least discoverable, and no gate noticed because every gate checked one surface at a
+time.
+
+That is the reconciliation §13 names, and it had three halves: a human path, a machine
+description, and an honest statement of which surface is authoritative for what.
+
+### Shipped
+
+- **Home links to the live surface.** A quiet invitation rather than a third hero button: the
+  two locked buttons are blueprint §2's and their wording is not mine to reorder, and §3.9
+  invites rather than instructs. The description is deliberately flat — the thing itself is
+  more persuasive than an adjective would be.
+- **`profile.json` carries a `demonstration` block** — the URL, the catalogue endpoint, what
+  it is, and the disclosure that it is a demo and **must not be reported as one of the three
+  production platforms**.
+- **`llms.txt` gains "Verifying the claims rather than quoting them."** Most of this site is
+  assertions a reader has to trust; the demonstration is not. An agent is pointed at
+  `/v1/demonstrations`, which returns all five with a reproducible command each.
+- **`scripts/fastlane-check.mjs`** — a new truth gate, wired into `npm run verify` and CI.
+
+### Why the demo is described but kept out of `systems[]`
+
+`profile.systems` is the three production platforms, and a screener quoting it is quoting the
+CV's claims. Adding a fourth entry would inflate the count of systems this engineer operates —
+exactly the drift rule 4 forbids. So the demonstration is a **sibling field**, described fully,
+labelled a demo twice, and carrying an explicit instruction not to fold it in.
+
+A gate asserts `systems.length === 3` and that no entry matches /demo/i.
+
+### Verification record
+
+**15 fast-lane checks**, all passing, over the built artifact — offline and browser-free, which
+is why this one belongs in CI beside the other truth gates rather than in the local-only render
+harness.
+
+**Proven by breaking it, three ways, each reverted:**
+
+| Injection | Caught |
+|---|---|
+| Home's `/live/` link repointed | *"nothing on the static surface pointed at /live/"* |
+| Demo pushed into `systems[]` | *"should hold exactly the three production platforms, found 4"* |
+| `/live/` added to the sitemap | *"a noindex page in the sitemap is a contradictory instruction"* |
+
+Also verified: the live surface is `noindex` and absent from the sitemap, so the two surfaces
+are not competing for the same queries; the no-JS path leads to a real destination; the static
+home page still loads **zero** bundled JavaScript; and every own-origin URL the machine layer
+promises resolves to a built file.
+
+The external links in `profile.links` are deliberately **not** checked here — LinkedIn and
+GitHub are somebody else's to serve, and their reachability is a quarterly maintenance concern
+rather than a build one. The link gate makes the same split; the first version of this gate did
+not, and failed on three URLs it had no business asserting about.
+
+Everything else unregressed: `npm run verify` exits 0 across six gates, 26/26 render and fusion
+checks, 121/121 control-plane tests, formatting clean.
+
+### Engineering decisions — P8 inherits these
+
+1. **`gate:fastlane` runs in CI.** It is offline and needs no browser. Do not move it into the
+   render harness, which needs a GPU and stays local.
+2. **The demonstration stays out of `systems[]` permanently.** If a later phase wants the demo
+   in a machine-readable list of systems, that is a product decision about what this engineer
+   claims to operate.
+3. **`/live/` is `noindex` and out of the sitemap, and must stay so.** The static surface is
+   the SEO and machine layer; two canonical copies of the same claims competing for the same
+   queries is the divergence rule 10 exists to stop.
+4. **P8's Lighthouse enforcement will meet a new page.** `/live/` is a WebGL surface carrying
+   367KB gz of JavaScript and will not score like the static pages. It is `noindex`, its
+   budgets are the §11 experience budgets rather than the static ones, and the thresholds
+   should be applied to the static surface as blueprint §7.5 specifies — Home and the flagship
+   case study — not blanket across both.
+
+### OWNER-INPUT — open items
+
+Unchanged: thirteen static-surface markers, deployment credentials, the model provider, and
+hospital telemetry permissions.
+
+### Next session
+
+P8 — Hardening and launch: adversarial and load testing, WAF, Lighthouse enforcing,
+accessibility, domain, runbook. Carried forward as explicitly outstanding: **the real
+mid-range device performance measurement from P4**, and **the missing security response
+headers** recorded as a P8 defect in the P0 review.
