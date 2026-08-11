@@ -42,12 +42,44 @@ const MIME = {
   '.pdf': 'application/pdf',
 };
 
-/** Serves the composed dist exactly as the Worker would. */
+/**
+ * Serves the composed dist exactly as the Worker would — and proxies the API.
+ *
+ * The proxy is not a convenience. In production the static surface and the
+ * control plane sit behind ONE Cloudflare origin, so the browser makes
+ * same-origin calls and no CORS is involved. Pointing the page at a second port
+ * would exercise a shape that never ships, and would need CORS headers the
+ * production service is right not to have. Proxying reproduces the real
+ * topology, so what is verified here is what deploys.
+ */
 function serve() {
+  const upstream = process.env.LIVE_API;
   return new Promise((ready) => {
     const server = createServer(async (request, response) => {
       try {
         const url = new URL(request.url ?? '/', 'http://localhost');
+
+        if (upstream && /^\/(v1|r|internal|health)(\/|$)/.test(url.pathname)) {
+          const chunks = [];
+          for await (const chunk of request) chunks.push(chunk);
+          const headers = Object.fromEntries(
+            Object.entries(request.headers).filter(
+              ([name]) => !['host', 'connection', 'content-length'].includes(name),
+            ),
+          );
+          const forwarded = await fetch(upstream + url.pathname + url.search, {
+            method: request.method,
+            headers,
+            body: chunks.length > 0 ? Buffer.concat(chunks) : undefined,
+          });
+          const text = await forwarded.text();
+          response.writeHead(forwarded.status, {
+            'content-type': forwarded.headers.get('content-type') ?? 'application/json',
+          });
+          response.end(text);
+          return;
+        }
+
         let path = join(DIST, decodeURIComponent(url.pathname));
         const info = await stat(path).catch(() => null);
         if (!info || info.isDirectory()) path = join(path, 'index.html');
@@ -329,7 +361,121 @@ try {
     await page.close();
   }
 
-  /* ---- 7. Responsive -------------------------------------------------- */
+  /* ---- 7. FUSION: every visual state traces to a real backend event --- */
+  console.log('\n=== P5 fusion (live control plane) ===');
+  if (!process.env.LIVE_API) {
+    console.log('  skipped — LIVE_API is not set, so there is no control plane to fuse with.');
+    console.log('  This section is the P5 definition of done and is NOT optional; it is run');
+    console.log('  against the Compose stack by `npm run verify:fusion`.');
+  } else {
+    const api = process.env.LIVE_API;
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.addInitScript((base) => {
+      // Point the surface at the running stack. Same code path as production;
+      // only the origin differs, which is exactly what VITE_API_BASE exists for.
+      window.__API_BASE__ = '';
+      window.__LIVE_URL__ = base.replace(/^http/, 'ws') + '/v1/live';
+    }, api);
+    await page.goto(`http://localhost:${PORT}/live/`, { waitUntil: 'load' });
+    await page.waitForSelector('#document');
+
+    // The arrival beat must show a REAL measured round trip.
+    const rtt = await page
+      .locator('.arrival-line')
+      .first()
+      .innerText()
+      .catch(() => '');
+    record(
+      'arrival reports a real measured round trip (§2.2, A6)',
+      rtt.replace(/\s+/g, ' ').trim(),
+      /\d+ms round trip/.test(rtt),
+    );
+
+    // A real tenant must have been provisioned by the real control plane.
+    await page.waitForSelector('.station', { timeout: 20_000 }).catch(() => null);
+    const provisioned = await page
+      .locator('.arrival-line')
+      .nth(2)
+      .innerText()
+      .catch(() => '');
+    record(
+      'a real tenant was provisioned by the control plane',
+      provisioned.replace(/\s+/g, ' ').trim(),
+      /tnt_/.test(provisioned),
+    );
+
+    // The break-out must produce a REAL 403 and fire the locked choreography.
+    await page.getByRole('button', { name: /^Read it$/ }).click();
+    const denial = await page
+      .locator('.denial')
+      .first()
+      .innerText({ timeout: 25_000 })
+      .catch(() => '');
+    record(
+      'the break-out is refused by the real control plane (§2.5)',
+      denial.replace(/\s+/g, ' ').trim().slice(0, 80),
+      /^403/.test(denial),
+    );
+
+    // The membrane inspector must carry the LIVE policy predicate.
+    await page.getByRole('button', { name: /Open the membrane/ }).click();
+    const predicate = await page
+      .locator('.inspect code')
+      .first()
+      .innerText({ timeout: 20_000 })
+      .catch(() => '');
+    record(
+      'the inspector shows the live predicate, not a description',
+      predicate.trim(),
+      /app_current_org\(\)/.test(predicate),
+    );
+
+    // The denial must arrive back over the socket as a real audit event.
+    const auditRow = await page
+      .locator('.event-denied')
+      .first()
+      .isVisible({ timeout: 20_000 })
+      .catch(() => false);
+    record(
+      'the refusal returns as a real audit event over the socket',
+      `denied row visible: ${auditRow}`,
+      auditRow,
+    );
+
+    // It must be LIVE, not replaying.
+    const live = await page.locator('.badge-live').count();
+    const replay = await page.locator('.badge-replay').count();
+    record(
+      'the surface reports LIVE when it is genuinely live',
+      `live badges: ${live}, replay badges: ${replay}`,
+      live === 1 && replay === 0,
+    );
+
+    await page.close();
+  }
+
+  /* ---- 8. Stations are real, shareable URLs (§2.9) -------------------- */
+  console.log('\n=== station URLs ===');
+  for (const station of ['isolation', 'payments', 'fraud', 'ai', 'limits']) {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    const response = await page.goto(`http://localhost:${PORT}/live/${station}/`, {
+      waitUntil: 'load',
+    });
+    await page.waitForSelector('#document').catch(() => null);
+    const title = await page.title();
+    const canonical = await page
+      .locator('link[rel=canonical]')
+      .getAttribute('href')
+      .catch(() => null);
+    record(
+      `/live/${station}/ is a real page`,
+      `${response?.status()} · "${title}" · ${canonical}`,
+      response?.status() === 200 && canonical?.endsWith(`/live/${station}/`) === true,
+    );
+    await page.close();
+  }
+
+  /* ---- 9. Responsive -------------------------------------------------- */
   console.log('\n=== responsive ===');
   for (const [label, viewport] of [
     ['mobile 390', { width: 390, height: 844 }],

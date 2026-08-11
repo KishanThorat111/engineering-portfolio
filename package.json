@@ -39,7 +39,8 @@
     "build:static": "npm run build --workspace apps/static",
     "build:experience": "npm run build --workspace apps/experience",
     "exp:dev": "npm run dev --workspace apps/experience",
-    "verify:render": "node scripts/render-verify.mjs"
+    "verify:render": "node scripts/render-verify.mjs",
+    "verify:fusion": "node scripts/render-verify.mjs"
   },
   "devDependencies": {
     "html-validate": "^10.0.0",
