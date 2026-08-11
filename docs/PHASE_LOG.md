@@ -1813,3 +1813,96 @@ P6 — Estate and record. Four-system zoom-out (§2.7), case studies in context 
 health. The three other platforms are **explicitly not attackable** and carry only
 already-published facts — dossier §15 leaves hospital telemetry permissions unanswered, so
 the estate layer shows what the case studies already publish and nothing more.
+
+---
+
+## P6 — Estate and record (Dossier §13) · 11 August 2026
+
+### Shipped
+
+- **The scale reveal** (§2.7) — the demonstration plane resolves into one node of four, beside
+  the hospital, menu, and electrical platforms.
+- **Case studies in context** (§2.8) — each production node links to its case study and
+  carries its disclosed limitations, read after the visitor has operated the system.
+- **Honest health** — one node is live and attackable; three are neither, and say so.
+
+### The estate reads the machine layer. It does not re-author it.
+
+`/api/profile.json` is generated at build from the same content collections the case-study
+pages render, and a CI gate already asserts the two cannot disagree. So the estate fetches it.
+Re-typing three platforms' names, statuses, and limitations into this surface would have
+created a **third** copy — and a third copy drifts, always in the flattering direction. Rule
+10 exists for exactly this.
+
+A test asserts the statuses shown match the machine layer's exactly, so a future edit that
+starts hardcoding them fails rather than merely looking fine.
+
+### The contrast is the point, and it is enforced
+
+§2.7: *this one is yours to break; those three are load-bearing and I am not letting you near
+them.* Implemented as data rather than styling — `attackable: false` and `liveSignal: false`
+are properties of the three production nodes, and a check asserts exactly one node is
+attackable. A second attackable node would not be a visual slip; it would be the page
+inviting somebody at a system other people depend on.
+
+**No live signal is claimed for any production platform.** Dossier §15 leaves hospital
+telemetry permissions unanswered, and until they are answered the estate shows only
+already-published facts. The node says so in words — that nothing is shown *rather than
+something estimated* — and a check asserts that sentence is present.
+
+### Verification record
+
+**26/26 browser checks**, five of them new, run three consecutive times with identical
+results:
+
+- The estate resolves into **4 nodes**.
+- **Exactly one is attackable**; three are load-bearing.
+- Statuses match the machine layer exactly: `IN PRODUCTION — HOSPITAL`, `LIVE`,
+  `PRE-LAUNCH (Q3 2026)`.
+- **9 disclosed limitations** shown in context.
+- No live signal claimed for the production platforms.
+- All P4 and P5 checks still pass, including the fusion against a real control plane.
+- Static surface unregressed; `npm run verify` exits 0; formatting clean.
+
+### The test defect this phase found
+
+The fusion suite failed once — `the refusal returns as a real audit event over the socket` —
+and then passed twice in a row. It was not flake and it was not the product.
+
+`locator.isVisible({ timeout })` **evaluates once and ignores the timeout entirely.** The
+check had always been a race: the denial has a genuine journey to make — commit, NOTIFY,
+gateway, socket, store, render — and the assertion was sampling a single instant. It had been
+passing on luck.
+
+Replaced with `waitFor({ state: 'visible' })`, which genuinely retries. Three consecutive
+full runs at 26/26 afterwards.
+
+Worth recording because the instinct on a one-off failure is to re-run and move on. Re-running
+was the right first step and the wrong last one: two green runs would have buried a check that
+proved nothing on a mechanism the whole peak depends on.
+
+### Engineering decisions — P7 inherits these
+
+1. **The estate is data, not markup.** `attackable` and `liveSignal` are fields on the node.
+   Anything that wants to change what a node offers changes the data, where a test can see it.
+2. **The three production nodes link to the STATIC surface's case studies** by relative path.
+   The absolute URLs in `profile.json` carry the configured origin, which is correct there and
+   unnecessary here — a relative link works on whatever origin is serving.
+3. **P7 must not add a second estate.** The static surface already publishes these three
+   systems at `/systems/*`; this is the same content rendered in context, from the same
+   source. If P7 reconciles anything, it reconciles toward `profile.json`.
+
+### OWNER-INPUT — open items
+
+Unchanged and now load-bearing for this phase: **hospital telemetry permissions** (§15). Until
+answered, the estate shows published facts only. The node's wording already states the reason,
+so answering it later is a content change rather than a redesign.
+
+Thirteen static-surface markers, deployment credentials, and the model provider all remain as
+recorded.
+
+### Next session
+
+P7 — Fast lane and machine layer: static surface reconciled, SEO, no-JS, low-power, agent
+layer. The static surface is already built and gated; P7 reconciles it with the live surface
+that now exists beside it, and must not undo decision 3 above.
