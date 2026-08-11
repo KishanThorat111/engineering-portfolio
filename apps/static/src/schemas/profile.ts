@@ -111,6 +111,26 @@ export const profileSchema = z
       .min(1),
 
     /** The site's own honesty rules, stated for a reader that is not a person. */
+    /**
+     * The live demonstration plane.
+     *
+     * An agent reading this site should know the demonstration exists and how
+     * to drive it, because §1.5 names automated screeners as a real audience.
+     * The catalogue endpoint returns all five demonstrations with a reproducible
+     * command for each, so a machine can verify the claims rather than quote
+     * them — which is the whole argument this portfolio makes.
+     */
+    demonstration: z
+      .object({
+        url: z.string().url(),
+        catalogue: z.string().url(),
+        plane: z.literal('demo'),
+        summary: z.string().min(1),
+        disclosure: z.string().min(1),
+        attackable: z.literal(true),
+      })
+      .strict(),
+
     disclosure: z
       .object({
         qualifiedFigures: z.string().min(1),

@@ -59,6 +59,27 @@ const stagger = (index: number) => `--reveal-delay: ${Math.min(index * 60, 240)}
         <Button href="/systems">See the systems</Button>
         <Button href="/cv.pdf" variant="secondary" download>Download CV</Button>
       </div>
+
+      {
+        /*
+          The live surface, reachable at last.
+
+          It shipped in P4–P6 and nothing on this site pointed at it, which made
+          the most unusual thing here the least discoverable. It is a separate
+          link rather than a third hero button because the two locked buttons
+          are blueprint §2's and their wording is not mine to reorder — and
+          because this is an invitation, not a call to action (§3.9).
+
+          The description is deliberately flat. "A real system you can attack"
+          is the claim; anything more excited would be the marketing voice §3.1
+          rules out, and the thing itself is more persuasive than an adjective.
+        */
+      }
+      <p class="live-invitation">
+        <a href="/live/">Or open the live system</a> — a real multi-tenant control plane on a demo plane,
+        built to be attacked. It provisions you a tenant, refuses your attempt to read another one, and
+        shows you the policy that stopped you.
+      </p>
     </div>
   </section>
 

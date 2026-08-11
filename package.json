@@ -1,6 +1,6 @@
 {
   "name": "engineering-portfolio",
-  "description": "Source for kishanthorat.com \u2014 an evidence-first engineering portfolio and a live, attackable demonstration system.",
+  "description": "Source for kishanthorat.com — an evidence-first engineering portfolio and a live, attackable demonstration system.",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -28,7 +28,7 @@
     "gate:confidential": "node scripts/confidential-parity.mjs",
     "gate:machine": "node scripts/machine-parity.mjs",
     "cv:pdf": "node scripts/cv-pdf.mjs",
-    "verify": "npm run check && npm run build && npm run gate:copy && npm run gate:links && npm run gate:html && npm run gate:contrast && npm run gate:confidential && npm run gate:machine",
+    "verify": "npm run check && npm run build && npm run gate:copy && npm run gate:links && npm run gate:html && npm run gate:contrast && npm run gate:confidential && npm run gate:machine && npm run gate:fastlane",
     "api:check": "npm run check --workspace @portfolio/api",
     "api:build": "npm run build --workspace @portfolio/api",
     "api:migrate": "node services/api/dist/db/migrate.js",
@@ -40,7 +40,8 @@
     "build:experience": "npm run build --workspace apps/experience",
     "exp:dev": "npm run dev --workspace apps/experience",
     "verify:render": "node scripts/render-verify.mjs",
-    "verify:fusion": "node scripts/render-verify.mjs"
+    "verify:fusion": "node scripts/render-verify.mjs",
+    "gate:fastlane": "node scripts/fastlane-check.mjs"
   },
   "devDependencies": {
     "html-validate": "^10.0.0",

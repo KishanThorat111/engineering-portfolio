@@ -131,3 +131,23 @@ a:hover {
     transition-duration: 0.01ms !important;
   }
 }
+
+/*
+ * The live-surface invitation on Home (P7).
+ *
+ * Deliberately quieter than the two locked hero buttons. §3.9 invites rather
+ * than instructs, and the thing itself is more persuasive than emphasis would
+ * be — a third loud call to action would make the hero argue with itself.
+ */
+.live-invitation {
+  margin: var(--space-6) 0 0;
+  max-width: 60ch;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+}
+
+.live-invitation a {
+  color: var(--accent);
+  font-weight: 500;
+}

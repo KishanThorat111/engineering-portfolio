@@ -98,6 +98,23 @@ export async function buildProfile(origin: URL): Promise<Profile> {
       })),
     })),
 
+    demonstration: {
+      url: absolute('/live/', origin),
+      catalogue: absolute('/v1/demonstrations', origin),
+      plane: 'demo' as const,
+      summary:
+        'A real multi-tenant control plane, deliberately attackable, rendering its own ' +
+        'telemetry. It provisions a real tenant, refuses cross-tenant reads with genuine ' +
+        'PostgreSQL row-level security beneath server-derived scoping, and exposes five ' +
+        'demonstrations that each write an auditable trace.',
+      disclosure:
+        'This is a demonstration plane, physically separate from any production system, with ' +
+        'no path to one. Every tenant it creates is destroyed on a TTL by a scheduled job. It ' +
+        'is not one of the three production platforms described above and must not be ' +
+        'reported as one.',
+      attackable: true as const,
+    },
+
     disclosure: {
       qualifiedFigures:
         'Every figure on this site carries the date it was true. A number without its ' +
