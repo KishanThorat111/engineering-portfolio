@@ -15,6 +15,7 @@ import { Scene } from './render/Scene.tsx';
 import { LiveDocument } from './ui/Document.tsx';
 import { Arrival } from './ui/Arrival.tsx';
 import { Stations } from './ui/Stations.tsx';
+import { Estate } from './ui/Estate.tsx';
 import { COPY } from './content/copy.ts';
 import { useWorld } from './state/store.ts';
 import { LiveSocketSource, ReplaySource, type EventSource } from './live/source.ts';
@@ -241,6 +242,8 @@ export function App() {
         <Arrival />
         {tenant ? <Stations apiKey={tenant.apiKey} /> : null}
         <LiveDocument />
+        {/* §2.8: the record comes AFTER operating the system, deliberately. */}
+        <Estate />
       </main>
     </div>
   );

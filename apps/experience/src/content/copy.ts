@@ -219,6 +219,35 @@ export const COPY = {
     purged: 'Purged. The data is gone; the record of what happened to it is not.',
   },
 
+  /* --- P6: the estate (§2.7) and the record (§2.8) -------------------- */
+  estate: {
+    heading: 'One node of four',
+    lede:
+      'The system you have been inside is the smallest thing here. Beside it are three ' +
+      'platforms other people depend on — and those are not yours to break.',
+    attackable: 'Yours to break. That is what it is for.',
+    notAttackable:
+      'Not attackable, and not reachable from this page. It is load-bearing and I am not ' +
+      'letting anyone near it.',
+    signalLive: 'Live telemetry, rendered from its own events.',
+    signalDegraded:
+      'Its telemetry is unreachable right now, so this page is replaying a real recording and ' +
+      'saying so.',
+    signalNone:
+      'No live signal published. What may be shown from a system in daily clinical use is a ' +
+      'permissions question that has not been answered, so nothing is shown rather than ' +
+      'something estimated.',
+    limitationsHeading: 'Disclosed limitations',
+    permissionsNote:
+      "Every status and limitation above is read from this site's own machine-readable " +
+      'profile, which is generated from the same content the case studies render. The two ' +
+      'cannot disagree, and a CI gate fails the build if they ever do.',
+    unavailable:
+      'The machine-readable profile could not be read, so the estate is not shown. Three ' +
+      'platforms rendered from memory would be exactly the divergence this page is built to ' +
+      'make impossible.',
+  },
+
   actions: {
     skipToDocument: 'Skip the scene and read the document',
     backToSite: 'Back to the main site',

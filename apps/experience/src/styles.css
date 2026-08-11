@@ -595,3 +595,98 @@ h2 {
   color: var(--accent);
   overflow-wrap: anywhere;
 }
+
+/* --- P6: the estate ------------------------------------------------- */
+
+.estate {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--space-4);
+  margin: 0 0 var(--space-6);
+}
+
+.estate-node {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--bg-raised) 70%, transparent);
+}
+/* The demo plane is the one that is live and the one that is smallest. It is
+   marked as different because it IS different, not to give it prominence. */
+.estate-node-demo {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+.estate-status {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-2);
+}
+
+.estate-node h3 {
+  font-size: 0.9375rem;
+  margin: 0 0 var(--space-3);
+}
+.estate-node h3 a {
+  color: var(--text);
+  text-decoration-color: var(--text-muted);
+  text-underline-offset: 3px;
+}
+.estate-node h3 a:hover {
+  color: var(--accent);
+}
+
+.estate-summary {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin: 0 0 var(--space-3);
+}
+
+.estate-posture {
+  font-size: 0.8125rem;
+  margin: 0 0 var(--space-2);
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--border);
+}
+.estate-posture.is-open {
+  border-left-color: var(--accent);
+  color: var(--accent);
+}
+/* Amber, not danger: refusing access is caution, not an error. And never the
+   isolation cyan, which means one specific thing on this surface. */
+.estate-posture.is-closed {
+  border-left-color: var(--accent-warm);
+  color: var(--accent-warm);
+}
+
+.estate-signal {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-3);
+}
+
+.estate-limitations h4 {
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-2);
+  text-transform: uppercase;
+}
+.estate-limitations ul {
+  margin: 0;
+  padding-left: 1.05rem;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+.estate-limitations li {
+  margin-bottom: var(--space-2);
+}
+
+.estate-note {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  max-width: 70ch;
+  margin: 0;
+}
