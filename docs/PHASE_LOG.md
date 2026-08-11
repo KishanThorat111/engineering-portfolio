@@ -1522,3 +1522,121 @@ fixtures**, at 60fps on a mid-range device at tier 2. Binding: A5 makes those fi
 degraded-mode payload rather than throwaway scaffolding, A4 requires visitor-facing copy to
 reach the build as data, and A8 keys quality tiers on sustained frame time rather than an
 initial probe. The wire contract to render against is `src/live/envelope.ts`.
+
+---
+
+## P4 — Render layer (Dossier §13) · 11 August 2026
+
+### Shipped
+
+- **`apps/experience`** — React 19 + TypeScript strict + Vite, React Three Fiber, Zustand.
+  Three-plane lattice, instanced tenant volumes, instanced packets, the isolation membrane,
+  a camera rig with weight, and monospace labels rendered in the world.
+- **Custom GLSL** for all four materials (`src/render/shaders.ts`).
+- **The quality governor** (A8) — sustained frame-time tiers with hysteresis.
+- **Real recorded traces** as the degraded-mode payload (A5), captured from the live plane.
+- **The accessible document** — the authoritative reading of the system, always rendered.
+- **`scripts/render-verify.mjs`** — ten browser-verified checks, local-only.
+- `content/origin.json` — the origin, now shared by both surfaces.
+
+### The interruption
+
+This phase was interrupted by a Claude Code API connectivity error partway through render
+verification. Nothing was lost and nothing was rebuilt: the working tree was intact, the
+uncommitted work was inspected file by file, and the verification was re-run from the
+recovered state rather than assumed. Recorded because "the tool disconnected" and "the work
+failed" are different facts and the log should not let a future reader confuse them.
+
+### Verification record
+
+- **Ten browser checks, all passing**, against the built artifact served the way the Worker
+  serves it. Re-run three times across the session, including after Prettier reformatted the
+  source.
+- **Sustained frame time on this machine: p50 4.5ms, p95 6.9ms, p99 8.5ms, 209.8fps over 1679
+  frames** at tier 3, after a warm-up discard. Budget is p95 ≤ 19ms.
+- **The governor demonstrably downgrades.** Under ~6x the pixels (1920×1080 at DPR 3) it went
+  tier 2 → tier 1 with the reason `sustained p95 19.1ms over budget`, and in later runs was
+  already at tier 1 before sampling began.
+- **Reduced motion verified by execution**, not by the presence of a media query: the canvas
+  is dimensionally stable across a 1.2s interval, the camera does not drift, packets do not
+  travel, the membrane collapses to presence/absence, and the disclosure renders.
+- **Degraded mode verified with a genuinely unreachable live plane** — no stub, no mock. The
+  REPLAY badge appears, the heading explains, 8 recorded events replay, and the LIVE badge is
+  **absent**: the surface never claims to be live when it is not.
+- **WebGL removed at the prototype** (`getContext` returning null): the notice renders, the
+  event log is present, zero canvases. The information survives the absence of the scene.
+- Accessibility: one `h1`, canvas `aria-hidden`, one polite live region, skip link first in
+  tab order and focused by the first Tab press.
+- Zero horizontal overflow at 390, 834, and 1440.
+- **P1–P3 unregressed**: 121/121 control-plane tests. Static surface unregressed: all gates
+  green, `npm run verify` exits 0, `format:check` clean, `npm audit` 0 at production scope.
+
+### What the performance number does and does not establish
+
+It establishes that the scene is far inside budget **on this machine** — a desktop with a real
+GPU. It does **not** establish the dossier's "60fps on a mid-range device at tier 2", and this
+entry will not claim it does.
+
+CPU throttling was tried first and is recorded because it proved nothing:
+`Emulation.setCPUThrottlingRate` slows script execution and does not slow a GPU, so a
+GPU-bound scene ran at 237fps under a 4x throttle and the governor correctly did nothing —
+a test that would have passed for a governor that was never wired up. It was replaced with
+real pixel pressure, which the scene does feel.
+
+**A real mid-range device measurement remains outstanding and belongs to P8's hardening pass.**
+
+### Engineering decisions — later phases inherit these
+
+1. **The surface builds to `/live/`, not `/experience/`.** The first build overwrote the static
+   site's `/experience` page and the link, confidential-parity, and machine-parity gates all
+   failed within one run. The gates caught a real regression exactly as designed. `/live` also
+   matches the socket it consumes.
+2. **The wire contract is single-sourced**, aliased as `@contract` to
+   `services/api/src/live/envelope.ts`. It is types plus one const, so it carries no Node
+   dependency into the browser. **P5 must not copy it.**
+3. **`content/origin.json` is now the one place the origin is written down.** It moved out of
+   `astro.config.mjs` when this surface needed the same value for its own canonical; a second
+   hardcoded copy would have gone stale silently while every gate kept passing. **P8's domain
+   swap is this file, not the Astro config.**
+4. **No transmission material.** §3.3 asks for translucent shells with refraction, and
+   `MeshTransmissionMaterial` renders the scene again per object and composes badly with
+   instancing — which is what dozens of volumes need. A fresnel shell with an interior term
+   gets the read and instances cleanly. This is what makes the budget reachable.
+5. **`durationMs: null` is never defaulted.** It draws a dashed packet, reads as "not measured"
+   in the document, and the legend explains it. P5 must preserve this: a zero standing in for
+   unknown would draw a fast packet for a request nobody timed.
+6. **The document is always rendered**, never hidden when WebGL works. It is the accessible
+   path and the authoritative reading; the canvas illustrates it.
+7. **GSAP is declared nowhere yet.** It is the locked choreography tool and P4 has no
+   choreography — the cold open and the beat timing are P5's. It arrives with the phase that
+   uses it, because an unused dependency has no justification.
+8. **`apps/experience/index.html` is Prettier-ignored.** Prettier normalises void elements to
+   `<meta … />` and lowercases the doctype; html-validate requires the omitted end tag and an
+   uppercase doctype, matching what Astro emits everywhere else. Both tools are right in their
+   own remit and neither is configurable to agree, so the one hand-written HTML file matches
+   the gate that ships. The meta description must also stay on **one line** — the parity gate
+   matches it contiguously and Vite does not minify this shell.
+
+### Budgets
+
+The static surface is unchanged and still far inside its budgets — home 5.6KB gz, /about
+4.6KB gz, /cv 6.4KB gz against 90KB.
+
+The live surface carries 1.3MB of JavaScript uncompressed, **367KB gzipped** across three
+chunks (three 182KB, app 122KB, React 60KB) plus 1.8KB CSS. That is **not** a breach of the
+static surface's "client JS < 15KB gz": §11 scopes that budget to the static surface, and
+`CLAUDE.md` records the split. A WebGL world cannot exist inside 15KB and the dossier never
+asked it to — which is precisely why the fast lane exists as a separate surface (§6.2).
+
+### OWNER-INPUT — open items
+
+Unchanged at thirteen static-surface markers. P4 adds none. Deployment credentials remain
+deferred by decision; the model provider remains deferred by ruling.
+
+### Next session
+
+P5 — Fusion. Render wired to live telemetry: the cold open, provisioning, the break-out
+choreography, and the four stations. Done when every visual state traces to a real backend
+event. Binding: A6 puts the arrival beat's PoP and RTT at the edge rather than the VM, A14's
+receipt already exists at `/v1/receipt`, GSAP arrives here for the locked slow-stop-hold-resume
+choreography, and decisions 2, 3 and 5 above must not be undone.
