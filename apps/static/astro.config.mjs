@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import origin from '../../content/origin.json' with { type: 'json' };
 
 /**
  * `site` is the origin every absolute URL on this site derives from, and since
@@ -8,8 +9,11 @@ import sitemap from '@astrojs/sitemap';
  * entries, JSON-LD identifiers, the Sitemap line in robots.txt, and every
  * absolute URL in /api/profile.json all come from here.
  *
- * It is deliberately the ONLY place the origin is written down. Nothing else
- * hardcodes a host, which is what makes the swap below a one-line change.
+ * The value itself now lives in `content/origin.json`, which is still the ONLY
+ * place it is written down — it moved there when the experience surface arrived
+ * and needed the same origin for its own canonical. Two configs reading one
+ * file keeps the swap a one-line change; a second hardcoded copy would have
+ * gone stale silently while every gate carried on passing.
  *
  * ⚠ INTERIM ORIGIN — Phase 8 changes this line to the production domain.
  *
@@ -42,7 +46,7 @@ import sitemap from '@astrojs/sitemap';
  * and treat the blueprint wording as superseded — see docs/PHASE_LOG.md.
  */
 export default defineConfig({
-  site: 'https://portfolio.kishanthorat.workers.dev',
+  site: origin.site,
 
   /*
    * The deployment artifact is the repository-root `dist/`, not this
