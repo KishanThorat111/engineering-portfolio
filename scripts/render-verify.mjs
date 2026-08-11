@@ -430,11 +430,22 @@ try {
       /app_current_org\(\)/.test(predicate),
     );
 
-    // The denial must arrive back over the socket as a real audit event.
+    /*
+     * The denial must arrive back over the socket as a real audit event.
+     *
+     * `waitFor`, NOT `isVisible({ timeout })`. isVisible() evaluates once and
+     * ignores a timeout option entirely, so the original check was a race that
+     * happened to pass — until it did not, once, in a full run. The event has a
+     * genuine journey to make (commit → NOTIFY → gateway → socket → store →
+     * render) and the assertion has to be willing to wait for it. A flaky check
+     * on a real mechanism teaches nobody anything; a patient one on the same
+     * mechanism proves it.
+     */
     const auditRow = await page
       .locator('.event-denied')
       .first()
-      .isVisible({ timeout: 20_000 })
+      .waitFor({ state: 'visible', timeout: 20_000 })
+      .then(() => true)
       .catch(() => false);
     record(
       'the refusal returns as a real audit event over the socket',
@@ -472,6 +483,66 @@ try {
       `${response?.status()} · "${title}" · ${canonical}`,
       response?.status() === 200 && canonical?.endsWith(`/live/${station}/`) === true,
     );
+    await page.close();
+  }
+
+  /* ---- 8b. P6: the estate reads the machine layer --------------------- */
+  console.log('\n=== P6 estate (§2.7, §2.8) ===');
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(`http://localhost:${PORT}/live/`, { waitUntil: 'load' });
+    await page.waitForSelector('.estate-node', { timeout: 20_000 }).catch(() => null);
+
+    const nodes = await page.locator('.estate-node').count();
+    record('the estate resolves into four nodes (§2.7)', `${nodes} nodes`, nodes === 4);
+
+    /*
+     * Exactly one node is attackable. §2.7 makes the contrast the point: this
+     * one is yours to break, those three are load-bearing. A second attackable
+     * node would not be a styling slip — it would be the page inviting someone
+     * at a system other people depend on.
+     */
+    const open = await page.locator('.estate-posture.is-open').count();
+    const closed = await page.locator('.estate-posture.is-closed').count();
+    record(
+      'exactly one node is attackable; three are load-bearing',
+      `open: ${open}, closed: ${closed}`,
+      open === 1 && closed === 3,
+    );
+
+    /*
+     * Statuses must match the machine layer exactly. Re-authoring them into
+     * this surface would create a third copy that drifts — and the drift would
+     * be in the flattering direction, which is what rule 10 exists to stop.
+     */
+    const profile = await (await fetch(`http://localhost:${PORT}/api/profile.json`)).json();
+    const expected = profile.systems.map((system) =>
+      system.statusDetail ? `${system.statusLabel} (${system.statusDetail})` : system.statusLabel,
+    );
+    const shown = (await page.locator('.estate-status').allInnerTexts()).map((t) => t.trim());
+    const allPresent = expected.every((label) => shown.includes(label));
+    record(
+      'estate statuses come from the machine layer, not re-authored (rule 10)',
+      `expected [${expected.join(' | ')}], shown [${shown.join(' | ')}]`,
+      allPresent,
+    );
+
+    // §2.8: the disclosed limitations are read in context, after operating.
+    const limitations = await page.locator('.estate-limitations li').count();
+    record(
+      'disclosed limitations are shown in context (§2.8)',
+      `${limitations} items`,
+      limitations >= 4,
+    );
+
+    // No live signal is claimed for a system whose permissions are unanswered.
+    const signals = (await page.locator('.estate-signal').allInnerTexts()).join(' ');
+    record(
+      'no live signal is claimed for the production platforms (§15)',
+      `mentions "No live signal published": ${signals.includes('No live signal published')}`,
+      signals.includes('No live signal published'),
+    );
+
     await page.close();
   }
 
