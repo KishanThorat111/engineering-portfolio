@@ -384,3 +384,214 @@ h2 {
     scroll-behavior: auto !important;
   }
 }
+
+/* --- P5: arrival, stations, take-away ------------------------------- */
+
+.panel-arrival {
+  border-left: 3px solid var(--accent);
+}
+
+.arrival {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.arrival-line {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+.arrival-line:last-child {
+  border-bottom: 0;
+}
+
+.arrival-label {
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+}
+.arrival-value {
+  color: var(--text);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+/* Pending reads as pending. No spinner: the line is the progress. */
+.arrival-pending .arrival-value {
+  color: var(--text-muted);
+}
+
+.arrival-note {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  margin: var(--space-4) 0 0;
+}
+
+/* --- stations ------------------------------------------------------- */
+
+.station-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-6);
+}
+.station-nav a {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+.station-nav a:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+/* The current station is marked for everyone, not only visually. */
+.station-nav a[aria-current='page'] {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.stations {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.station {
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-6);
+}
+.station:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.station h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 1rem;
+}
+.station-invitation {
+  color: var(--text-muted);
+  margin: 0 0 var(--space-3);
+  max-width: 62ch;
+}
+.station-target {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-3);
+  overflow-wrap: anywhere;
+}
+
+.station-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+}
+.station-actions button {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  padding: var(--space-2) var(--space-4);
+  background: transparent;
+  /* --text-muted, not --border: SC 1.4.11 wants 3:1 for the boundary that
+     identifies a control, and --border is 1.33:1. Same fix Phase 2 made. */
+  border: 1px solid var(--text-muted);
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+}
+.station-actions button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.station-actions button:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.station-result {
+  border-left: 2px solid var(--accent);
+  padding: var(--space-3) 0 var(--space-3) var(--space-4);
+  margin: 0 0 var(--space-4);
+}
+.station-result-error {
+  border-left-color: var(--accent-danger);
+}
+.station-result p {
+  margin: 0 0 var(--space-2);
+}
+
+/* Refusal. The boundary colour, and only here. */
+.denial {
+  color: var(--isolation);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.station-note,
+.station-disclosure {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  max-width: 66ch;
+  margin: 0 0 var(--space-2);
+}
+.station-disclosure {
+  border-left: 2px solid var(--accent-warm);
+  padding-left: var(--space-3);
+}
+
+.inspect {
+  margin: 0 0 var(--space-3);
+  font-size: 0.8125rem;
+}
+.inspect dt {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  margin-top: var(--space-3);
+}
+.inspect dd {
+  margin: var(--space-1) 0 0;
+  overflow-wrap: anywhere;
+}
+.inspect code {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text);
+  background: var(--bg-raised);
+  padding: 2px 5px;
+  border-radius: 3px;
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.codes {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.code-ok {
+  color: var(--accent);
+}
+/* Shed. Cyan is the boundary; a rate limit is a different refusal, so it
+   takes amber — caution — and never borrows the isolation colour. */
+.code-shed {
+  color: var(--accent-warm);
+}
+
+.station-takeaway {
+  border-top: 1px solid var(--border);
+}
+.station-takeaway a {
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}

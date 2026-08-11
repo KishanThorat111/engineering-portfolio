@@ -130,7 +130,7 @@ export function LiveDocument() {
   const denials = log.filter((event) => event.outcome === 'denied').length;
 
   return (
-    <main className="document" id="document">
+    <>
       <header className="document-header">
         <p className="eyebrow">{COPY.disclosure.label}</p>
         <h1>{COPY.document.title}</h1>
@@ -222,6 +222,6 @@ export function LiveDocument() {
       <div className="sr-only" role="status" aria-live="polite">
         {announcement}
       </div>
-    </main>
+    </>
   );
 }

@@ -347,6 +347,7 @@ function Membrane() {
   const materialRef = useRef<THREE.ShaderMaterial>(null);
   const lastDenialAt = useWorld((s) => s.lastDenialAt);
   const reducedMotion = useWorld((s) => s.reducedMotion);
+  const breakOut = useWorld((s) => s.breakOut);
 
   const uniforms = useMemo(
     () => ({ uTime: { value: 0 }, uFlare: { value: 0 }, uCyan: { value: cyan.clone() } }),
@@ -355,6 +356,22 @@ function Membrane() {
 
   useFrame((_, delta) => {
     uniforms.uTime.value += delta;
+
+    /*
+     * The locked choreography wins when it is running (§2.5).
+     *
+     * P4 drove the flare from an envelope over `lastDenialAt`. P5 adds the
+     * authored timeline, which holds — and a hold is exactly what an envelope
+     * over elapsed time cannot express. The envelope remains as the fallback
+     * for denials that arrive over the socket from OTHER tenants, which are
+     * real refusals the visitor did not cause and which should register without
+     * hijacking the camera.
+     */
+    if (breakOut.flare > 0.001) {
+      uniforms.uFlare.value = breakOut.flare;
+      return;
+    }
+
     if (lastDenialAt === null) {
       uniforms.uFlare.value = 0;
       return;
@@ -404,6 +421,21 @@ function Membrane() {
 
 export function World({ quality }: { quality: QualitySettings }) {
   const setFrame = useWorld((s) => s.setFrame);
+  const assembly = useWorld((s) => s.assembly);
+  const groupRef = useRef<THREE.Group>(null);
+
+  /*
+   * The cold open assembles the geometry out of the dark (§2.2), paced by the
+   * visitor's REAL measured handshake. Scale and opacity only — nothing is
+   * created or destroyed, so the take stays continuous.
+   */
+  useFrame(() => {
+    const group = groupRef.current;
+    if (!group) return;
+    const eased = Math.max(0.0001, assembly);
+    group.scale.setScalar(0.82 + eased * 0.18);
+    group.visible = assembly > 0.01;
+  });
 
   // The world is lit from within (§3.7): no sun, no key light. The only
   // ambient term is a whisper so unlit back-faces are not pure black.
@@ -414,10 +446,12 @@ export function World({ quality }: { quality: QualitySettings }) {
   return (
     <>
       <ambientLight intensity={0.08} />
-      <Lattice quality={quality} />
-      <Volumes quality={quality} />
-      <Packets quality={quality} />
-      <Membrane />
+      <group ref={groupRef}>
+        <Lattice quality={quality} />
+        <Volumes quality={quality} />
+        <Packets quality={quality} />
+        <Membrane />
+      </group>
     </>
   );
 }

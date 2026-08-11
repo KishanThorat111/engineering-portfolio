@@ -1,33 +1,44 @@
 /**
- * The surface: one canvas, one document, one event source.
+ * The surface: one canvas, one document, one event source, one tenant.
  *
- * The source decision is the honest one and it lives here so it is easy to
- * audit: try the live plane, and if it cannot be reached after three attempts,
- * fall back to the RECORDED REAL TRACES and say so in the badge. There is no
- * third path. A quiet live plane is left quiet rather than topped up from the
- * recording, because §6.3 and principle 12 both turn on the visitor always
- * knowing which one they are looking at.
+ * THE FUSION RULE (§13, P5): every visual state traces to a real backend event.
+ * So the order here is not cosmetic — the world does nothing until the control
+ * plane has actually answered, and when it cannot, the surface says so and
+ * replays recorded real traces rather than filling the silence.
+ *
+ * The source decision is unchanged from P4 and still the honest one: try live,
+ * and after three failed attempts fall back to the recording behind a badge
+ * that says what it is. A quiet live plane is left quiet.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Scene } from './render/Scene.tsx';
 import { LiveDocument } from './ui/Document.tsx';
+import { Arrival } from './ui/Arrival.tsx';
+import { Stations } from './ui/Stations.tsx';
 import { COPY } from './content/copy.ts';
 import { useWorld } from './state/store.ts';
 import { LiveSocketSource, ReplaySource, type EventSource } from './live/source.ts';
 import { RECORDING } from './live/recording.ts';
+import * as api from './live/api.ts';
+import { clearSession, loadSession, markColdOpenPlayed, saveSession } from './state/session.ts';
+import { breakOutTimeline, coldOpenTimeline } from './beats/choreography.ts';
+import { currentRoute } from './router.ts';
 
-/**
- * Where the live plane is.
- *
- * Same-origin by default so the deployed surface needs no configuration and no
- * CORS. `VITE_LIVE_URL` overrides it for local development against the Compose
- * stack, which is the only case where the two are not on one host.
- */
-function liveUrl(): string {
-  const configured = import.meta.env['VITE_LIVE_URL'] as string | undefined;
-  if (configured) return configured;
-  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${protocol}//${location.host}/v1/live`;
+function liveUrl(key: string | null): string {
+  // Runtime override first, for the same reason apiBase() has one: the harness
+  // points a production build at a local control plane without rebuilding it.
+  const runtime = (globalThis as { __LIVE_URL__?: string }).__LIVE_URL__;
+  const configured = runtime ?? (import.meta.env['VITE_LIVE_URL'] as string | undefined);
+  const base =
+    configured ?? `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/v1/live`;
+  /*
+   * The socket authenticates from the credential, exactly as every HTTP route
+   * does. A browser cannot set headers on a handshake, so the key travels as a
+   * query parameter — a knowing trade-off recorded in the gateway, bounded by
+   * the keys being short-lived and scoped to a plane with nothing real behind
+   * it.
+   */
+  return key ? `${base}${base.includes('?') ? '&' : '?'}key=${encodeURIComponent(key)}` : base;
 }
 
 function useWebglSupport(): boolean {
@@ -51,17 +62,22 @@ export function App() {
   const setSource = useWorld((s) => s.setSource);
   const setReducedMotion = useWorld((s) => s.setReducedMotion);
   const setWebglAvailable = useWorld((s) => s.setWebglAvailable);
+  const setEdge = useWorld((s) => s.setEdge);
+  const setAssembly = useWorld((s) => s.setAssembly);
+  const setTenant = useWorld((s) => s.setTenant);
+  const setProvisionError = useWorld((s) => s.setProvisionError);
+  const setBreakOut = useWorld((s) => s.setBreakOut);
+  const setBeat = useWorld((s) => s.setBeat);
+  const setStation = useWorld((s) => s.setStation);
+
+  const reducedMotion = useWorld((s) => s.reducedMotion);
+  const tenant = useWorld((s) => s.tenant);
+  const breakOutTrigger = useWorld((s) => s.breakOutTrigger);
+
   const sourceRef = useRef<EventSource | null>(null);
   const webgl = useWebglSupport();
 
-  /*
-   * prefers-reduced-motion, watched rather than read once.
-   *
-   * The dossier is explicit that reduced motion is invisible to every gate and
-   * must be verified by execution (§11). Subscribing to the query means a
-   * visitor who changes the OS setting mid-session gets the change immediately,
-   * which is the behaviour the setting is supposed to have.
-   */
+  /* --- reduced motion, watched rather than read once ------------------ */
   useEffect(() => {
     if (typeof matchMedia !== 'function') return;
     const query = matchMedia('(prefers-reduced-motion: reduce)');
@@ -71,11 +87,43 @@ export function App() {
     return () => query.removeEventListener('change', apply);
   }, [setReducedMotion]);
 
-  useEffect(() => {
-    setWebglAvailable(webgl);
-  }, [webgl, setWebglAvailable]);
+  useEffect(() => setWebglAvailable(webgl), [webgl, setWebglAvailable]);
 
+  /* --- stations are real URLs (§2.9) ---------------------------------- */
   useEffect(() => {
+    const apply = () => setStation(currentRoute().station);
+    apply();
+    addEventListener('popstate', apply);
+    return () => removeEventListener('popstate', apply);
+  }, [setStation]);
+
+  const startColdOpen = useCallback(
+    (rttMs: number, alreadyPlayed: boolean): (() => void) | undefined => {
+      if (alreadyPlayed) {
+        // §2.9: the cold open plays once per visitor. A returning visitor lands
+        // in the world already assembled rather than sitting through it again.
+        setAssembly(1);
+        setBeat('recognition');
+        return undefined;
+      }
+      const timeline = coldOpenTimeline(setAssembly, {
+        rttMs,
+        reducedMotion,
+        onComplete: () => {
+          setBeat('recognition');
+          markColdOpenPlayed();
+        },
+      });
+      return () => timeline.kill();
+    },
+    [reducedMotion, setAssembly, setBeat],
+  );
+
+  /* --- the real lifecycle --------------------------------------------- */
+  useEffect(() => {
+    let cancelled = false;
+    let stopColdOpen: (() => void) | undefined;
+
     const handlers = { onEvent: ingest, onState: setSource };
 
     const startReplay = (reason: string) => {
@@ -85,15 +133,99 @@ export function App() {
       replay.start();
     };
 
-    const live = new LiveSocketSource(liveUrl(), handlers, startReplay);
-    sourceRef.current = live;
-    live.start();
+    const connect = (key: string | null) => {
+      sourceRef.current?.stop();
+      const live = new LiveSocketSource(liveUrl(key), handlers, startReplay);
+      sourceRef.current = live;
+      live.start();
+    };
+
+    void (async () => {
+      // A6: the edge answers first, and it answers without the VM.
+      const edge = await api.readEdge();
+      if (cancelled) return;
+      setEdge(edge);
+
+      const existing = loadSession();
+      stopColdOpen = startColdOpen(edge.rttMs, existing?.coldOpenPlayed === true);
+
+      if (existing) {
+        setTenant({
+          orgId: existing.orgId,
+          publicRef: existing.publicRef,
+          apiKey: existing.apiKey,
+          expiresAt: existing.expiresAt,
+          seededRecords: 0,
+        });
+        setBeat('ownership');
+        connect(existing.apiKey);
+        // Confirm it still exists rather than trusting local storage: a tenant
+        // can be purged between visits and a stale key would produce a world
+        // full of 410s with no explanation.
+        try {
+          await api.me(existing.apiKey);
+        } catch {
+          clearSession();
+          if (!cancelled) setTenant(null);
+        }
+        return;
+      }
+
+      try {
+        const provisioned = await api.provision('visitor');
+        if (cancelled) return;
+        saveSession({
+          apiKey: provisioned.credential.apiKey,
+          publicRef: provisioned.tenant.publicRef,
+          orgId: provisioned.tenant.id,
+          expiresAt: provisioned.tenant.expiresAt,
+          coldOpenPlayed: false,
+        });
+        setTenant({
+          orgId: provisioned.tenant.id,
+          publicRef: provisioned.tenant.publicRef,
+          apiKey: provisioned.credential.apiKey,
+          expiresAt: provisioned.tenant.expiresAt,
+          seededRecords: provisioned.seededRecords,
+        });
+        setBeat('ownership');
+        connect(provisioned.credential.apiKey);
+      } catch (error) {
+        if (cancelled) return;
+        /*
+         * Provisioning genuinely failed. Say so, and watch the world without a
+         * tenant — the socket still carries other tenants' events, and if it
+         * cannot connect either, the replay takes over and says THAT instead.
+         * At no point does the surface manufacture a tenant to keep the
+         * stations usable.
+         */
+        setProvisionError((error as Error).message);
+        connect(null);
+      }
+    })();
 
     return () => {
+      cancelled = true;
+      stopColdOpen?.();
       sourceRef.current?.stop();
       sourceRef.current = null;
     };
-  }, [ingest, setSource]);
+  }, [ingest, setSource, setEdge, setTenant, setProvisionError, setBeat, startColdOpen]);
+
+  /* --- the locked break-out choreography (§2.5) ----------------------- */
+  useEffect(() => {
+    if (breakOutTrigger === 0) return undefined;
+    setBeat('confrontation');
+    const timeline = breakOutTimeline(setBreakOut, {
+      reducedMotion,
+      onComplete: () => setBeat('recognition'),
+    });
+    // Braced so the cleanup returns void. `() => timeline.kill()` returns the
+    // timeline, which React's EffectCallback type rightly refuses.
+    return () => {
+      timeline.kill();
+    };
+  }, [breakOutTrigger, reducedMotion, setBreakOut, setBeat]);
 
   return (
     <div className="surface">
@@ -105,7 +237,11 @@ export function App() {
           <Scene />
         </div>
       ) : null}
-      <LiveDocument />
+      <main className="document" id="document">
+        <Arrival />
+        {tenant ? <Stations apiKey={tenant.apiKey} /> : null}
+        <LiveDocument />
+      </main>
     </div>
   );
 }

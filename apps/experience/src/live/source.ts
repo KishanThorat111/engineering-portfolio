@@ -50,6 +50,8 @@ export interface EventSource {
 
 export class LiveSocketSource implements EventSource {
   #url: string;
+  /** Whether the URL carries a credential, and so whether `self` is available. */
+  #authenticated: boolean;
   #socket: WebSocket | null = null;
   #handlers: SourceEvents;
   #state: SourceState = { mode: 'connecting', presence: null, reason: null, recordedAt: null };
@@ -60,6 +62,7 @@ export class LiveSocketSource implements EventSource {
 
   constructor(url: string, handlers: SourceEvents, onGiveUp: (reason: string) => void) {
     this.#url = url;
+    this.#authenticated = url.includes('key=');
     this.#handlers = handlers;
     this.#onGiveUp = onGiveUp;
   }
@@ -88,9 +91,20 @@ export class LiveSocketSource implements EventSource {
 
     socket.onopen = () => {
       this.#attempts = 0;
-      // `world` only. This surface watches the estate; a tenant-scoped
-      // subscription belongs to P5, where a visitor has a tenant to scope to.
+      /*
+       * BOTH scopes, when there is a credential.
+       *
+       * `world` alone was right in P4, where the surface had no tenant of its
+       * own. In P5 it is a bug: the gateway routes an event to `self` when it
+       * belongs to the subscriber and to `world` when it does not, so a
+       * world-only subscription silently drops the visitor's OWN events — which
+       * is precisely the audit row §2.5 ends on. Caught by the fusion check
+       * asserting the refusal comes back over the socket.
+       */
       socket.send(JSON.stringify({ type: 'subscribe', scope: 'world' }));
+      if (this.#authenticated) {
+        socket.send(JSON.stringify({ type: 'subscribe', scope: 'self' }));
+      }
     };
 
     socket.onmessage = (message) => {

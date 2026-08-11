@@ -22,6 +22,7 @@ import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import origin from '../../content/origin.json' with { type: 'json' };
+import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '../..');
@@ -61,6 +62,73 @@ function injectCanonical() {
   };
 }
 
+/**
+ * The stations, as real pages.
+ *
+ * §2.9 requires every station to be directly addressable by URL and shareable
+ * as a link that opens there. A hash would technically be a URL and would fail
+ * the spirit of it: no crawlable shell, no per-station title, and a link that
+ * cannot be served by a static host as its own document.
+ *
+ * So each station gets its own built HTML file carrying the same bundle and its
+ * own title and description. `/live/payments/` is a real page the Worker serves
+ * with no SPA fallback and no route rewriting, which is also why this needed no
+ * change to wrangler.jsonc — the static host already knows how to serve a
+ * directory with an index.html in it.
+ */
+const STATION_PAGES = [
+  {
+    path: 'isolation',
+    title: 'Isolation',
+    description: 'Attempt a cross-tenant read and watch two independent layers refuse it.',
+  },
+  {
+    path: 'payments',
+    title: 'Payments',
+    description: 'Fire the same activation twice at once and watch exactly one take effect.',
+  },
+  {
+    path: 'fraud',
+    title: 'Fraud',
+    description: 'Submit the same photo twice and watch the hash collide.',
+  },
+  {
+    path: 'ai',
+    title: 'AI cost',
+    description: 'Watch a question answered by SQL at zero model cost, then one that escalates.',
+  },
+  {
+    path: 'limits',
+    title: 'Limits',
+    description: 'Hammer an endpoint until it sheds your requests.',
+  },
+];
+
+function emitStationPages() {
+  return {
+    name: 'emit-station-pages',
+    closeBundle() {
+      const outDir = resolve(repoRoot, 'dist/live');
+      const shell = readFileSync(resolve(outDir, 'index.html'), 'utf8');
+      for (const station of STATION_PAGES) {
+        const html = shell
+          .replace(/<title>[^<]*<\/title>/, `<title>${station.title} — live system</title>`)
+          .replace(
+            /<meta name="description" content="[^"]*">/,
+            `<meta name="description" content="${station.description}">`,
+          )
+          .replace(
+            /<link rel="canonical" href="[^"]*">/,
+            `<link rel="canonical" href="${siteOrigin()}/live/${station.path}/">`,
+          );
+        const dir = resolve(outDir, station.path);
+        mkdirSync(dir, { recursive: true });
+        writeFileSync(resolve(dir, 'index.html'), html);
+      }
+    },
+  };
+}
+
 /** Writes the visitor-facing copy out as data so the truth gates can read it. */
 function emitCopyArtifact() {
   return {
@@ -86,7 +154,7 @@ function emitCopyArtifact() {
 }
 
 export default defineConfig({
-  plugins: [react(), injectCanonical(), emitCopyArtifact()],
+  plugins: [react(), injectCanonical(), emitCopyArtifact(), emitStationPages()],
   resolve: {
     alias: {
       '@contract': resolve(repoRoot, 'services/api/src/live/envelope.ts'),

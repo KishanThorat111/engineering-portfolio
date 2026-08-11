@@ -31,8 +31,30 @@ import { useWorld } from '../state/store.ts';
  * damped at 1. A lerp toward a target is the thing the dossier explicitly
  * names as wrong, so the difference is not cosmetic.
  */
+/**
+ * Time dilation (§2.5 step 2): "everything else slows".
+ *
+ * R3F's clock drives every useFrame delta in the scene, so scaling it here
+ * slows the entire world at once — packets, volume drift, the camera — rather
+ * than requiring every component to know about the choreography. That is the
+ * whole reason the timeline exposes a timeScale instead of animating each
+ * element: one number, applied at the root, and nothing downstream has to
+ * participate.
+ */
+function TimeDilation() {
+  const timeScale = useWorld((s) => s.breakOut.timeScale);
+  const { clock } = useThree();
+  useFrame(() => {
+    // Guarded: a zero would stop the clock permanently rather than dilate it,
+    // and the hold is meant to be near-stillness, not a frozen frame.
+    (clock as unknown as { _tScale?: number })._tScale = Math.max(timeScale, 0.02);
+  });
+  return null;
+}
+
 function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
   const { camera } = useThree();
+  const approach = useWorld((s) => s.breakOut.approach);
   const velocity = useRef(new THREE.Vector3());
   const target = useRef(new THREE.Vector3(0, 2.4, 26));
   const lookAt = useRef(new THREE.Vector3(0, 0, 0));
@@ -63,10 +85,17 @@ function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
     // A slow orbital drift: the world is alive without anyone touching it
     // (§3.6, "idle is alive"). Amplitude is small enough to read as breathing.
     const t = state.clock.elapsedTime;
+    /*
+     * The rig closes on the boundary as the request approaches it, and the
+     * spring below carries it back afterwards without a second animation. The
+     * pull is bounded so the world never loses its scale — §3.8 wants one
+     * continuous take, not a cut to a close-up.
+     */
+    const pull = approach * 5.5;
     target.current.set(
       Math.sin(t * 0.045) * 2.6 + pointer.current.x * 1.5,
       2.4 + Math.sin(t * 0.07) * 0.55 - pointer.current.y * 0.9,
-      26 + Math.cos(t * 0.035) * 1.4,
+      26 + Math.cos(t * 0.035) * 1.4 - pull,
     );
 
     // Critically damped spring. omega sets how quickly it converges; damping at
@@ -186,6 +215,7 @@ export function Scene() {
       onError={() => setWebglAvailable(false)}
     >
       <Suspense fallback={null}>
+        <TimeDilation />
         <CameraRig reducedMotion={reducedMotion} />
         <FrameGovernor onTier={handleTier} onReport={setFrame} />
         <World quality={quality} />
