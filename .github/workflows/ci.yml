@@ -67,6 +67,13 @@ jobs:
       - name: Machine/human parity — profile.json against the pages
         run: npm run gate:machine
 
+      # The two surfaces now share an origin, so the risk is the one rule 10
+      # exists to catch: each telling a reader something different. This reads
+      # the built artifact and needs no browser, so it belongs beside the other
+      # truth gates rather than in the local-only render harness.
+      - name: Fast lane and machine layer reconciled
+        run: npm run gate:fastlane
+
   lighthouse:
     name: Lighthouse (warn-only until Phase 8)
     runs-on: ubuntu-latest
