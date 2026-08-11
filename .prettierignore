@@ -13,3 +13,13 @@ CLAUDE.md
 
 # Binary font assets and their upstream licence text, which ships verbatim.
 apps/static/public/fonts/
+
+# The experience app's HTML shell.
+#
+# Prettier normalises void elements to `<meta … />` and lowercases the doctype;
+# html-validate (which gates BUILT output, including this file) requires the
+# omitted end tag and an uppercase doctype, matching what Astro emits for every
+# other page. Both tools are right within their own remit and neither is
+# configurable to agree, so the one hand-written HTML file in the repository is
+# formatted to match the gate that ships rather than the formatter that does not.
+apps/experience/index.html

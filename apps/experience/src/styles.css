@@ -1,0 +1,386 @@
+/*
+ * The document's styling.
+ *
+ * Tokens are copied from the static surface's locked palette (blueprint §5) so
+ * both surfaces are visibly one system. They are values, not decisions — the
+ * decision lives in apps/static/src/styles/tokens.css and §12.1 locks it.
+ *
+ * Contrast: every pairing used here is one the repository's contrast gate
+ * already enforces on the static surface. --text on --bg is 16.06:1,
+ * --text-muted on --bg is 7.59:1, --accent on --bg is 11.09:1.
+ */
+
+:root {
+  --bg: #0b0e14;
+  --bg-raised: #12161f;
+  --border: #232936;
+  --text: #e8eaf0;
+  --text-muted: #9aa3b2;
+  --accent: #4ade80;
+  --accent-warm: #fbbf24;
+  --accent-danger: #f87171;
+  /* The isolation boundary. Used here only for refusal. */
+  --isolation: #a8f0ff;
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Consolas, monospace;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.surface {
+  position: relative;
+  min-height: 100dvh;
+}
+
+/*
+ * The canvas sits behind the document and never intercepts input. Every
+ * interactive thing on this page is a real DOM control that a keyboard reaches,
+ * which is what keeps the scene from becoming a trap.
+ */
+.scene-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.scene-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.document {
+  position: relative;
+  z-index: 1;
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: clamp(var(--space-6), 5vw, var(--space-12)) var(--space-4) var(--space-12);
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: var(--space-2);
+  z-index: 10;
+  padding: var(--space-2) var(--space-4);
+  background: var(--bg-raised);
+  color: var(--text);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  text-decoration: none;
+}
+.skip-link:focus {
+  left: var(--space-4);
+}
+
+/* Focus is always visible and always the accent. Never removed. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- header -------------------------------------------------------- */
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-2);
+}
+
+h1 {
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  line-height: 1.15;
+  margin: 0 0 var(--space-4);
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: 1.125rem;
+  line-height: 1.3;
+  margin: 0 0 var(--space-3);
+}
+
+.lede {
+  color: var(--text-muted);
+  max-width: 62ch;
+  margin: 0 0 var(--space-6);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  margin: 0 0 var(--space-4);
+  background: var(--bg-raised);
+}
+
+.badge .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.badge-live {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+.badge-replay {
+  color: var(--accent-warm);
+  border-color: color-mix(in srgb, var(--accent-warm) 35%, var(--border));
+}
+.badge-connecting {
+  color: var(--text-muted);
+}
+
+.badge-note {
+  color: var(--text-muted);
+  letter-spacing: 0;
+  font-family: var(--font-sans);
+  text-transform: none;
+}
+
+.notice {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-warm);
+  background: var(--bg-raised);
+  padding: var(--space-4);
+  border-radius: 6px;
+  margin: 0 0 var(--space-6);
+}
+.notice h2 {
+  font-size: 1rem;
+}
+.notice p {
+  margin: 0 0 var(--space-2);
+  color: var(--text-muted);
+}
+.notice p:last-child {
+  margin-bottom: 0;
+}
+.notice-reason {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+/* --- panels -------------------------------------------------------- */
+
+.panel {
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-raised) 82%, transparent);
+  backdrop-filter: blur(6px);
+  border-radius: 8px;
+  padding: var(--space-6);
+  margin: 0 0 var(--space-6);
+}
+
+.panel-note {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin: 0 0 var(--space-4);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+.stats div {
+  margin: 0;
+}
+.stats dt {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+.stats dd {
+  margin: var(--space-1) 0 0;
+  font-family: var(--font-mono);
+  font-size: 1.375rem;
+  color: var(--text);
+}
+
+.legend {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--text-muted);
+}
+.legend li {
+  margin-bottom: var(--space-2);
+}
+
+.quiet {
+  color: var(--text-muted);
+  font-style: normal;
+  margin: var(--space-4) 0 0;
+}
+
+/* --- event log ----------------------------------------------------- */
+
+.event-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.event {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1.6fr) minmax(0, 1fr) 5.5rem 4.5rem;
+  gap: var(--space-3);
+  align-items: baseline;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+.event:last-child {
+  border-bottom: 0;
+}
+
+.event-outcome {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  align-self: center;
+}
+.event-denied .event-outcome {
+  /* Refusal. The one place the boundary colour appears in the document. */
+  background: var(--isolation);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--isolation) 60%, transparent);
+}
+.event-error .event-outcome {
+  background: var(--accent-danger);
+}
+
+.event-action {
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.event-org,
+.event-duration,
+.event-time {
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.event-duration,
+.event-time {
+  text-align: right;
+}
+
+/* --- footer -------------------------------------------------------- */
+
+.document-footer {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-6);
+}
+.document-footer p {
+  margin: 0 0 var(--space-3);
+  max-width: 68ch;
+}
+.document-footer a {
+  color: var(--accent);
+}
+
+.noscript-notice {
+  max-width: 40rem;
+  margin: 4rem auto;
+  padding: 0 1rem;
+}
+.noscript-notice a {
+  color: var(--accent);
+}
+
+/* --- responsive ---------------------------------------------------- */
+
+@media (max-width: 640px) {
+  .event {
+    grid-template-columns: 10px minmax(0, 1fr) 4.5rem;
+    row-gap: var(--space-1);
+  }
+  /* The org ref moves under the action rather than being truncated away. */
+  .event-org {
+    grid-column: 2 / 4;
+    font-size: 0.75rem;
+  }
+  .event-duration {
+    grid-column: 2;
+    text-align: left;
+    font-size: 0.75rem;
+  }
+  .event-time {
+    grid-column: 3;
+  }
+  .panel {
+    padding: var(--space-4);
+  }
+}
+
+/*
+ * REDUCED MOTION.
+ *
+ * Transform animation collapses to opacity or instant (§11). The scene's own
+ * motion is disabled in JavaScript rather than here — CSS cannot reach a
+ * WebGL render loop — so this rule covers the document and the two work
+ * together. Verified by execution, not by the presence of this block.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,407 @@
+{
+  "recordedAt": "2026-08-11T10:23:01.426Z",
+  "source": "control-plane-api p4-fixture-capture, local production-shaped stack",
+  "note": "A real session captured over the live WebSocket: two tenants provisioned and seeded, ordinary writes, a cross-tenant break-out refused, the isolation inspector, idempotent payment activation and its replay, duplicate-evidence rejection, SQL-first routing and an escalation, rate-limit shedding, and the scheduled TTL purge. Intervals are the real intervals; nothing was authored or re-timed.",
+  "events": [
+    {
+      "offsetMs": 0,
+      "event": {
+        "id": "6923fc54-1cb1-4f54-a900-7a82abfb74e2",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "tenant.provision",
+        "outcome": "allowed",
+        "resourceType": "tenant",
+        "occurredAt": "2026-08-11T10:21:39.107Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": 1,
+        "publishedAt": "2026-08-11T10:21:39.122Z"
+      }
+    },
+    {
+      "offsetMs": 511,
+      "event": {
+        "id": "a3eaaea9-6c08-426a-9e37-5eec4b537460",
+        "orgRef": "vol_bSxlwAE9PzFd",
+        "isSelf": false,
+        "action": "tenant.provision",
+        "outcome": "allowed",
+        "resourceType": "tenant",
+        "occurredAt": "2026-08-11T10:21:39.630Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": 1,
+        "publishedAt": "2026-08-11T10:21:39.636Z"
+      }
+    },
+    {
+      "offsetMs": 1121,
+      "event": {
+        "id": "31d1f318-0427-48e1-a82c-df16ba1bfa41",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "record.create",
+        "outcome": "allowed",
+        "resourceType": "demo_record",
+        "occurredAt": "2026-08-11T10:21:40.244Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": 5,
+        "publishedAt": "2026-08-11T10:21:40.247Z"
+      }
+    },
+    {
+      "offsetMs": 1831,
+      "event": {
+        "id": "90d84c50-8a19-478a-8d01-80d8e34fff55",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "record.create",
+        "outcome": "allowed",
+        "resourceType": "demo_record",
+        "occurredAt": "2026-08-11T10:21:40.953Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": 3,
+        "publishedAt": "2026-08-11T10:21:40.956Z"
+      }
+    },
+    {
+      "offsetMs": 2539,
+      "event": {
+        "id": "5466d565-fad9-460a-845a-ac106a82fd45",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "record.create",
+        "outcome": "allowed",
+        "resourceType": "demo_record",
+        "occurredAt": "2026-08-11T10:21:41.661Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": 3,
+        "publishedAt": "2026-08-11T10:21:41.664Z"
+      }
+    },
+    {
+      "offsetMs": 3255,
+      "event": {
+        "id": "a13efc21-d9f9-4f27-bf5f-ca3311796701",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "record.read",
+        "outcome": "denied",
+        "resourceType": "demo_record",
+        "occurredAt": "2026-08-11T10:21:42.376Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": 3,
+        "publishedAt": "2026-08-11T10:21:42.380Z"
+      }
+    },
+    {
+      "offsetMs": 4168,
+      "event": {
+        "id": "20f40661-a53c-4d1b-b26a-ff3a86aa73cc",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "demo.isolation.inspect",
+        "outcome": "denied",
+        "resourceType": "demo_record",
+        "occurredAt": "2026-08-11T10:21:43.287Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": null,
+        "publishedAt": "2026-08-11T10:21:43.293Z"
+      }
+    },
+    {
+      "offsetMs": 4979,
+      "event": {
+        "id": "812091e3-33b4-49a1-b29b-4a763c62f8ab",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "demo.payments.activated",
+        "outcome": "allowed",
+        "resourceType": "payment_activation",
+        "occurredAt": "2026-08-11T10:21:44.101Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": 5,
+        "publishedAt": "2026-08-11T10:21:44.105Z"
+      }
+    },
+    {
+      "offsetMs": 5640,
+      "event": {
+        "id": "8ee8e594-dc16-483e-9694-52b8728b7104",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "demo.payments.replayed",
+        "outcome": "allowed",
+        "resourceType": "payment_activation",
+        "occurredAt": "2026-08-11T10:21:44.761Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": 4,
+        "publishedAt": "2026-08-11T10:21:44.765Z"
+      }
+    },
+    {
+      "offsetMs": 6299,
+      "event": {
+        "id": "9b4319bc-e39c-424c-8c48-49b09421e467",
+        "orgRef": "vol_bSxlwAE9PzFd",
+        "isSelf": false,
+        "action": "demo.fraud.submit",
+        "outcome": "allowed",
+        "resourceType": "fraud_submission",
+        "occurredAt": "2026-08-11T10:21:45.421Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": null,
+        "publishedAt": "2026-08-11T10:21:45.424Z"
+      }
+    },
+    {
+      "offsetMs": 7008,
+      "event": {
+        "id": "5a971048-c54d-4195-8f7c-b4f25af671cb",
+        "orgRef": "vol_bSxlwAE9PzFd",
+        "isSelf": false,
+        "action": "demo.fraud.submit",
+        "outcome": "denied",
+        "resourceType": "fraud_submission",
+        "occurredAt": "2026-08-11T10:21:46.129Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": null,
+        "publishedAt": "2026-08-11T10:21:46.133Z"
+      }
+    },
+    {
+      "offsetMs": 7717,
+      "event": {
+        "id": "d69e2ac6-45e2-413a-a9fc-a192009e9358",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "demo.ai.ask",
+        "outcome": "allowed",
+        "resourceType": null,
+        "occurredAt": "2026-08-11T10:21:46.838Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": null,
+        "publishedAt": "2026-08-11T10:21:46.842Z"
+      }
+    },
+    {
+      "offsetMs": 8476,
+      "event": {
+        "id": "32a4351f-0dd7-4442-be93-207897ce06c1",
+        "orgRef": "vol_bSxlwAE9PzFd",
+        "isSelf": false,
+        "action": "demo.ai.ask",
+        "outcome": "allowed",
+        "resourceType": null,
+        "occurredAt": "2026-08-11T10:21:47.597Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": null,
+        "publishedAt": "2026-08-11T10:21:47.601Z"
+      }
+    },
+    {
+      "offsetMs": 9283,
+      "event": {
+        "id": "24c62ff8-b8bc-4325-84de-4cdb394a885d",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "demo.limits.request",
+        "outcome": "allowed",
+        "resourceType": null,
+        "occurredAt": "2026-08-11T10:21:48.406Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": 2,
+        "publishedAt": "2026-08-11T10:21:48.408Z"
+      }
+    },
+    {
+      "offsetMs": 9511,
+      "event": {
+        "id": "4b9b74f5-6028-48a2-9187-db9b8135fb70",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "demo.limits.request",
+        "outcome": "allowed",
+        "resourceType": null,
+        "occurredAt": "2026-08-11T10:21:48.633Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": 2,
+        "publishedAt": "2026-08-11T10:21:48.636Z"
+      }
+    },
+    {
+      "offsetMs": 9739,
+      "event": {
+        "id": "0ca23a15-f5be-42e8-a27f-abb8c10c2f63",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "demo.limits.request",
+        "outcome": "allowed",
+        "resourceType": null,
+        "occurredAt": "2026-08-11T10:21:48.861Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": 2,
+        "publishedAt": "2026-08-11T10:21:48.865Z"
+      }
+    },
+    {
+      "offsetMs": 9966,
+      "event": {
+        "id": "5a9a1d2d-c42c-41a4-9257-a4594aa27b5b",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "demo.limits.request",
+        "outcome": "allowed",
+        "resourceType": null,
+        "occurredAt": "2026-08-11T10:21:49.089Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": 2,
+        "publishedAt": "2026-08-11T10:21:49.092Z"
+      }
+    },
+    {
+      "offsetMs": 10194,
+      "event": {
+        "id": "ba758f24-3aed-41e8-a664-caf5d9b78f55",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "demo.limits.request",
+        "outcome": "allowed",
+        "resourceType": null,
+        "occurredAt": "2026-08-11T10:21:49.317Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": 2,
+        "publishedAt": "2026-08-11T10:21:49.319Z"
+      }
+    },
+    {
+      "offsetMs": 10421,
+      "event": {
+        "id": "ca92e22a-552e-4eb1-a2f0-8b344039c8b9",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "demo.limits.request",
+        "outcome": "allowed",
+        "resourceType": null,
+        "occurredAt": "2026-08-11T10:21:49.544Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": 2,
+        "publishedAt": "2026-08-11T10:21:49.547Z"
+      }
+    },
+    {
+      "offsetMs": 10648,
+      "event": {
+        "id": "4d719f53-b58f-44d7-bee0-b36addf599d2",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "demo.limits.request",
+        "outcome": "allowed",
+        "resourceType": null,
+        "occurredAt": "2026-08-11T10:21:49.772Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": 2,
+        "publishedAt": "2026-08-11T10:21:49.774Z"
+      }
+    },
+    {
+      "offsetMs": 10878,
+      "event": {
+        "id": "66c8382a-6f79-4bd4-857f-ec35cabab661",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "demo.limits.request",
+        "outcome": "allowed",
+        "resourceType": null,
+        "occurredAt": "2026-08-11T10:21:49.999Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": 3,
+        "publishedAt": "2026-08-11T10:21:50.003Z"
+      }
+    },
+    {
+      "offsetMs": 11105,
+      "event": {
+        "id": "bd4b3fd3-f0e2-4bd3-90f8-3e9b05553c2e",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "demo.limits.request",
+        "outcome": "allowed",
+        "resourceType": null,
+        "occurredAt": "2026-08-11T10:21:50.228Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": 2,
+        "publishedAt": "2026-08-11T10:21:50.231Z"
+      }
+    },
+    {
+      "offsetMs": 11334,
+      "event": {
+        "id": "258045ba-3dee-4558-aece-1c7c4c8a1595",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "demo.limits.request",
+        "outcome": "allowed",
+        "resourceType": null,
+        "occurredAt": "2026-08-11T10:21:50.457Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": 3,
+        "publishedAt": "2026-08-11T10:21:50.460Z"
+      }
+    },
+    {
+      "offsetMs": 62440,
+      "event": {
+        "id": "7fc37c46-9928-4a6f-885a-583ff9bdb002",
+        "orgRef": "vol_i4yXxXMOd_lw",
+        "isSelf": false,
+        "action": "tenant.purge",
+        "outcome": "allowed",
+        "resourceType": "tenant",
+        "occurredAt": "2026-08-11T10:22:41.560Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": null,
+        "publishedAt": "2026-08-11T10:22:41.566Z"
+      }
+    },
+    {
+      "offsetMs": 62445,
+      "event": {
+        "id": "8664dc09-1e97-4f80-acda-955b342cce23",
+        "orgRef": "vol_bSxlwAE9PzFd",
+        "isSelf": false,
+        "action": "tenant.purge",
+        "outcome": "allowed",
+        "resourceType": "tenant",
+        "occurredAt": "2026-08-11T10:22:41.566Z",
+        "correlationId": null,
+        "traceId": null,
+        "durationMs": null,
+        "publishedAt": "2026-08-11T10:22:41.571Z"
+      }
+    }
+  ]
+}

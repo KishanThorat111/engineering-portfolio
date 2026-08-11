@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Live system — Kishan Thorat</title>
+    <!-- One line, deliberately: the machine-parity gate matches
+         `<meta name="description" content="…"` contiguously, and Vite does not
+         minify this shell, so a wrapped attribute ships as a page with no
+         description as far as the gate — and a crawler — can tell. -->
+    <meta name="description" content="A live demonstration plane: a real multi-tenant system, rendered from its own telemetry.">
+    <meta name="theme-color" content="#0B0E14">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <!--
+      Not indexed. The static surface is the SEO and machine layer (dossier
+      §6.2); this surface is the world. Two canonical copies of the same claims
+      competing for the same queries is the divergence rule 10 exists to stop.
+    -->
+    <meta name="robots" content="noindex, follow">
+  </head>
+  <body>
+    <!--
+      The scene is not the only way to understand this page.
+
+      #root carries an accessible document — headings, prose, a live region —
+      that a screen reader, a keyboard, a text browser, or anyone whose GPU
+      cannot run WebGL gets in full. The canvas is layered behind it as an
+      illustration of what the text already says. WCAG 2.2 AA is a budget the
+      dossier binds to BOTH surfaces (§11), and a canvas with no textual
+      equivalent would fail it no matter how well it ran.
+    -->
+    <div id="root"></div>
+    <noscript>
+      <div class="noscript-notice">
+        <h1>Live system</h1>
+        <p>
+          This surface renders a real system's telemetry and needs JavaScript to do it. Everything
+          it demonstrates is also written down, without JavaScript, on the main site.
+        </p>
+        <p><a href="/">Go to the site</a></p>
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,6 +1,6 @@
 {
   "name": "engineering-portfolio",
-  "description": "Source for kishanthorat.com — an evidence-first engineering portfolio and a live, attackable demonstration system.",
+  "description": "Source for kishanthorat.com \u2014 an evidence-first engineering portfolio and a live, attackable demonstration system.",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -16,9 +16,9 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace apps/static",
-    "build": "npm run build --workspace apps/static",
+    "build": "npm run build --workspace apps/static && npm run build --workspace apps/experience",
     "preview": "npm run preview --workspace apps/static",
-    "check": "npm run check --workspace apps/static",
+    "check": "npm run check --workspace apps/static && npm run check --workspace apps/experience",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "gate:copy": "node scripts/copy-check.mjs",
@@ -35,7 +35,11 @@
     "api:test": "npm test --workspace @portfolio/api",
     "api:up": "docker compose -f infra/compose.dev.yml up -d",
     "api:down": "docker compose -f infra/compose.dev.yml down -v",
-    "api:verify": "npm run api:check && npm run api:build && npm run api:test"
+    "api:verify": "npm run api:check && npm run api:build && npm run api:test",
+    "build:static": "npm run build --workspace apps/static",
+    "build:experience": "npm run build --workspace apps/experience",
+    "exp:dev": "npm run dev --workspace apps/experience",
+    "verify:render": "node scripts/render-verify.mjs"
   },
   "devDependencies": {
     "html-validate": "^10.0.0",
