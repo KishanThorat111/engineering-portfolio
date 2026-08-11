@@ -1712,3 +1712,104 @@ docker run --rm -v "$PWD:/repo" node:24-bookworm-slim sh -c '…npm install…'
 ```
 
 A local `npm ci` remains necessary and is no longer sufficient.
+
+---
+
+## P5 — Fusion (Dossier §13) · 11 August 2026
+
+### Shipped
+
+- **The render layer wired to the real control plane.** `src/live/api.ts` is a typed client
+  for the endpoints P1 and P2 built; there is no mock layer and no demo mode.
+- **The cold open** (§2.2) — real edge PoP and a real measured round trip (A6), the browser's
+  actual TLS state, real provisioning, and geometry assembling at a pace set by that
+  measurement.
+- **The break-out choreography** (§2.5), locked: slow → stop → **hold** → resume, with the
+  audit pulse ~200ms after the resume. GSAP, per the locked stack.
+- **The four stations plus the boundary** (§2.6), each hitting the real P2 endpoints.
+- **Stations as real URLs** (§2.9) — `/live/isolation/`, `/live/payments/`, `/live/fraud/`,
+  `/live/ai/`, `/live/limits/`, each a built page with its own title, description, and
+  canonical.
+- **The take-away** (§2.10, A14) — the signed receipt permalink from `/v1/receipt`.
+- **The cold open plays once per visitor**; returning visitors land already provisioned.
+
+### Verification record
+
+**21/21 browser checks**, six of them new and run against a **real control plane** — a real
+Postgres, a real Redis, the real migrations, the real API process. Nothing is stubbed.
+
+- Arrival reports a **real measured round trip** (4ms locally) and prints `edge unknown`
+  rather than inventing a location when the trace endpoint is absent.
+- A **real tenant** was provisioned by the control plane: `tnt_XA5oG1HZbQdT`.
+- The break-out is refused by the real service: **403 — "That record does not belong to your
+  tenant."**
+- The inspector carries the **live predicate read from `pg_policies`**:
+  `(tenant_id = app_current_org())`. Not a description of it.
+- The refusal **returns over the socket as a real audit event** and appears in the log.
+- The surface reports **LIVE when it is genuinely live** — one live badge, zero replay badges.
+- All five station URLs return 200 with correct per-station canonicals.
+- P4's checks all still pass: p95 6.6ms / 192fps, governor reacts under pressure, reduced
+  motion, degraded mode, WebGL absent, three viewports.
+- Static surface unregressed: all gates green, `npm run verify` exits 0. 121/121 control-plane
+  tests. Formatting clean.
+
+### The defect the fusion check caught
+
+**The socket subscribed to `world` only, so the visitor's own events were silently dropped.**
+
+That was correct in P4, where the surface had no tenant of its own. In P5 it is a bug with a
+sharp edge: the gateway routes an event to `self` when it belongs to the subscriber and to
+`world` when it does not, so a world-only subscription discards exactly the audit row §2.5
+ends on — the visitor reading the record of their own attempt. The scene looked right, the
+403 was real, and the one thing missing was the beat the whole peak builds toward.
+
+Nothing else would have caught it. The check that did is the one asserting the refusal comes
+back over the socket, which exists because P5's definition of done is that every visual state
+traces to a real backend event — not that it looks like it does.
+
+### Engineering decisions — P6 inherits these
+
+1. **The verification harness PROXIES the control plane** rather than pointing the page at a
+   second origin. In production both sit behind one Cloudflare origin, so the browser makes
+   same-origin calls; testing across two ports would exercise a shape that never ships and
+   would need CORS headers the production service is right not to have.
+2. **The browser uses the CLIENT-VERIFY payment path, never the webhook.** The webhook needs
+   an HMAC over the raw body and that secret is a server secret — shipping it in a bundle
+   would hand every visitor the ability to forge a signed webhook and make the signature
+   verification the station demonstrates meaningless. The client path is the other half of the
+   same dual-path activation and is what a real checkout return does.
+3. **The break-out target is a real second tenant**, provisioned on demand, whose record id is
+   then attacked. A fabricated uuid would produce a 403 that proved nothing.
+4. **`__API_BASE__` / `__LIVE_URL__` are runtime overrides** so a PRODUCTION build can be
+   pointed at a local control plane without rebuilding. The artifact under test is then the
+   artifact that ships.
+5. **The session lives in localStorage**, holds only a short-TTL demo key, and is discarded
+   when past its TTL rather than reused — a stale key would produce a world full of 410s with
+   no explanation.
+6. **Time dilation is applied to the R3F clock at the root**, so one number slows the entire
+   world. That is why the timeline exposes `timeScale` instead of animating each element.
+7. **The authored choreography is the ONLY authored motion on this surface**, and it is
+   authored because §2.5 authored it. It fires on a real 403 and represents an event that
+   genuinely happened. Everything else remains measured.
+
+### Known limitations
+
+- **The station interactions have no automated coverage beyond the isolation break-out.**
+  Payments, fraud, AI and limits are verified through their P2 API tests (121 passing) and by
+  hand in a browser; the browser harness drives only the break-out end to end. Recorded rather
+  than hidden: extending the harness across all five is P8 hardening work.
+- The arrival beat's PoP reads `edge unknown` locally because `/cdn-cgi/trace` only exists on
+  a Cloudflare-proxied host. It will resolve a real colo in production; that is a deployment
+  observation, not a code path change.
+
+### OWNER-INPUT — open items
+
+Unchanged. Thirteen static-surface markers; deployment credentials deferred by decision; the
+model provider deferred by ruling.
+
+### Next session
+
+P6 — Estate and record. Four-system zoom-out (§2.7), case studies in context (§2.8), honest
+health. The three other platforms are **explicitly not attackable** and carry only
+already-published facts — dossier §15 leaves hospital telemetry permissions unanswered, so
+the estate layer shows what the case studies already publish and nothing more.
