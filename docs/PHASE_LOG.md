@@ -1998,3 +1998,202 @@ P8 — Hardening and launch: adversarial and load testing, WAF, Lighthouse enfor
 accessibility, domain, runbook. Carried forward as explicitly outstanding: **the real
 mid-range device performance measurement from P4**, and **the missing security response
 headers** recorded as a P8 defect in the P0 review.
+
+---
+
+## P8 — Hardening and launch (Dossier §13) · 14 August 2026
+
+Dossier §13 lists six things for P8: adversarial and load testing, WAF, Lighthouse
+enforcing, accessibility, domain, runbook. Four were completed. The two that could not be
+honestly finished are named in full at the bottom rather than quietly counted as done.
+
+### The defect P0 recorded, finally closed
+
+The P0 review fetched the live origin and found it sent **no security response headers at
+all** — no CSP, no HSTS, no `X-Content-Type-Options`, no `Referrer-Policy`. For a site
+whose subject is security engineering that is the wrong thing for a reader to discover.
+
+`scripts/emit-headers.mjs` now generates `dist/_headers` **as part of the build**, so it
+cannot go stale relative to what it describes. Verified against the installed wrangler
+bundle rather than from memory: it declares `HEADERS_FILENAME = "_headers"`, so this stays
+a static-assets deployment with no Worker script and no request-time code.
+
+**The CSP is computed, not written.** The static surface carries inline scripts, and a
+policy with `'unsafe-inline'` would pass a scanner while permitting exactly the injection
+CSP exists to stop. So the script bodies in the build are hashed and precisely those are
+allowed. Two policies, because the surfaces genuinely differ: the static pages get
+`connect-src 'none'` — they load no bundled JavaScript and have nothing to talk to — and
+`/live/*` gets `script-src 'self'`, `connect-src 'self'` and `worker-src blob:`, which is
+what three needs and nothing wider.
+
+### The harness had to become more honest before it could check this
+
+Applying the real policy in `render-verify` exposed two things about the harness itself.
+
+**The fusion tests were pointing the socket at a different origin than the page.** In
+production both surfaces sit behind one origin and the WebSocket is same-origin; the
+harness was using a cross-origin socket, which `connect-src 'self'` correctly refuses. The
+fix was not to widen the policy — it was to proxy the WebSocket upgrade through the
+harness origin, so the test now exercises the topology that actually ships.
+
+**And that broke the degraded-mode check, which had been passing on an accident.** It
+asserts the surface degrades when the live plane is unreachable, and the plane was
+unreachable only because the harness did not forward WebSockets. The moment it did, the
+socket connected and the check failed. It now runs against a **second origin serving the
+same build with no control plane behind it** (`DEAD_PORT`), so the plane is absent by
+construction. One subtlety cost a run: passing `undefined` for the upstream took the
+default parameter and quietly proxied to the live plane — it has to be `null`.
+
+**Proven by breaking it, both ways, both reverted:**
+
+| Injection | Caught |
+|---|---|
+| Unhashed inline script added to `dist/index.html` | browser refused it; both the CSP-refusal check and the hash-coverage check failed |
+| `Referrer-Policy` stripped from `dist/_headers` | *"missing referrer-policy"* on all three pages |
+
+### Lighthouse enforcing — and it found two real defects
+
+Flipped from `warn` to `error`, `continue-on-error` removed from the job. P7's log warned
+that `/live/` would meet these thresholds badly; it is excluded deliberately, with the
+reason recorded in `lighthouserc.json`: it is a WebGL surface whose budgets are the §11
+experience budgets, verified against a real GPU by the render harness. Scoring it as a
+static document would measure the wrong contract. `/dev/components/` is excluded as a
+noindex gallery that ships no claims.
+
+**The accessibility threshold was extended past the two pages blueprint §7.5 names, to
+every indexed route** — Lighthouse's accessibility category *is* axe-core, so this is the
+"axe in CI" gate T18 asks for, with no new dependency. Extending it immediately failed two
+routes that had never been audited:
+
+- `/systems/` — `h1` straight to `h3`, a skipped level.
+- `/experience/` — the same, and the later "What transferred" heading was an `h2`, so the
+  document ran `h1 → h3 → h2`.
+
+`SystemCard` hardcoded `h3`. That was right on Home, where the cards sit under a section
+header, and wrong on `/systems/`, where they follow the `h1` directly. **A card cannot know
+its own heading level — that is a property of where it is used, not of what it is.** Both
+components now take the level as a prop and style by class rather than by tag, so they look
+identical at either level. `ExperienceCard` already had the prop; it just did not allow
+`h2`.
+
+Final: **9 routes × 4 categories, all 100, worst of three runs.**
+
+### Adversarial testing — 47 attacks, all refused
+
+`scripts/adversarial.mjs` attacks a running control plane over a real socket, which asks a
+different question from the unit suite: not "does this handler reject this?" but "is there
+any way in?" Every attack asserts two things — a refusal that is not a 500, and a body that
+leaks no stack frame, no SQL, no driver text and no filesystem path.
+
+Coverage: seven authentication attacks, including that a credential in the query string or
+in an `X-Api-Key` header must **not** authenticate, so keys cannot leak into access logs
+and referrers; cross-tenant reads and four header-spoofing attempts at the org id; nine
+injection payloads through both a path parameter and a body field that is genuinely written
+to the database; prototype pollution; oversized, deeply nested and malformed bodies;
+content-type and method confusion; three attempts at the internal purge plane; disclosure
+checks; and the limiter.
+
+**Run against the production-shaped Compose stack, not a dev process** — the real container
+behind the real `Caddyfile`, with the real 120/minute limit. `infra/compose.local.yml`
+publishes Caddy on `127.0.0.1:8080` **only**, and stubs `cloudflared`. It is never
+deployed: the deploy workflow copies `compose.yml`, `Caddyfile` and `otel-collector.yaml`
+and nothing else.
+
+**Two of my own assertions were wrong, and finding that out was the point.**
+
+1. I asserted the isolation inspector must refuse with a 4xx. It answers **200 by design** —
+   explaining the refusal *is* the demonstration, and it publishes its own SQL and query
+   plan on purpose. The assertion now checks the property that actually matters: both layers
+   report `rowsReturned: 0`, and the explanation quotes **no part** of the row it refused.
+2. I asserted a burst would be rate limited, and it was not — because the plane I was
+   attacking ran at 2000/minute, not the 120 default. A false finding produced by a test
+   believing it knew the configuration. It now reads `x-ratelimit-limit` from the service
+   and bursts past whatever that is.
+
+**Proven by breaking it, reverted:** `ALTER TABLE demo_record DISABLE ROW LEVEL SECURITY`
+produced *"rows=0/1"* — the app-layer org scope still refused, and the database returned
+the foreign row. That is the clearest evidence in this repository that **RLS is
+load-bearing and not decoration**, and that the two layers are genuinely independent.
+Restored and re-verified end-to-end: both layers refusing, `rlsEnabled` and `rlsForced`
+true.
+
+### Load testing — and a measurement that was lying
+
+`scripts/loadtest.mjs`, with no new dependency: the workload has to be authenticated and
+tenant-scoped, which autocannon or k6 would have needed a custom script for anyway.
+
+The first version reported excellent percentiles. They were **rejection latency** — one
+credential exhausts its budget in the first 120 requests and everything after is a cheap
+429, which then dominated the numbers. That is precisely the flattering measurement rule 2
+exists to stop. It now keeps served and refused latencies apart, and drives a pool of
+tenants so that real work is actually served.
+
+Measured 14 Aug 2026, win32/x64, 20 logical CPUs, generator on the same machine as the
+service:
+
+| Concurrency | Requests | Served p50 / p95 / p99 | Errors |
+|---|---|---|---|
+| 1 | 9,060 | 3.0 / 4.7 / 5.9 ms (n=840) | 0 |
+| 8, 32, 64 | 186,311 | budgets exhausted — the limiter absorbed the level | 0 |
+
+**195,371 requests answered, zero 5xx, zero dropped connections, healthy afterwards.** The
+served path is the full authenticated one: credential lookup, `withTenant` transaction,
+`set_config`, RLS-filtered query. No latency threshold is asserted, deliberately — the
+generator shares a CPU with the service, so any number chosen would be a property of this
+laptop, and a gate that fails on a busy machine teaches people to ignore it.
+
+### Runbook
+
+`docs/MAINTENANCE.md` — what is running and why there is no inbound port, how to run both
+stacks, what each gate actually proves, deploy and rollback, routine operations, six
+incident playbooks, a release checklist, quarterly maintenance, and a closing section on
+**what the runbook does not claim**.
+
+### Verification record
+
+`npm run verify` exits 0 across seven gates · 121/121 control-plane tests · 35/35 render
+and fusion checks · 47/47 attacks refused · load suite OK · Lighthouse 100/100/100/100 on
+all nine indexed routes, enforcing · formatting clean.
+
+### Engineering decisions — inherited by whatever comes next
+
+1. **`dist/_headers` is a build artifact and must stay one.** Hand-editing it would let the
+   hashes drift from the scripts they authorise, and the failure mode is a blank page.
+2. **The accessibility threshold applies to every indexed route, permanently.** A screen
+   reader does not care which route it landed on. Performance stays scoped to the two pages
+   §7.5 names, so a heavier page added later fails on the thing that matters rather than on
+   a budget never written for it.
+3. **Components take their heading level from where they are used.** Do not hardcode it.
+4. **`compose.local.yml` never deploys.** The loopback binding is load-bearing — an
+   unqualified port would publish to every interface, which on a cloud VM is the internet.
+5. **Do not raise a rate limit to make a suite pass.** The adversarial suite failing to
+   provision means it has been run four times in an hour, which is the limiter working.
+
+### OWNER-INPUT — open items
+
+Unchanged: thirteen static-surface markers, deployment credentials, the model provider, and
+hospital telemetry permissions. Plus, now explicitly:
+
+- **The domain.** P8 lists it and it is not done. The swap itself is a one-line change to
+  `content/origin.json`, which is the single place the origin is written down — but the
+  domain is an owner decision, and no deployment has happened.
+
+### NOT PROVEN — stated plainly
+
+Two P8 items could not be honestly completed in this environment, and neither is counted as
+done:
+
+- **The WAF.** Cloudflare's WAF and edge rate limiting are console-side settings on a real
+  zone, not reproducible from this repository. The design (A13) assumes them and the
+  topology is built for them. Until they are configured, **the edge tier of the defence is
+  a plan, not a fact.** The origin-side tier — Caddy refusing `/internal/*`, the
+  per-credential limiter, tenant-scoped authorisation, RLS — is real and is proven above.
+- **The mid-range device measurement, carried from P4 and still outstanding.** The render
+  harness measures a real GPU: the one in this machine. It is not a mid-range phone, and CPU
+  throttling approximates one without being one. **The §11 claim of 60fps on a mid-range
+  device at tier 2 remains unverified.** It needs a physical device. It was not faked.
+
+Also recorded so it is not mistaken for a result: the local Redis rate-limit counters
+(`rl:*` only) were cleared between suites, because the load test legitimately exhausts the
+10/hour provisioning budget. That is local test-state hygiene. **No limit was changed**, and
+the limiter refusing was itself observed and recorded as correct behaviour.
