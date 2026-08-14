@@ -22,11 +22,21 @@
  */
 import { chromium } from 'playwright-core';
 import { createServer } from 'node:http';
+import { connect as netConnect } from 'node:net';
 import { readFile, stat } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { join, extname, resolve } from 'node:path';
 
 const DIST = resolve('dist');
 const PORT = 4317;
+/*
+ * A second origin serving the same build with NO control plane behind it. The
+ * degraded-mode check needs a plane that is genuinely absent, and it must be
+ * absent by construction rather than because the main harness happens not to
+ * forward something — an earlier version of this file passed that check only
+ * because the WebSocket was not proxied, and started failing the moment it was.
+ */
+const DEAD_PORT = 4318;
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -43,6 +53,52 @@ const MIME = {
 };
 
 /**
+ * Parses `dist/_headers` and applies it the way Cloudflare does.
+ *
+ * The harness has to serve the SAME headers the origin will, or the pages below
+ * are being verified in conditions no visitor will ever be in. Rules apply in
+ * file order, `/*` first as the catch-all and more specific patterns overriding
+ * it, which is the semantics Workers static assets implements.
+ */
+const headerRules = (() => {
+  const rules = [];
+  try {
+    let current = null;
+    for (const raw of readFileSync(join(DIST, '_headers'), 'utf8').split('\n')) {
+      const line = raw.trimEnd();
+      if (line.trim() === '' || line.trimStart().startsWith('#')) continue;
+      if (!/^\s/.test(line)) {
+        current = { pattern: line.trim(), headers: new Map() };
+        rules.push(current);
+        continue;
+      }
+      const index = line.indexOf(':');
+      if (index > 0 && current) {
+        current.headers.set(
+          line.slice(0, index).trim().toLowerCase(),
+          line.slice(index + 1).trim(),
+        );
+      }
+    }
+  } catch {
+    /* absent file: the P8 checks fail loudly, which is the correct outcome */
+  }
+
+  const matches = (pattern, pathname) =>
+    pattern.endsWith('/*') ? pathname.startsWith(pattern.slice(0, -1)) : pattern === pathname;
+
+  return (pathname) => {
+    const applied = new Map();
+    for (const rule of rules) {
+      if (matches(rule.pattern, pathname)) {
+        for (const [name, value] of rule.headers) applied.set(name, value);
+      }
+    }
+    return Object.fromEntries(applied);
+  };
+})();
+
+/**
  * Serves the composed dist exactly as the Worker would — and proxies the API.
  *
  * The proxy is not a convenience. In production the static surface and the
@@ -52,8 +108,7 @@ const MIME = {
  * production service is right not to have. Proxying reproduces the real
  * topology, so what is verified here is what deploys.
  */
-function serve() {
-  const upstream = process.env.LIVE_API;
+function serve(port = PORT, upstream = process.env.LIVE_API) {
   return new Promise((ready) => {
     const server = createServer(async (request, response) => {
       try {
@@ -86,6 +141,7 @@ function serve() {
         const body = await readFile(path);
         response.writeHead(200, {
           'content-type': MIME[extname(path)] ?? 'application/octet-stream',
+          ...headerRules(url.pathname),
         });
         response.end(body);
       } catch {
@@ -93,7 +149,35 @@ function serve() {
         response.end('not found');
       }
     });
-    server.listen(PORT, () => ready(server));
+
+    /*
+     * The WebSocket is proxied for the same reason the HTTP calls are, and one
+     * more: `connect-src 'self'` is a real part of the shipped policy, so a
+     * cross-origin socket would be refused by the browser here while working
+     * perfectly in production behind Caddy. Piping the upgrade through this
+     * origin makes the socket genuinely same-origin, which is both what ships
+     * and what the CSP describes.
+     */
+    server.on('upgrade', (request, socket, head) => {
+      if (!upstream) return socket.destroy();
+      const target = new URL(upstream);
+      const relay = netConnect(Number(target.port || 80), target.hostname, () => {
+        const lines = [`${request.method} ${request.url} HTTP/1.1`];
+        for (let i = 0; i < request.rawHeaders.length; i += 2) {
+          const name = request.rawHeaders[i];
+          const value = name.toLowerCase() === 'host' ? target.host : request.rawHeaders[i + 1];
+          lines.push(`${name}: ${value}`);
+        }
+        relay.write(lines.join('\r\n') + '\r\n\r\n');
+        if (head?.length) relay.write(head);
+        relay.pipe(socket);
+        socket.pipe(relay);
+      });
+      relay.on('error', () => socket.destroy());
+      socket.on('error', () => relay.destroy());
+    });
+
+    server.listen(port, () => ready(server));
   });
 }
 
@@ -158,6 +242,10 @@ async function open(browser, options, path = '/live/') {
 }
 
 const server = await serve();
+// `null`, not `undefined` — an explicit `undefined` would take the default
+// parameter and quietly proxy to the live plane, which is precisely the origin
+// this one exists not to be.
+const deadServer = await serve(DEAD_PORT, null);
 const browser = await launch();
 
 try {
@@ -267,9 +355,13 @@ try {
   console.log('\n=== degraded mode (live plane unreachable) ===');
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-    // No control plane is running on this origin, so the socket genuinely
-    // fails. Nothing is stubbed — this is the real failure path.
-    await page.goto(`http://localhost:${PORT}/live/`, { waitUntil: 'load' });
+    /*
+     * Served from the origin with no control plane behind it: the fetches 404
+     * and the socket upgrade is refused, both same-origin and both at the
+     * network layer. Nothing is stubbed and no page behaviour is overridden —
+     * this is the real failure path, reached by genuinely removing the plane.
+     */
+    await page.goto(`http://localhost:${DEAD_PORT}/live/`, { waitUntil: 'load' });
     await page.waitForTimeout(9000);
 
     const badge = await page
@@ -368,14 +460,15 @@ try {
     console.log('  This section is the P5 definition of done and is NOT optional; it is run');
     console.log('  against the Compose stack by `npm run verify:fusion`.');
   } else {
-    const api = process.env.LIVE_API;
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-    await page.addInitScript((base) => {
-      // Point the surface at the running stack. Same code path as production;
-      // only the origin differs, which is exactly what VITE_API_BASE exists for.
+    await page.addInitScript(() => {
+      // Both the HTTP calls and the socket go through this origin, which the
+      // harness proxies to the running stack. That is the production topology —
+      // one origin in front of both surfaces — rather than an approximation of
+      // it, and it is what makes `connect-src 'self'` verifiable here.
       window.__API_BASE__ = '';
-      window.__LIVE_URL__ = base.replace(/^http/, 'ws') + '/v1/live';
-    }, api);
+      window.__LIVE_URL__ = `ws://localhost:${location.port}/v1/live`;
+    });
     await page.goto(`http://localhost:${PORT}/live/`, { waitUntil: 'load' });
     await page.waitForSelector('#document');
 
@@ -546,7 +639,92 @@ try {
     await page.close();
   }
 
-  /* ---- 9. Responsive -------------------------------------------------- */
+  /* ---- 9. P8: the security headers, applied and survived -------------- */
+  console.log('\n=== P8 security headers ===');
+  {
+    /*
+     * Every page in this harness is already served under the real policy (see
+     * headerRules), so these loads happen inside exactly the CSP the origin
+     * will send. A generated policy nobody has loaded a page under is a guess;
+     * running the real pages inside it and watching for refusals is the only
+     * thing that distinguishes a correct policy from a plausible one.
+     */
+    const REQUIRED = [
+      'content-security-policy',
+      'x-content-type-options',
+      'referrer-policy',
+      'x-frame-options',
+      'permissions-policy',
+      'strict-transport-security',
+    ];
+
+    for (const [label, path] of [
+      ['static home', '/'],
+      ['case study', '/systems/hospital-operations/'],
+      ['live surface', '/live/'],
+    ]) {
+      const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+      const refusals = [];
+      page.on('console', (message) => {
+        const text = message.text();
+        if (/Content Security Policy|Refused to/i.test(text)) refusals.push(text);
+      });
+      const response = await page.goto(`http://localhost:${PORT}${path}`, { waitUntil: 'load' });
+      await page.waitForTimeout(2500);
+
+      const sent = response?.headers() ?? {};
+      const missing = REQUIRED.filter((name) => !sent[name]);
+      record(
+        `${label}: all six security headers present`,
+        missing.length === 0 ? 'all present' : `missing ${missing.join(', ')}`,
+        missing.length === 0,
+      );
+      record(
+        `${label}: loads with zero CSP refusals`,
+        refusals.length === 0 ? 'none' : refusals.slice(0, 2).join(' | '),
+        refusals.length === 0,
+      );
+      await page.close();
+    }
+
+    // The static surface loads no bundled JavaScript and has nothing to talk
+    // to, so it is permitted to open no connections at all.
+    const staticCsp = headerRules('/')['content-security-policy'] ?? '';
+    record(
+      'the static surface forbids connections entirely',
+      staticCsp.includes("connect-src 'none'") ? "connect-src 'none'" : staticCsp.slice(0, 70),
+      staticCsp.includes("connect-src 'none'"),
+    );
+
+    // And neither policy may be softened into decoration. A CSP with
+    // 'unsafe-inline' in script-src passes a scanner while permitting exactly
+    // the injection a CSP exists to stop.
+    const liveCsp = headerRules('/live/')['content-security-policy'] ?? '';
+    const unsafe = /script-src[^;]*unsafe-(inline|eval)/;
+    record(
+      'no unsafe-inline or unsafe-eval in either script-src',
+      'both policies checked',
+      staticCsp !== '' && !unsafe.test(staticCsp) && !unsafe.test(liveCsp),
+    );
+
+    // The hashes must be the ones this build produced, not a stale copy left
+    // behind by an earlier one.
+    const home = await readFile(join(DIST, 'index.html'), 'utf8');
+    const inline = [...home.matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)]
+      .map((match) => match[1])
+      .filter((body) => body.trim() !== '');
+    const { createHash } = await import('node:crypto');
+    const allHashed = inline.every((body) =>
+      staticCsp.includes(createHash('sha256').update(body, 'utf8').digest('base64')),
+    );
+    record(
+      'every inline script in this build is hashed into the policy',
+      `${inline.length} inline script(s) on home`,
+      inline.length > 0 && allHashed,
+    );
+  }
+
+  /* ---- 10. Responsive ------------------------------------------------- */
   console.log('\n=== responsive ===');
   for (const [label, viewport] of [
     ['mobile 390', { width: 390, height: 844 }],
@@ -565,6 +743,7 @@ try {
 } finally {
   await browser.close();
   server.close();
+  deadServer.close();
 }
 
 const failed = results.filter((r) => !r.pass);

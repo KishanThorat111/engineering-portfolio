@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace apps/static",
-    "build": "npm run build --workspace apps/static && npm run build --workspace apps/experience",
+    "build": "npm run build --workspace apps/static && npm run build --workspace apps/experience && node scripts/emit-headers.mjs",
     "preview": "npm run preview --workspace apps/static",
     "check": "npm run check --workspace apps/static && npm run check --workspace apps/experience",
     "format": "prettier --write .",
@@ -41,7 +41,12 @@
     "exp:dev": "npm run dev --workspace apps/experience",
     "verify:render": "node scripts/render-verify.mjs",
     "verify:fusion": "node scripts/render-verify.mjs",
-    "gate:fastlane": "node scripts/fastlane-check.mjs"
+    "gate:fastlane": "node scripts/fastlane-check.mjs",
+    "gate:headers": "node scripts/emit-headers.mjs",
+    "verify:adversarial": "node scripts/adversarial.mjs",
+    "verify:load": "node scripts/loadtest.mjs",
+    "stack:up": "docker compose -f infra/compose.yml -f infra/compose.local.yml up -d --build",
+    "stack:down": "docker compose -f infra/compose.yml -f infra/compose.local.yml down"
   },
   "devDependencies": {
     "html-validate": "^10.0.0",
