@@ -74,10 +74,13 @@ jobs:
       - name: Fast lane and machine layer reconciled
         run: npm run gate:fastlane
 
+  # Enforcing as of P8. Scoped to the two pages blueprint §7.5 names — Home and
+  # the flagship case study — for the reason recorded in lighthouserc.json: the
+  # live surface is measured against the §11 experience budgets by the render
+  # harness on a real GPU, not by a static-page performance score.
   lighthouse:
-    name: Lighthouse (warn-only until Phase 8)
+    name: Lighthouse (enforcing)
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 

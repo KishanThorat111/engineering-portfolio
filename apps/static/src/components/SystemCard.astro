@@ -19,9 +19,22 @@ interface Props {
   problem: string;
   stack: string[];
   href: string;
+  /**
+   * The heading level this card sits at.
+   *
+   * A card cannot know its own level — that is a property of where it is used,
+   * not of what it is. Hardcoding `h3` was correct on Home, where the cards sit
+   * under an `h2` section header, and wrong on `/systems/`, where they follow
+   * the `h1` directly and left a skipped level. Lighthouse caught it on the
+   * route once P8 extended the accessibility gate past the two pages the
+   * blueprint originally named.
+   */
+  headingLevel?: 2 | 3;
 }
 
-const { title, status, statusDetail, problem, stack, href } = Astro.props;
+const { title, status, statusDetail, problem, stack, href, headingLevel = 3 } = Astro.props;
+
+const Heading = `h${headingLevel}` as 'h2' | 'h3';
 
 /** Blueprint §5 fixes the card at three tags; the full stack lives on the case study. */
 const shownStack = stack.slice(0, 3);
@@ -29,7 +42,7 @@ const shownStack = stack.slice(0, 3);
 
 <article class="system-card">
   <StatusBadge status={status} detail={statusDetail} />
-  <h3><a href={href}>{title}</a></h3>
+  <Heading class="card-title"><a href={href}>{title}</a></Heading>
   <p class="problem">{problem}</p>
   <ul class="stack">
     {shownStack.map((tag) => <li>{tag}</li>)}
@@ -65,18 +78,20 @@ const shownStack = stack.slice(0, 3);
     border-color: var(--accent);
   }
 
-  h3 {
+  /* Styled by class, not by tag: the heading level varies with where the card
+     is used, and the card must look identical at either level. */
+  .card-title {
     font-size: var(--text-md);
     margin: 0;
   }
 
-  h3 a {
+  .card-title a {
     color: var(--text);
     text-decoration: none;
   }
 
   /* Stretched link: one anchor, whole-card hit area. */
-  h3 a::after {
+  .card-title a::after {
     content: '';
     position: absolute;
     inset: 0;

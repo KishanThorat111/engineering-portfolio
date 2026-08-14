@@ -1,17 +1,43 @@
 {
-  "$comment": "Lighthouse CI — warn-only until Phase 8 hardening flips these assertions to error at the blueprint §7.5 thresholds (≥95 performance, accessibility pass, ≥95 SEO).",
+  "$comment": "Lighthouse CI — ENFORCING as of P8. Two assertion sets, because the pages are not the same kind of page. Lighthouse's accessibility category is axe-core, so this is the 'axe in CI' gate blueprint T18 asks for, and it now covers every indexed static route rather than the two originally named. Two routes are deliberately absent from the list: /live/ is a WebGL surface whose budgets are the dossier §11 experience budgets, verified against a real GPU by scripts/render-verify.mjs — scoring it as a static document would measure the wrong contract; and /dev/components/ is a noindex component gallery that ships no claims. Both are covered by the render harness instead.",
   "ci": {
     "collect": {
       "staticDistDir": "./dist",
-      "numberOfRuns": 1
+      "url": [
+        "http://localhost/index.html",
+        "http://localhost/systems/hospital-operations/",
+        "http://localhost/about/",
+        "http://localhost/cv/",
+        "http://localhost/engineering/",
+        "http://localhost/experience/",
+        "http://localhost/systems/",
+        "http://localhost/systems/electrical-platform/",
+        "http://localhost/systems/menu-platform/"
+      ],
+      "numberOfRuns": 3
     },
     "assert": {
-      "assertions": {
-        "categories:performance": ["warn", { "minScore": 0.95 }],
-        "categories:accessibility": ["warn", { "minScore": 1 }],
-        "categories:best-practices": ["warn", { "minScore": 0.95 }],
-        "categories:seo": ["warn", { "minScore": 0.95 }]
-      }
+      "assertMatrix": [
+        {
+          "$comment": "Home and the flagship case study carry the full blueprint §7.5 thresholds: ≥95 performance, ≥95 SEO, ≥95 best-practices, and a perfect accessibility audit.",
+          "matchingUrlPattern": ".*(index\\.html|systems/hospital-operations/)$",
+          "assertions": {
+            "categories:performance": ["error", { "minScore": 0.95 }],
+            "categories:accessibility": ["error", { "minScore": 1 }],
+            "categories:best-practices": ["error", { "minScore": 0.95 }],
+            "categories:seo": ["error", { "minScore": 0.95 }]
+          }
+        },
+        {
+          "$comment": "Every other static route. Accessibility and SEO are properties of the page and are enforced identically everywhere — a screen reader does not care which route it landed on. Performance is asserted only on the two pages §7.5 names, so a heavier page added later fails on the thing that matters rather than on a budget that was never written for it.",
+          "matchingUrlPattern": "^(?!.*(index\\.html|systems/hospital-operations/)$).*",
+          "assertions": {
+            "categories:accessibility": ["error", { "minScore": 1 }],
+            "categories:seo": ["error", { "minScore": 0.95 }],
+            "categories:best-practices": ["error", { "minScore": 0.95 }]
+          }
+        }
+      ]
     },
     "upload": {
       "target": "filesystem",

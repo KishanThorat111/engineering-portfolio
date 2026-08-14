@@ -33,6 +33,11 @@ const systems = (await getCollection('systems')).sort((a, b) => a.data.order - b
 
   <section class="listing">
     <div class="container">
+      {
+        /* headingLevel={2}: on this route the cards follow the h1 directly —
+          there is no section heading above them — so they are the page's
+          top-level sections. Leaving them at the default h3 skipped a level. */
+      }
       <div class="system-grid">
         {
           systems.map((system, index) => (
@@ -44,6 +49,7 @@ const systems = (await getCollection('systems')).sort((a, b) => a.data.order - b
                 problem={system.data.problem}
                 stack={system.data.stack}
                 href={`/systems/${system.id}`}
+                headingLevel={2}
               />
             </div>
           ))

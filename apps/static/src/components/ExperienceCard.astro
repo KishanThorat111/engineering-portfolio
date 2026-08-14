@@ -20,7 +20,7 @@ interface Props {
   confidential?: boolean;
   note?: string;
   /** See SectionHeader: a prop named `as` breaks prop typing in this toolchain. */
-  level?: 'h3' | 'h4';
+  level?: 'h2' | 'h3' | 'h4';
 }
 
 const {
@@ -81,6 +81,7 @@ const CONFIDENTIAL: Status = 'CONFIDENTIAL';
     gap: var(--space-2);
   }
 
+  h2,
   h3,
   h4 {
     font-size: var(--text-md);

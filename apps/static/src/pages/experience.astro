@@ -43,6 +43,7 @@ const roles = (await getCollection('experience')).sort((a, b) => a.data.order - 
                 bullets={role.data.bullets}
                 confidential={role.data.confidential}
                 note={role.data.note}
+                level="h2"
               />
             </div>
           ))
