@@ -1,0 +1,37 @@
+# Local-only override for the PRODUCTION-shaped stack.
+#
+# WHAT THIS IS FOR
+# `compose.yml` is the deployment shape: no inbound port exists, because
+# cloudflared makes an outbound connection and pulls requests in. That is
+# correct and must not change. But it also means nothing on this machine can
+# reach Caddy to test it, and the adversarial and load suites need to attack the
+# real container behind the real Caddy config rather than a `npm run dev`
+# process with different limits.
+#
+# So this publishes Caddy on the loopback interface only, and nowhere else.
+#
+# WHAT THIS IS NOT
+# It is never used in deployment. `compose.yml` alone is what the VM runs, and
+# the CI deploy step names only that file. Two things keep this honest:
+#   - the binding is `127.0.0.1:8080`, not `8080` — an unqualified port would
+#     publish to every interface on the host, which on a cloud VM is the entire
+#     internet, and would defeat the whole tunnel design; and
+#   - cloudflared is replaced by a no-op, because there is no tunnel to run
+#     locally and its token is a real credential this environment must not need.
+#
+# Usage:
+#   docker compose -f infra/compose.yml -f infra/compose.local.yml up -d --build
+#   LIVE_API=http://127.0.0.1:8080 node scripts/adversarial.mjs
+
+services:
+  caddy:
+    ports:
+      - '127.0.0.1:8080:80'
+
+  # There is no tunnel locally. Scaling it to zero keeps one compose file valid
+  # for both uses without a token that only the real deployment should hold.
+  cloudflared:
+    deploy:
+      replicas: 0
+    command: ['--version']
+    restart: 'no'
