@@ -127,11 +127,27 @@ ships the compose files, writes `.env` over SSH, and releases.
 the outgoing image in `.previous-image` *before* replacing it, so a release that
 dies halfway is still reversible.
 
-### Required secrets
+### Required `production` environment secrets
 
-`VM_HOST`, `VM_USER`, `VM_SSH_KEY`, `VM_SSH_KNOWN_HOSTS`, `POSTGRES_USER`,
-`POSTGRES_PASSWORD`, `APP_DB_PASSWORD`, `IP_HASH_PEPPER`, `ADMIN_TOKEN`,
-`PAYMENT_WEBHOOK_SECRET`, `RECEIPT_SIGNING_KEY`, `CLOUDFLARE_TUNNEL_TOKEN`.
+`POSTGRES_USER`, `POSTGRES_PASSWORD`, `APP_DB_PASSWORD`, `IP_HASH_PEPPER`,
+`ADMIN_TOKEN`, `PAYMENT_WEBHOOK_SECRET`, `RECEIPT_SIGNING_KEY`,
+`CLOUDFLARE_TUNNEL_TOKEN`, `GHCR_PULL_TOKEN`.
+
+Generate each from base64url or hex. The env heredoc in the workflow is
+unquoted, so a value containing `$`, a backtick or `$(…)` would be expanded or
+executed rather than written literally.
+
+### Required `production` environment variables
+
+`API_PUBLIC_URL`, `GCP_PROJECT_ID`, `GCP_ZONE`, `GCP_VM_NAME`,
+`GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_DEPLOY_SERVICE_ACCOUNT`. Optional:
+`TENANT_TTL_SECONDS` (default 1800), `PURGE_INTERVAL_MS` (default 15000).
+
+**There is no SSH key secret and no GCP service-account key.** The deploy job
+authenticates with GitHub OIDC through Workload Identity Federation and reaches
+the VM over an IAP tunnel with OS Login, so every credential it holds is minted
+per run and expires with it. `VM_HOST`, `VM_USER`, `VM_SSH_KEY` and
+`VM_SSH_KNOWN_HOSTS` were removed when that path replaced raw SSH.
 
 ---
 

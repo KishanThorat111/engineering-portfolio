@@ -79,6 +79,23 @@ jobs:
     if: ${{ always() && (inputs.rollback || needs.publish.result == 'success') }}
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: read
+      # OIDC. The runner mints a short-lived identity token that GCP's Workload
+      # Identity Federation trades for a federated access token scoped to the
+      # deployment service account. There is no service-account JSON key in this
+      # repository, in GitHub, or on the runner — the credential is minted per
+      # run and expires with it, so there is nothing to leak or rotate.
+      id-token: write
+    env:
+      # Not secrets. These are resource identifiers, and the security boundary
+      # is the federation trust policy that binds the provider to THIS
+      # repository — not the obscurity of a project name. Kept as variables so
+      # the workflow stays portable and no infrastructure naming is baked into
+      # a public repository's source.
+      GCP_PROJECT: ${{ vars.GCP_PROJECT_ID }}
+      GCP_ZONE: ${{ vars.GCP_ZONE }}
+      GCP_VM: ${{ vars.GCP_VM_NAME }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -94,22 +111,41 @@ jobs:
             echo "ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.publish.outputs.digest }}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Authorise SSH
-        run: |
-          install -m 700 -d ~/.ssh
-          echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          # Pinned host key. StrictHostKeyChecking=no would accept a
-          # man-in-the-middle on the one channel that carries every secret.
-          echo "${{ secrets.VM_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+      # WHY FEDERATION AND NOT AN SSH KEY
+      #
+      # The VM has no public SSH port and uses OS Login, so a private key in a
+      # GitHub secret could not reach it and would not be honoured if it did:
+      # OS Login ignores metadata keys, and the login name is derived from the
+      # Google identity rather than chosen. Federating instead removes the
+      # long-lived credential entirely — this job holds nothing that outlives it.
+      - name: Authenticate to GCP with GitHub OIDC
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
 
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      # WHERE HOST VERIFICATION WENT
+      #
+      # The old path pinned a host key because raw SSH over the internet has no
+      # other anchor. This path has a stronger one: IAP authenticates the tunnel
+      # to a named instance in a named project before any SSH bytes flow, and
+      # authorisation is an IAM decision. gcloud manages the host key for that
+      # instance itself. The trust anchor moved from a pinned string in a GitHub
+      # secret to Google's own authenticated channel; it was not removed.
       - name: Ship the compose files
         run: |
-          ssh -i ~/.ssh/id_ed25519 "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" \
-            'mkdir -p ~/control-plane/infra'
-          scp -i ~/.ssh/id_ed25519 \
+          gcloud compute ssh "$GCP_VM" \
+            --zone "$GCP_ZONE" --project "$GCP_PROJECT" \
+            --tunnel-through-iap --quiet \
+            --command 'mkdir -p ~/control-plane/infra'
+          gcloud compute scp \
+            --zone "$GCP_ZONE" --project "$GCP_PROJECT" \
+            --tunnel-through-iap --quiet \
             infra/compose.yml infra/Caddyfile infra/otel-collector.yaml \
-            "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:~/control-plane/infra/"
+            "$GCP_VM:~/control-plane/infra/"
 
       - name: Write the environment file
         # Secrets never enter git and never enter the image; they are written
@@ -133,18 +169,32 @@ jobs:
           OTEL_ENABLED=true
           APP_VERSION=${{ inputs.ref }}
           EOF
-          scp -i ~/.ssh/id_ed25519 /tmp/env.deploy \
-            "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:~/control-plane/infra/.env.partial"
+          gcloud compute scp \
+            --zone "$GCP_ZONE" --project "$GCP_PROJECT" \
+            --tunnel-through-iap --quiet \
+            /tmp/env.deploy "$GCP_VM:~/control-plane/infra/.env.partial"
           rm -f /tmp/env.deploy
 
       - name: Release
+        # The release script travels over the IAP tunnel on STDIN, never as
+        # command arguments — so nothing in it is visible in `ps` on the VM or
+        # in gcloud's own argument logging. That matters because the registry
+        # credential below is inside it.
         run: |
-          ssh -i ~/.ssh/id_ed25519 "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" \
-            MODE='${{ steps.image.outputs.mode }}' \
-            NEW_IMAGE='${{ steps.image.outputs.ref }}' \
-            'bash -s' <<'REMOTE'
+          set +x
+          gcloud compute ssh "$GCP_VM" \
+            --zone "$GCP_ZONE" --project "$GCP_PROJECT" \
+            --tunnel-through-iap --quiet \
+            --command "MODE='${{ steps.image.outputs.mode }}' NEW_IMAGE='${{ steps.image.outputs.ref }}' bash -s" <<'REMOTE'
           set -euo pipefail
           cd ~/control-plane/infra
+
+          # The registry credential is read-only, lives only in this shell, and
+          # is revoked from the host on exit by whichever path exits — success,
+          # failure, or interruption. It is never written to .env, so the
+          # long-lived application environment on the VM cannot carry it.
+          cleanup() { sudo docker logout ghcr.io >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
 
           if [ "$MODE" = "rollback" ]; then
             if [ ! -f .previous-image ]; then
@@ -170,16 +220,27 @@ jobs:
           rm -f .env.partial
           chmod 600 .env
 
-          docker compose --env-file .env -f compose.yml pull
+          # The package is PRIVATE and stays private: the control plane's image
+          # is the deployable artifact of a system that invites attack, and
+          # publishing it to save one login would be trading a real boundary for
+          # a convenience. --password-stdin keeps the token off the argument
+          # list; the token itself arrived on this script's stdin.
+          printf '%s' '${{ secrets.GHCR_PULL_TOKEN }}' \
+            | sudo docker login ghcr.io -u '${{ github.repository_owner }}' --password-stdin
+          sudo docker compose --env-file .env -f compose.yml pull
+          # Revoked immediately: the pull is the only thing that needed it, and
+          # the trap above is the backstop rather than the mechanism.
+          sudo docker logout ghcr.io
+
           # `up -d` recreates only what changed. The migrate container runs to
           # completion first (service_completed_successfully), so a bad
           # migration stops the release before the API serves a request.
-          docker compose --env-file .env -f compose.yml up -d --remove-orphans
+          sudo docker compose --env-file .env -f compose.yml up -d --remove-orphans
 
           echo "waiting for readiness"
           ok=0
           for i in $(seq 1 30); do
-            if docker compose --env-file .env -f compose.yml exec -T api \
+            if sudo docker compose --env-file .env -f compose.yml exec -T api \
                  node -e "fetch('http://127.0.0.1:8080/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"; then
               ok=1; break
             fi
@@ -191,13 +252,13 @@ jobs:
             if [ -f .previous-image ] && [ "$MODE" != "rollback" ]; then
               echo "rolling back automatically to $(cat .previous-image)"
               sed -i "s|^API_IMAGE=.*|API_IMAGE=$(cat .previous-image)|" .env
-              docker compose --env-file .env -f compose.yml up -d
+              sudo docker compose --env-file .env -f compose.yml up -d
             fi
             exit 1
           fi
 
           echo "$TARGET" > .current-image
-          docker image prune -f --filter "until=168h" || true
+          sudo docker image prune -f --filter "until=168h" || true
           echo "released $TARGET"
           REMOTE
 
