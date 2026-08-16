@@ -87,15 +87,26 @@ jobs:
       # repository, in GitHub, or on the runner — the credential is minted per
       # run and expires with it, so there is nothing to leak or rotate.
       id-token: write
+      # Lets THIS job's automatic GITHUB_TOKEN pull the private image, which is
+      # what removes the need for a long-lived registry PAT. See the Release
+      # step for why that is the better credential.
+      packages: read
     env:
-      # Not secrets. These are resource identifiers, and the security boundary
-      # is the federation trust policy that binds the provider to THIS
-      # repository — not the obscurity of a project name. Kept as variables so
-      # the workflow stays portable and no infrastructure naming is baked into
-      # a public repository's source.
-      GCP_PROJECT: ${{ vars.GCP_PROJECT_ID }}
-      GCP_ZONE: ${{ vars.GCP_ZONE }}
-      GCP_VM: ${{ vars.GCP_VM_NAME }}
+      # Deliberately literal, not secrets and not variables.
+      #
+      # None of these is sensitive: a project id, a project number, a zone and
+      # an instance name identify infrastructure, they do not authorise anything.
+      # What authorises is the federation trust policy on the provider below,
+      # which is bound by attribute condition to THIS repository — so publishing
+      # the provider's resource name grants a reader nothing.
+      #
+      # Written here rather than in `vars` so the deployment is reproducible from
+      # the repository alone: a workflow whose target lives only in a GitHub
+      # settings page cannot be reviewed in a pull request, and this repository
+      # is itself an exhibit.
+      GCP_PROJECT: engineering-portfolio-prod
+      GCP_ZONE: europe-west2-a
+      GCP_VM: portfolio-live-prod-01
     steps:
       - uses: actions/checkout@v4
         with:
@@ -121,8 +132,12 @@ jobs:
       - name: Authenticate to GCP with GitHub OIDC
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+          project_id: engineering-portfolio-prod
+          workload_identity_provider: projects/328778272589/locations/global/workloadIdentityPools/github-actions/providers/github
+          # The DEPLOYMENT identity, deliberately not the VM's runtime identity.
+          # It can open an IAP tunnel and log in to this one instance; it cannot
+          # read application data, and nothing it holds outlives the job.
+          service_account: portfolio-deployer@engineering-portfolio-prod.iam.gserviceaccount.com
 
       - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v2
@@ -180,12 +195,20 @@ jobs:
         # command arguments — so nothing in it is visible in `ps` on the VM or
         # in gcloud's own argument logging. That matters because the registry
         # credential below is inside it.
+        #
+        # STDIN IS GUARDED, BECAUSE ITS FAILURE MODE IS SILENT SUCCESS.
+        # If gcloud ever stopped forwarding stdin, `bash -s` would read EOF, do
+        # nothing, and exit 0 — a deploy that reported success while shipping
+        # nothing at all. So the script prints a marker as its last act and this
+        # step fails if the marker never arrives. `tee` keeps the remote output
+        # streaming into the log rather than being swallowed for the check, and
+        # `pipefail` keeps gcloud's own exit code authoritative.
         run: |
-          set +x
+          set -euo pipefail
           gcloud compute ssh "$GCP_VM" \
             --zone "$GCP_ZONE" --project "$GCP_PROJECT" \
             --tunnel-through-iap --quiet \
-            --command "MODE='${{ steps.image.outputs.mode }}' NEW_IMAGE='${{ steps.image.outputs.ref }}' bash -s" <<'REMOTE'
+            --command "MODE='${{ steps.image.outputs.mode }}' NEW_IMAGE='${{ steps.image.outputs.ref }}' bash -s" <<'REMOTE' | tee /tmp/release.log
           set -euo pipefail
           cd ~/control-plane/infra
 
@@ -223,10 +246,19 @@ jobs:
           # The package is PRIVATE and stays private: the control plane's image
           # is the deployable artifact of a system that invites attack, and
           # publishing it to save one login would be trading a real boundary for
-          # a convenience. --password-stdin keeps the token off the argument
-          # list; the token itself arrived on this script's stdin.
-          printf '%s' '${{ secrets.GHCR_PULL_TOKEN }}' \
-            | sudo docker login ghcr.io -u '${{ github.repository_owner }}' --password-stdin
+          # a convenience.
+          #
+          # WHY GITHUB_TOKEN AND NOT A PAT.
+          # This job's automatic token already has `packages: read`, it is minted
+          # for this run, and it dies with it. A personal access token would be a
+          # long-lived credential a human has to create, store, remember to scope
+          # and remember to rotate — strictly more to go wrong for exactly the
+          # same pull. The best secret is the one that does not need to exist.
+          #
+          # --password-stdin keeps it off the argument list; the value itself
+          # arrived on this script's stdin, so it is never in `ps` either.
+          printf '%s' '${{ secrets.GITHUB_TOKEN }}' \
+            | sudo docker login ghcr.io -u '${{ github.actor }}' --password-stdin
           sudo docker compose --env-file .env -f compose.yml pull
           # Revoked immediately: the pull is the only thing that needed it, and
           # the trap above is the backstop rather than the mechanism.
@@ -260,7 +292,18 @@ jobs:
           echo "$TARGET" > .current-image
           sudo docker image prune -f --filter "until=168h" || true
           echo "released $TARGET"
+          # Last line of the script, deliberately. Its absence upstream means
+          # the script did not run to completion — or did not run at all.
+          echo "__RELEASE_SCRIPT_COMPLETED__"
           REMOTE
+
+          if ! grep -q '__RELEASE_SCRIPT_COMPLETED__' /tmp/release.log; then
+            echo "::error::the release script did not run to completion on the VM."
+            echo "::error::gcloud exited 0 but the remote marker never arrived, which"
+            echo "::error::means stdin did not reach 'bash -s'. NOTHING WAS DEPLOYED."
+            exit 1
+          fi
+          rm -f /tmp/release.log
 
       - name: Confirm the tunnel is serving the new version
         # Readiness inside the container proves the container. Only a request

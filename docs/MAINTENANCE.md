@@ -131,7 +131,11 @@ dies halfway is still reversible.
 
 `POSTGRES_USER`, `POSTGRES_PASSWORD`, `APP_DB_PASSWORD`, `IP_HASH_PEPPER`,
 `ADMIN_TOKEN`, `PAYMENT_WEBHOOK_SECRET`, `RECEIPT_SIGNING_KEY`,
-`CLOUDFLARE_TUNNEL_TOKEN`, `GHCR_PULL_TOKEN`.
+`CLOUDFLARE_TUNNEL_TOKEN`.
+
+Eight. There is **no registry credential**: the VM authenticates to GHCR with
+the deploy job's own `GITHUB_TOKEN`, which is minted for that run, carries
+`packages: read`, and expires with the job.
 
 Generate each from base64url or hex. The env heredoc in the workflow is
 unquoted, so a value containing `$`, a backtick or `$(…)` would be expanded or
@@ -139,9 +143,26 @@ executed rather than written literally.
 
 ### Required `production` environment variables
 
-`API_PUBLIC_URL`, `GCP_PROJECT_ID`, `GCP_ZONE`, `GCP_VM_NAME`,
-`GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_DEPLOY_SERVICE_ACCOUNT`. Optional:
-`TENANT_TTL_SECONDS` (default 1800), `PURGE_INTERVAL_MS` (default 15000).
+One required:
+
+```
+API_PUBLIC_URL=https://kishanthorat.com
+```
+
+It is the origin the deploy workflow fetches `/health` from after the release,
+through Cloudflare — the step that distinguishes "the container is healthy" from
+"the deployment is reachable". It is the production hostname, not an `api.`
+subdomain: the live surface calls the control plane same-origin, and a separate
+host would be refused by the `/live/*` CSP and by the absence of CORS headers.
+
+Optional: `TENANT_TTL_SECONDS` (default 1800), `PURGE_INTERVAL_MS`
+(default 15000).
+
+The GCP project, zone, instance, Workload Identity provider and deployment
+service account are written literally in the workflow. None of them authorises
+anything — the federation trust policy does, and it is bound by attribute
+condition to this repository — so keeping them in source makes the deployment
+reviewable in a pull request instead of hidden in a settings page.
 
 **There is no SSH key secret and no GCP service-account key.** The deploy job
 authenticates with GitHub OIDC through Workload Identity Federation and reaches
