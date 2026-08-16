@@ -35,7 +35,7 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/control-plane-api
+  IMAGE_NAME: kishanthorat111/engineering-portfolio/control-plane-api
 
 jobs:
   publish:
