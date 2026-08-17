@@ -272,8 +272,20 @@ jobs:
           echo "waiting for readiness"
           ok=0
           for i in $(seq 1 30); do
+            # `< /dev/null` IS LOAD-BEARING, NOT TIDINESS.
+            #
+            # This script arrives on `bash -s`'s stdin and bash reads it
+            # incrementally. `exec -T` inherits that same stdin and streams it
+            # into the container, so without this redirect the first readiness
+            # attempt swallowed every unexecuted line below it — the rest of the
+            # loop, the rollback branch, and the completion marker. bash then hit
+            # EOF and exited 0, and the release reported failure having actually
+            # deployed. Reproduced locally against this compose file: without the
+            # redirect the marker never prints, with it the marker prints.
+            # `exec` is the only command in this script that reads stdin.
             if sudo docker compose --env-file .env -f compose.yml exec -T api \
-                 node -e "fetch('http://127.0.0.1:8080/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"; then
+                 node -e "fetch('http://127.0.0.1:8080/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" \
+                 < /dev/null; then
               ok=1; break
             fi
             sleep 5
@@ -299,8 +311,10 @@ jobs:
 
           if ! grep -q '__RELEASE_SCRIPT_COMPLETED__' /tmp/release.log; then
             echo "::error::the release script did not run to completion on the VM."
-            echo "::error::gcloud exited 0 but the remote marker never arrived, which"
-            echo "::error::means stdin did not reach 'bash -s'. NOTHING WAS DEPLOYED."
+            echo "::error::gcloud exited 0 but the remote marker never arrived, so the"
+            echo "::error::script stopped early. Read the remote output above to see how"
+            echo "::error::far it got: the stack may be fully deployed, partially"
+            echo "::error::deployed, or untouched, and this check cannot tell which."
             exit 1
           fi
           rm -f /tmp/release.log
