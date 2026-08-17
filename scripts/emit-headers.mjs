@@ -118,8 +118,25 @@ ${SHARED.join('\n')}
 
 # The live surface loads its own bundle and opens a same-origin WebSocket, so
 # it needs a wider connect-src than the static pages — and only that.
+#
+# The unset line below IS THE WHOLE POINT OF THIS BLOCK.
+#
+# Cloudflare ACCUMULATES every matching rule; a more specific path does not
+# override a broader one. Without the unset, /live/ received TWO policies — this
+# one and the /* one — and a browser enforces the INTERSECTION of all CSP
+# headers it is given. The static policy's connect-src 'none' therefore won,
+# and every fetch and the WebSocket on the live surface were refused with
+# "Failed to fetch" in production while every gate here stayed green.
+#
+# Verified against the installed wrangler rather than recalled: its bundle
+# defines UNSET_OPERATOR = "! " and compiles each rule to { set, unset }, and
+# the doubled Strict-Transport-Security seen in production is the same
+# accumulation joining values with a comma.
+#
+# The shared headers are deliberately NOT repeated here — /* already applied
+# them, and repeating them is what produced those doubled values.
 /live/*
-${SHARED.join('\n')}
+  ! Content-Security-Policy
   Content-Security-Policy: ${liveCsp}
 `;
 

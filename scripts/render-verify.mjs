@@ -53,12 +53,23 @@ const MIME = {
 };
 
 /**
- * Parses `dist/_headers` and applies it the way Cloudflare does.
+ * Parses `dist/_headers` and applies it the way Cloudflare ACTUALLY does.
  *
- * The harness has to serve the SAME headers the origin will, or the pages below
- * are being verified in conditions no visitor will ever be in. Rules apply in
- * file order, `/*` first as the catch-all and more specific patterns overriding
- * it, which is the semantics Workers static assets implements.
+ * THIS PARSER WAS WRONG, AND ITS WRONGNESS SHIPPED A PRODUCTION OUTAGE.
+ *
+ * It used to `set` each header, so a later rule replaced an earlier one and
+ * /live/ appeared to receive only its own policy. Cloudflare does not do that:
+ * every matching rule ACCUMULATES, repeated names are joined with a comma, and
+ * `! Header` is the only way to drop an inherited one. So /live/ really
+ * received two Content-Security-Policy headers — its own, and the static one
+ * carrying `connect-src 'none'`. A browser enforces the INTERSECTION of every
+ * CSP header it is given, so nothing on the live surface could open a
+ * connection, while this harness reported 35/35 green.
+ *
+ * Verified against the installed wrangler's own bundle: UNSET_OPERATOR = "! ",
+ * each rule compiles to { set, unset }, and same-name values within a rule are
+ * joined with `, `. A harness that models the platform incorrectly is worse
+ * than no harness, because it converts an unknown into a false assurance.
  */
 const headerRules = (() => {
   const rules = [];
@@ -68,16 +79,23 @@ const headerRules = (() => {
       const line = raw.trimEnd();
       if (line.trim() === '' || line.trimStart().startsWith('#')) continue;
       if (!/^\s/.test(line)) {
-        current = { pattern: line.trim(), headers: new Map() };
+        current = { pattern: line.trim(), headers: [], unset: [] };
         rules.push(current);
         continue;
       }
-      const index = line.indexOf(':');
-      if (index > 0 && current) {
-        current.headers.set(
-          line.slice(0, index).trim().toLowerCase(),
-          line.slice(index + 1).trim(),
-        );
+      const trimmed = line.trim();
+      if (!current) continue;
+      // `! Header` — the unset operator, matching wrangler's UNSET_OPERATOR.
+      if (trimmed.startsWith('! ')) {
+        current.unset.push(trimmed.slice(2).trim().toLowerCase());
+        continue;
+      }
+      const index = trimmed.indexOf(':');
+      if (index > 0) {
+        current.headers.push([
+          trimmed.slice(0, index).trim().toLowerCase(),
+          trimmed.slice(index + 1).trim(),
+        ]);
       }
     }
   } catch {
@@ -90,8 +108,12 @@ const headerRules = (() => {
   return (pathname) => {
     const applied = new Map();
     for (const rule of rules) {
-      if (matches(rule.pattern, pathname)) {
-        for (const [name, value] of rule.headers) applied.set(name, value);
+      if (!matches(rule.pattern, pathname)) continue;
+      // Unset first, then set — the order each compiled rule is applied in.
+      for (const name of rule.unset) applied.delete(name);
+      for (const [name, value] of rule.headers) {
+        const existing = applied.get(name);
+        applied.set(name, existing ? `${existing}, ${value}` : value);
       }
     }
     return Object.fromEntries(applied);
@@ -696,10 +718,30 @@ try {
       staticCsp.includes("connect-src 'none'"),
     );
 
-    // And neither policy may be softened into decoration. A CSP with
-    // 'unsafe-inline' in script-src passes a scanner while permitting exactly
-    // the injection a CSP exists to stop.
+    /*
+     * THE LIVE SURFACE MUST RECEIVE EXACTLY ONE POLICY, AND IT MUST PERMIT
+     * CONNECTIONS.
+     *
+     * This is the check whose absence let a production outage ship. Cloudflare
+     * accumulates matching rules, so /live/ inherited the static
+     * `connect-src 'none'` alongside its own `connect-src 'self'` — and a
+     * browser enforces the intersection of every CSP header, so the strictest
+     * won and the live surface could not reach its own control plane. Both
+     * halves are asserted: one policy, and one that allows connections.
+     */
     const liveCsp = headerRules('/live/')['content-security-policy'] ?? '';
+    record(
+      'the live surface receives exactly one CSP, not an accumulated pair',
+      liveCsp.includes(',') ? `ACCUMULATED: ${liveCsp.slice(0, 90)}` : 'single policy',
+      liveCsp !== '' && !liveCsp.includes(','),
+    );
+    record(
+      'the live surface is permitted to reach its own control plane',
+      /connect-src 'self'/.test(liveCsp) && !/connect-src 'none'/.test(liveCsp)
+        ? "connect-src 'self'"
+        : `BLOCKED: ${(liveCsp.match(/connect-src[^;]*/g) || ['absent']).join(' + ')}`,
+      /connect-src 'self'/.test(liveCsp) && !/connect-src 'none'/.test(liveCsp),
+    );
     const unsafe = /script-src[^;]*unsafe-(inline|eval)/;
     record(
       'no unsafe-inline or unsafe-eval in either script-src',
