@@ -1,4 +1,4 @@
 {
   "$comment": "The site's origin. THE one place it is written down. Repository-wide constitutional data, alongside banned.json, because more than one surface now needs it: apps/static/astro.config.mjs derives every canonical, OG URL, sitemap entry, JSON-LD @id and profile.json URL from it, and apps/experience derives the canonical on /live/ from it. It lived in astro.config.mjs until the experience surface arrived and needed the same value; hardcoding a second copy there would have gone stale silently while every gate kept passing. PHASE 8 SWAPS THIS LINE to the production domain, rebuilds, re-runs every gate, and then FETCHES the deployed site — CI proves the artifact, only a network request proves the address in it is real.",
-  "site": "https://portfolio.kishanthorat.workers.dev"
+  "site": "https://kishanthorat.com"
 }
