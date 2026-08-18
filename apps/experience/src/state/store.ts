@@ -59,7 +59,15 @@ export type Tenant = {
   publicRef: string;
   apiKey: string;
   expiresAt: string;
-  seededRecords: number;
+  /**
+   * How many rows this tenant owns, or null when it is not yet known.
+   *
+   * Null is a real state, not a missing value: a returning visitor's stored
+   * session carries no count until `me()` answers. The same rule that governs
+   * `durationMs` governs this — unmeasured is not zero, and the surface says
+   * nothing rather than something untrue.
+   */
+  seededRecords: number | null;
 };
 
 export type WorldState = {

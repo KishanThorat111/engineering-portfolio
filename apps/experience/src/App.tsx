@@ -156,7 +156,16 @@ export function App() {
           publicRef: existing.publicRef,
           apiKey: existing.apiKey,
           expiresAt: existing.expiresAt,
-          seededRecords: 0,
+          /*
+           * null, not 0. The stored session never carried a count, and this
+           * used to hardcode a zero — so a returning visitor was told "0 rows
+           * seeded" about a tenant that had eight. That is a placeholder
+           * standing in for an unknown, which rule 4 forbids outright, and it
+           * made a working system look empty. The real number arrives from
+           * `me()` below; until it does, the line says nothing rather than
+           * something false.
+           */
+          seededRecords: null,
         });
         setBeat('ownership');
         connect(existing.apiKey);
@@ -164,7 +173,16 @@ export function App() {
         // can be purged between visits and a stale key would produce a world
         // full of 410s with no explanation.
         try {
-          await api.me(existing.apiKey);
+          const self = await api.me(existing.apiKey);
+          if (!cancelled) {
+            setTenant({
+              orgId: existing.orgId,
+              publicRef: existing.publicRef,
+              apiKey: existing.apiKey,
+              expiresAt: self.tenant.expiresAt,
+              seededRecords: self.records,
+            });
+          }
         } catch {
           clearSession();
           if (!cancelled) setTenant(null);

@@ -71,9 +71,19 @@ export function Arrival() {
         {tenant ? (
           <Line
             label={COPY.arrival.ready}
-            value={`${tenant.seededRecords} rows seeded · expires ${new Date(
-              tenant.expiresAt,
-            ).toLocaleTimeString()}`}
+            /*
+             * The row count is stated only when it is known. A returning
+             * visitor's session carries no count until `me()` answers, and the
+             * expiry alone is true on its own — better than pairing it with a
+             * number nobody measured.
+             */
+            value={
+              tenant.seededRecords === null
+                ? `expires ${new Date(tenant.expiresAt).toLocaleTimeString()}`
+                : `${tenant.seededRecords} rows seeded · expires ${new Date(
+                    tenant.expiresAt,
+                  ).toLocaleTimeString()}`
+            }
             state="done"
           />
         ) : null}
