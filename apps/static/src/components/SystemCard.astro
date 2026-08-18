@@ -10,6 +10,7 @@
  * link text.
  */
 import type { Status } from '../schemas/constitution';
+import { STATUS_LABELS } from '../schemas/constitution';
 import StatusBadge from './StatusBadge.astro';
 
 interface Props {
@@ -36,11 +37,26 @@ const { title, status, statusDetail, problem, stack, href, headingLevel = 3 } = 
 
 const Heading = `h${headingLevel}` as 'h2' | 'h3';
 
+/*
+ * The card takes its colour from the system's own status.
+ *
+ * The tone was already defined in the constitution and already used by the
+ * badge — it just never reached the card, so three systems in three genuinely
+ * different states rendered as three identical grey rectangles. A platform
+ * running in a hospital and one that has never had a user looked the same,
+ * which is the one distinction this section exists to draw.
+ *
+ * This adds no colour to the palette and invents no meaning: green already
+ * means in production, amber already means pre-launch. It just lets the card
+ * say what the badge inside it was already saying.
+ */
+const { tone } = STATUS_LABELS[status];
+
 /** Blueprint §5 fixes the card at three tags; the full stack lives on the case study. */
 const shownStack = stack.slice(0, 3);
 ---
 
-<article class="system-card">
+<article class="system-card" data-tone={tone}>
   <StatusBadge status={status} detail={statusDetail} />
   <Heading class="card-title"><a href={href}>{title}</a></Heading>
   <p class="problem">{problem}</p>
@@ -67,8 +83,39 @@ const shownStack = stack.slice(0, 3);
       transform var(--duration-micro) var(--ease-out);
   }
 
+  /*
+   * A status rail down the leading edge, in the status's own colour. It is the
+   * first thing the eye resolves in a grid of three, so the state of each
+   * system is legible before a single word is read — which is the ranking a
+   * reader actually needs and the one the grid was failing to give.
+   */
+  .system-card::before {
+    content: '';
+    position: absolute;
+    inset-block: -1px;
+    inset-inline-start: -1px;
+    width: 3px;
+    border-start-start-radius: var(--radius);
+    border-end-start-radius: var(--radius);
+    background: var(--tone-colour, var(--border));
+  }
+
+  .system-card[data-tone='accent'] {
+    --tone-colour: var(--accent);
+  }
+
+  .system-card[data-tone='warm'] {
+    --tone-colour: var(--accent-warm);
+  }
+
+  .system-card[data-tone='muted'] {
+    --tone-colour: var(--text-muted);
+  }
+
+  /* Hover answers in the card's own colour rather than a universal green, so
+     the response confirms which system you are pointing at. */
   .system-card:hover {
-    border-color: var(--accent);
+    border-color: var(--tone-colour, var(--accent));
     transform: translateY(-2px);
   }
 

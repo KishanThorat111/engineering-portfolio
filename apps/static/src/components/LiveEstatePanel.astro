@@ -88,6 +88,32 @@ const ARCHITECTURAL = [
         }
       </dl>
 
+      {
+        /*
+        THE TRACE IS THE SITE'S SIGNATURE, AND IT IS A REAL INSTRUMENT.
+
+        Every portfolio can draw a chart. This one draws the round trip to its
+        own control plane, sampled from the visitor's browser while they read,
+        so the line is their latency to a system that is genuinely running. It
+        cannot be faked by a site that has no backend, which is exactly why it
+        belongs here rather than a decorative animation that any template could
+        carry.
+
+        It samples a bounded number of times and then stops. A page that pinged
+        a production service forever to keep a graph moving would be spending
+        someone else's resources on ornament.
+
+        aria-hidden because it is a second rendering of numbers the DOM already
+        states in text — the figure above it is the accessible one.
+      */
+      }
+      <figure class="trace" data-trace hidden>
+        <canvas data-trace-canvas width="1200" height="120" aria-hidden="true"></canvas>
+        <figcaption data-trace-caption>
+          Round trip to the control plane, sampled from your browser.
+        </figcaption>
+      </figure>
+
       <p class="panel-copy">
         A multi-tenant control plane on a demo plane, built to be attacked. It provisions you your
         own tenant, refuses your attempt to read another one, and shows you the exact database
@@ -221,6 +247,37 @@ const ARCHITECTURAL = [
     margin-block-start: var(--space-2);
   }
 
+  /*
+   * The trace sits between the figures and the prose, so the panel reads
+   * top-to-bottom as: what this is, what it measures, what it looks like, what
+   * it means. The canvas is fluid and short — a signal strip, not a chart with
+   * axes and furniture it does not need.
+   */
+  .trace {
+    margin: 0 0 var(--space-6);
+  }
+
+  .trace canvas {
+    display: block;
+    width: 100%;
+    height: 60px;
+    /* The line is drawn at 1200x120 and scaled, so it stays crisp on any
+       display without measuring the element or handling resize. */
+  }
+
+  @media (min-width: 768px) {
+    .trace canvas {
+      height: 76px;
+    }
+  }
+
+  .trace figcaption {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    margin-block-start: var(--space-3);
+  }
+
   .panel-copy {
     color: var(--text-muted);
     max-width: 62ch;
@@ -267,18 +324,97 @@ const ARCHITECTURAL = [
       box.hidden = false;
     };
 
+    /* ---- the trace ------------------------------------------------- */
+
+    const samples: number[] = [];
+    const figure = frame.querySelector<HTMLElement>('[data-trace]');
+    const canvas = frame.querySelector<HTMLCanvasElement>('[data-trace-canvas]');
+    const caption = frame.querySelector<HTMLElement>('[data-trace-caption]');
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /*
+     * BARS, NOT A LINE, AND THAT IS A CORRECTNESS DECISION.
+     *
+     * These are discrete samples taken seconds apart. A connected curve would
+     * assert that the latency travelled continuously between them, which is
+     * not something anybody measured — the same objection this project raises
+     * against drawing an unmeasured packet as a fast one. Bars state exactly
+     * what is known: twelve measurements, each its own height, nothing implied
+     * in between.
+     *
+     * It also reads better, because the honest shape of a real connection is a
+     * tall cold first request followed by a steady run, and that story is
+     * invisible in a flat line.
+     */
+    const draw = () => {
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      const { width: w, height: h } = canvas;
+      ctx.clearRect(0, 0, w, h);
+      if (samples.length === 0) return;
+
+      const pad = 8;
+      const peak = Math.max(...samples, 1);
+      const slots = 12;
+      const slot = (w - pad * 2) / slots;
+      const barWidth = Math.max(4, slot * 0.42);
+      const floor = h - pad;
+      // A minimum height so the smallest sample is still a mark rather than
+      // nothing: a measurement that happened should be visible.
+      const heightFor = (v: number) => Math.max(3, (v / peak) * (h - pad * 2));
+
+      samples.forEach((v, i) => {
+        const x = pad + slot * i + (slot - barWidth) / 2;
+        const barHeight = heightFor(v);
+        const isLast = i === samples.length - 1;
+
+        /*
+         * The most recent sample is the accent; the history behind it recedes.
+         * One hue, two weights — no new colour is introduced.
+         *
+         * 0.48, not the 0.34 this started at: every bar is a measurement a
+         * reader is meant to compare, which makes them meaningful graphics
+         * under WCAG 1.4.11 and puts a 3:1 floor on them. 0.34 measured 2.26:1
+         * against this panel and failed it; 0.48 clears it with margin.
+         */
+        ctx.fillStyle = isLast ? '#4ade80' : 'rgba(74, 222, 128, 0.48)';
+        ctx.beginPath();
+        ctx.roundRect(x, floor - barHeight, barWidth, barHeight, 2);
+        ctx.fill();
+      });
+
+      // A baseline, so the bars sit on something and the strip reads as an
+      // instrument rather than as floating marks.
+      // 0.58 for the same 3:1 reason: the baseline is what the bar heights are
+      // read against, so it is part of the information, not decoration.
+      ctx.strokeStyle = 'rgba(154, 163, 178, 0.58)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pad, floor + 0.5);
+      ctx.lineTo(w - pad, floor + 0.5);
+      ctx.stroke();
+    };
+
+    /** One honest measurement: the full round trip, as the browser saw it. */
+    const sample = async (): Promise<number> => {
+      const started = performance.now();
+      const response = await fetch('/health', { cache: 'no-store' });
+      const rtt = Math.round(performance.now() - started);
+      if (!response.ok) throw new Error('health');
+      return rtt;
+    };
+
     void (async () => {
       try {
-        // Measured here, in the visitor's own browser, against the deployed
-        // plane. It is their latency, not a number from a config file.
-        const started = performance.now();
-        const health = await fetch('/health', { cache: 'no-store' });
-        const rtt = Math.round(performance.now() - started);
-        if (!health.ok) throw new Error('health');
+        const first = await sample();
 
         frame.dataset.state = 'live';
         if (statusText) statusText.textContent = 'Live · control plane responding';
-        show('latency', String(rtt));
+        show('latency', String(first));
+        samples.push(first);
+        if (figure) figure.hidden = false;
+        draw();
 
         const catalogue = await fetch('/v1/demonstrations', { cache: 'no-store' });
         if (catalogue.ok) {
@@ -286,6 +422,43 @@ const ARCHITECTURAL = [
           if (Array.isArray(body.demonstrations)) {
             show('demos', String(body.demonstrations.length));
           }
+        }
+
+        /*
+         * A BOUNDED number of further samples, and then it stops for good.
+         * Twelve is enough for the shape of the connection to appear and few
+         * enough that a page left open costs the control plane nothing. Under
+         * reduced motion the trace is not animated into being at all — the
+         * first measurement is drawn and left alone.
+         */
+        if (still) {
+          if (caption) {
+            caption.textContent = `Round trip to the control plane: ${first}ms, measured from your browser.`;
+          }
+          return;
+        }
+
+        const target = 12;
+        while (samples.length < target) {
+          await new Promise((resolve) => setTimeout(resolve, 1400));
+          try {
+            const next = await sample();
+            samples.push(next);
+            show('latency', String(next));
+            draw();
+          } catch {
+            // A failed sample is real information: stop, and let the caption
+            // say how many were taken rather than silently padding the line.
+            break;
+          }
+        }
+
+        if (caption) {
+          const best = Math.min(...samples);
+          const worst = Math.max(...samples);
+          caption.textContent =
+            `${samples.length} round trips to the control plane, measured from your browser — ` +
+            `${best}ms best, ${worst}ms worst. Sampling stopped.`;
         }
       } catch {
         // Principle 12: degraded says so. The panel does not pretend.
