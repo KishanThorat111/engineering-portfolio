@@ -43,9 +43,24 @@ function Lattice({ quality }: { quality: QualitySettings }) {
   const uniforms = useMemo(
     () => ({
       uColour: { value: muted.clone() },
-      uOpacity: { value: 0.13 },
-      uFadeNear: { value: 14 },
-      uFadeFar: { value: 52 },
+      /*
+       * The lattice is the one thing in this world that is always true.
+       *
+       * It was drawn at 0.13 alpha and then hazed by the atmosphere below,
+       * which measured out at 4.3% of the viewport painted — indistinguishable
+       * from a blank page, and the reason an idle system read as a broken one.
+       * The three planes are real architecture, not telemetry, so drawing them
+       * so they can actually be seen states nothing that is not the case.
+       *
+       * What stays event-driven is everything that CARRIES a measurement:
+       * volumes brighten on real load, packets exist only for real events. The
+       * structure is visible at rest; the activity is still earned.
+       */
+      uOpacity: { value: 0.38 },
+      // Reach further before fading, so the world has depth instead of a
+      // small lit patch surrounded by black.
+      uFadeNear: { value: 22 },
+      uFadeFar: { value: 74 },
     }),
     [],
   );
@@ -130,7 +145,13 @@ function Atmosphere() {
           <meshBasicMaterial
             color={PALETTE.dark}
             transparent
-            opacity={0.55}
+            /*
+             * 0.55 did not read as haze, it read as a lid. These planes are
+             * dark, so at that strength they erased the lattice behind them and
+             * the world went black. Softened until distance still recedes but
+             * the structure survives the trip.
+             */
+            opacity={0.28}
             depthWrite={false}
             blending={THREE.NormalBlending}
           />
