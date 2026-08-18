@@ -60,6 +60,39 @@
   --radius: 6px;
   --border-width: 1px;
 
+  /*
+   * DISPLAY AND METRIC TIERS — added in the P9 redesign.
+   *
+   * The blueprint's eight-step scale was correct and barely used: pages reached
+   * for three sizes, so nothing on screen carried more weight than anything
+   * else and every panel read as equally important. These add the two tiers a
+   * status page actually needs — a display size for the one claim that should
+   * dominate a viewport, and a tabular metric size for numbers that must be
+   * read as instrument output rather than prose.
+   *
+   * `--text-display` is fluid so the hero fills a phone and a 1440 desktop
+   * without a breakpoint, and stays inside the §5 scale's intent at both ends.
+   */
+  --text-display: clamp(2.5rem, 6vw, 4rem);
+  --leading-display: 1.04;
+  --tracking-display: -0.022em;
+
+  /** Mono, tabular, for live figures. Numbers must not reflow as they change. */
+  --text-metric: clamp(1.75rem, 3.4vw, 2.25rem);
+
+  /*
+   * MATERIALS.
+   *
+   * Everything on this site was one material: --bg-raised with a 1px border.
+   * Repeated thirty times a page it stops being a card and becomes wallpaper.
+   * `--surface-instrument` is the second material — a translucent panel that
+   * reads as live apparatus rather than a document, used only where something
+   * is genuinely reporting state. Elevation still comes from border and
+   * background shift, never shadow (blueprint §5).
+   */
+  --surface-instrument: color-mix(in srgb, var(--bg-raised) 78%, transparent);
+  --border-instrument: color-mix(in srgb, var(--accent) 22%, var(--border));
+
   /* Motion — blueprint §6. Confirms, never performs. */
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
   --duration-micro: 150ms;

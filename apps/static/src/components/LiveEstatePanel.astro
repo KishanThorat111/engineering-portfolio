@@ -1,0 +1,297 @@
+---
+/**
+ * The live estate panel — the homepage's proof that this site is a system.
+ *
+ * WHY THIS EXISTS
+ * Every portfolio claims to build production systems. This one runs one, and
+ * until now said so in a text link in the middle of a paragraph. A visitor had
+ * to take the claim on trust for the whole homepage and then discover, by
+ * reading, that they could go and break something. The most unusual asset here
+ * was the least visible.
+ *
+ * WHAT IS REAL HERE
+ * Everything. The latency is measured in the visitor's own browser against the
+ * deployed control plane. The demonstration count is read from
+ * /v1/demonstrations, which the API generates from the same registry the live
+ * surface uses. Nothing is animated to look busy and no number is invented.
+ *
+ * IT WORKS WITH NO JAVASCRIPT
+ * The panel renders complete and correct from the server: heading, description,
+ * the two architectural facts that do not need a network call, and the CTA. The
+ * script below only ADDS the two figures that require asking the API. With JS
+ * off, or the control plane down, the panel is honest and the route in still
+ * works — it simply does not claim liveness it has not verified.
+ *
+ * WHY THE STATIC SURFACE NOW MAKES A NETWORK CALL
+ * It previously had `connect-src 'none'` because it had nothing to talk to.
+ * It now legitimately does: its own API, on its own origin. `connect-src 'self'`
+ * is the correct policy for that rather than a loosening — it is still
+ * same-origin only, and the page still ships no bundled JavaScript.
+ */
+import Button from './Button.astro';
+
+/*
+ * Two facts that are architecture, not telemetry, so they are true whether or
+ * not the control plane answers and are rendered server-side.
+ *
+ * "2 isolation layers" is the ADR-0003 server-derived org scope plus PostgreSQL
+ * row-level security — the two the isolation inspector reports separately, and
+ * the pair the P8 audit proved independent by disabling RLS and watching the
+ * app layer still refuse.
+ */
+const ARCHITECTURAL = [
+  { value: '2', label: 'isolation layers', qualifier: 'org scope + RLS' },
+  { value: '0', label: 'inbound ports', qualifier: 'tunnel only' },
+];
+---
+
+<section class="live-panel" aria-labelledby="live-panel-heading">
+  <div class="container">
+    <div class="panel-frame" data-live-panel>
+      <header class="panel-head">
+        <p class="panel-status" data-live-status>
+          <span class="dot" aria-hidden="true"></span>
+          <span data-live-status-text>A real control plane</span>
+        </p>
+        <h2 id="live-panel-heading">You can attack this one.</h2>
+      </header>
+
+      <dl class="metrics">
+        {
+          /* Filled by the script when the control plane answers. Rendered as
+            unmeasured rather than zero, because unknown is not none. */
+        }
+        <div class="metric" data-metric="latency" hidden>
+          <dt>round trip</dt>
+          <dd><span data-metric-value>—</span><span class="unit">ms</span></dd>
+        </div>
+        <div class="metric" data-metric="demos" hidden>
+          <dt>demonstrations</dt>
+          <dd><span data-metric-value>—</span></dd>
+        </div>
+        {
+          /*
+           * The qualifier lives INSIDE the <dd>, not beside it. A <div> within
+           * a <dl> may contain only <dt> and <dd>; a sibling <p> is invalid
+           * grouping and axe flags it, which cost the homepage its perfect
+           * accessibility score the first time this shipped.
+           */
+          ARCHITECTURAL.map((item) => (
+            <div class="metric">
+              <dt>{item.label}</dt>
+              <dd>
+                {item.value}
+                <span class="qualifier">{item.qualifier}</span>
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+
+      <p class="panel-copy">
+        A multi-tenant control plane on a demo plane, built to be attacked. It provisions you your
+        own tenant, refuses your attempt to read another one, and shows you the exact database
+        policy that stopped you.
+      </p>
+
+      <div class="panel-actions">
+        <Button href="/live/">Enter the live system</Button>
+        <p class="panel-note">
+          Runs in your browser · no sign-up · your tenant is destroyed on a timer
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .live-panel {
+    /* Sits directly under the hero: one argument, not two bands. */
+    padding-block: 0 var(--space-16);
+  }
+
+  /*
+   * The instrument material: translucent rather than raised, with a border that
+   * carries a trace of the accent. It should read as apparatus reporting state,
+   * not as another document card — that distinction is the whole point of
+   * having a second material at all.
+   */
+  .panel-frame {
+    position: relative;
+    background: var(--surface-instrument);
+    border: var(--border-width) solid var(--border-instrument);
+    border-radius: var(--radius);
+    padding: var(--space-8) var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .panel-frame {
+      padding: var(--space-12) var(--space-8);
+    }
+  }
+
+  .panel-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  .dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  /* Green only once the control plane has actually answered. */
+  .panel-frame[data-state='live'] .dot {
+    background: var(--accent);
+  }
+
+  .panel-frame[data-state='live'] .panel-status {
+    color: var(--accent);
+  }
+
+  .panel-frame[data-state='down'] .dot {
+    background: var(--accent-warm);
+  }
+
+  .panel-frame[data-state='down'] .panel-status {
+    color: var(--accent-warm);
+  }
+
+  h2 {
+    font-size: var(--text-2xl);
+    line-height: var(--leading-heading);
+    margin-block: var(--space-3) 0;
+    max-width: 18ch;
+  }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-6) var(--space-8);
+    margin-block: var(--space-8) var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .metrics {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .metric dt {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-block-end: var(--space-2);
+  }
+
+  /* The metric tier: mono, tabular so a changing figure does not reflow. */
+  .metric dd {
+    font-family: var(--font-mono);
+    font-size: var(--text-metric);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    margin: 0;
+    color: var(--text);
+  }
+
+  .unit {
+    font-size: 0.45em;
+    color: var(--text-muted);
+    margin-inline-start: 0.15em;
+  }
+
+  /* Inside the <dd>, so it needs to become its own line. */
+  .qualifier {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    margin-block-start: var(--space-2);
+  }
+
+  .panel-copy {
+    color: var(--text-muted);
+    max-width: 62ch;
+    margin-block-end: var(--space-8);
+  }
+
+  .panel-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .panel-note {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    margin: 0;
+  }
+</style>
+
+<script>
+  /*
+   * Progressive enhancement, and nothing more.
+   *
+   * Two GET requests, both same-origin. Deliberately NOT a provisioning call:
+   * POST /v1/tenants is rate limited to ten an hour per address by design, and
+   * spending that budget on everyone who loads the homepage would exhaust the
+   * demonstration for the people who actually came to use it.
+   *
+   * If either call fails the panel says the plane is not answering. It never
+   * shows a stale or invented figure, and the route into /live/ keeps working
+   * either way — the live surface has its own degraded mode and will explain
+   * itself far better than a homepage tile could.
+   */
+  const frame = document.querySelector<HTMLElement>('[data-live-panel]');
+  if (frame) {
+    const statusText = frame.querySelector<HTMLElement>('[data-live-status-text]');
+    const show = (name: string, value: string) => {
+      const box = frame.querySelector<HTMLElement>(`[data-metric="${name}"]`);
+      const slot = box?.querySelector<HTMLElement>('[data-metric-value]');
+      if (!box || !slot) return;
+      slot.textContent = value;
+      box.hidden = false;
+    };
+
+    void (async () => {
+      try {
+        // Measured here, in the visitor's own browser, against the deployed
+        // plane. It is their latency, not a number from a config file.
+        const started = performance.now();
+        const health = await fetch('/health', { cache: 'no-store' });
+        const rtt = Math.round(performance.now() - started);
+        if (!health.ok) throw new Error('health');
+
+        frame.dataset.state = 'live';
+        if (statusText) statusText.textContent = 'Live · control plane responding';
+        show('latency', String(rtt));
+
+        const catalogue = await fetch('/v1/demonstrations', { cache: 'no-store' });
+        if (catalogue.ok) {
+          const body = (await catalogue.json()) as { demonstrations?: unknown[] };
+          if (Array.isArray(body.demonstrations)) {
+            show('demos', String(body.demonstrations.length));
+          }
+        }
+      } catch {
+        // Principle 12: degraded says so. The panel does not pretend.
+        frame.dataset.state = 'down';
+        if (statusText) statusText.textContent = 'Control plane not answering right now';
+      }
+    })();
+  }
+</script>

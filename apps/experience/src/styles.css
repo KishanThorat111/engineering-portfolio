@@ -690,3 +690,158 @@ h2 {
   max-width: 70ch;
   margin: 0;
 }
+
+/* ------------------------------------------------------------------ */
+/* The status bar — the control room's continuous statement of state.  */
+
+/*
+ * Sticky rather than fixed: it stays with you while you operate the stations,
+ * but it does not float over the document's own scroll or steal a fixed strip
+ * of a phone screen. The instrument material, so it reads as apparatus over the
+ * scene rather than as another document card.
+ */
+.status-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-6);
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(10px);
+  border-block-end: 1px solid var(--border);
+}
+
+@media (min-width: 768px) {
+  .status-bar {
+    padding-inline: clamp(var(--space-4), 5vw, var(--space-12));
+  }
+}
+
+.status-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.status-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* Green only when the socket is genuinely connected — the same rule the
+   document's own badge follows. Amber for the recording, never green. */
+.status-bar[data-mode='live'] .status-dot {
+  background: var(--accent);
+}
+
+.status-bar[data-mode='live'] .status-mode {
+  color: var(--accent);
+}
+
+.status-bar[data-mode='replay'] .status-dot {
+  background: var(--accent-warm);
+}
+
+.status-bar[data-mode='replay'] .status-mode {
+  color: var(--accent-warm);
+}
+
+.status-field {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.status-key {
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+/* ------------------------------------------------------------------ */
+/* The boundary — §2.5's dramatic peak, given the weight it carries.   */
+
+/*
+ * One of five identical cards is not a peak. This is the action the whole
+ * surface exists to offer, so it reads as its own thing: bordered in the
+ * isolation colour, set on a slightly lifted ground, and separated from the
+ * four capabilities beneath it.
+ *
+ * The cyan is the locked semantic, not a decorative choice — it means the
+ * isolation boundary and nothing else, which is precisely what this station is.
+ */
+.station-boundary {
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--isolation) 34%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--isolation) 4%, transparent);
+  padding: var(--space-6);
+  margin-block-end: var(--space-8);
+}
+
+.station-boundary::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 2px;
+  background: var(--isolation);
+  border-start-start-radius: 8px;
+  border-end-start-radius: 8px;
+}
+
+.station-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--isolation);
+  margin: 0 0 var(--space-2);
+}
+
+.station-boundary h3 {
+  font-size: 1.375rem;
+}
+
+/*
+ * The primary action. Every control on this surface looked equally optional,
+ * so the one that matters is filled rather than outlined. Dark text on the
+ * accent, matching the static surface's primary button and its contrast.
+ */
+.station-actions button.action-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+  font-weight: 500;
+}
+
+.station-actions button.action-primary:hover:not(:disabled) {
+  /* Slightly lifted rather than a new hue: the accent still means one thing. */
+  background: color-mix(in srgb, var(--accent) 88%, white);
+  border-color: color-mix(in srgb, var(--accent) 88%, white);
+}
+
+.station-actions button.action-primary:disabled {
+  background: color-mix(in srgb, var(--accent) 45%, var(--bg));
+  border-color: transparent;
+  color: var(--bg);
+}
+
+/* A refusal carries the boundary colour on its rail, not the live green. */
+.station-result-boundary {
+  border-left-color: var(--isolation);
+}

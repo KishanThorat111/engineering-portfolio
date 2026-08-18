@@ -277,7 +277,7 @@ export const latticeFragment = /* glsl */ `
   varying vec2 vUv;
 
   void main() {
-    vec2 grid = abs(fract(vUv * 24.0 - 0.5) - 0.5) / fwidth(vUv * 24.0);
+    vec2 grid = abs(fract(vUv * 14.0 - 0.5) - 0.5) / fwidth(vUv * 14.0);
     float line = 1.0 - min(min(grid.x, grid.y), 1.0);
 
     float fade = 1.0 - smoothstep(uFadeNear, uFadeFar, vDepth);

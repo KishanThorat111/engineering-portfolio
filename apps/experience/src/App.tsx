@@ -24,6 +24,7 @@ import * as api from './live/api.ts';
 import { clearSession, loadSession, markColdOpenPlayed, saveSession } from './state/session.ts';
 import { breakOutTimeline, coldOpenTimeline } from './beats/choreography.ts';
 import { currentRoute } from './router.ts';
+import { StatusBar } from './ui/StatusBar.tsx';
 
 function liveUrl(key: string | null): string {
   // Runtime override first, for the same reason apiBase() has one: the harness
@@ -256,6 +257,13 @@ export function App() {
           <Scene />
         </div>
       ) : null}
+      {/*
+        The status bar sits above the document and stays there. It states what
+        the page already knew — source, tenant, expiry, connections — in the
+        place a control room states it, so a visitor learns what this is without
+        reading a panel to find out.
+      */}
+      <StatusBar />
       <main className="document" id="document">
         <Arrival />
         {tenant ? <Stations apiKey={tenant.apiKey} /> : null}

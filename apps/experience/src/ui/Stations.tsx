@@ -20,9 +20,19 @@ import { STATIONS, navigate, type Station } from '../router.ts';
 /** A tiny deterministic image. Same bytes every time, so the hash collides. */
 const EVIDENCE_BYTES = 'a2lzaGFuLXRob3JhdC1kZW1vLWV2aWRlbmNlLXBob3Rv';
 
-function Result({ children }: { children: React.ReactNode }) {
+function Result({ children, tone }: { children: React.ReactNode; tone?: 'boundary' }) {
+  /*
+   * `tone="boundary"` exists for one case and should stay that way. A refusal
+   * was rendering cyan text on a green rail — green means live and working, so
+   * the payoff of the whole surface was signalling two different things at
+   * once. The isolation colour is locked to mean the boundary and nothing else,
+   * so the refusal carries it on the rail as well as in the words.
+   */
   return (
-    <div className="station-result" role="status">
+    <div
+      className={`station-result${tone === 'boundary' ? ' station-result-boundary' : ''}`}
+      role="status"
+    >
       {children}
     </div>
   );
@@ -108,13 +118,31 @@ function IsolationStation({ apiKey }: { apiKey: string }) {
   const station = COPY.stations.isolation;
 
   return (
-    <section className="station" aria-labelledby="st-isolation">
+    /*
+     * THE BOUNDARY IS THE PEAK, AND NOW LOOKS LIKE IT.
+     *
+     * §2.5 makes the break-out the dramatic peak of the whole surface, and it
+     * was rendering as one of five identical bordered cards — visually
+     * indistinguishable from fetching a receipt link. A visitor had no way to
+     * tell which action was the point.
+     *
+     * The cyan is not decoration and not a new colour: the palette is locked so
+     * that cyan means the isolation boundary and nothing else, so marking the
+     * isolation station with it states exactly what the semantic already says.
+     */
+    <section className="station station-boundary" aria-labelledby="st-isolation">
+      <p className="station-eyebrow">The boundary</p>
       <h3 id="st-isolation">{station.name}</h3>
       <p className="station-invitation">{station.invitation}</p>
       {target ? <p className="station-target">target record {target}</p> : null}
 
       <div className="station-actions">
-        <button type="button" onClick={() => void attempt.invoke()} disabled={attempt.busy}>
+        <button
+          type="button"
+          className="action-primary"
+          onClick={() => void attempt.invoke()}
+          disabled={attempt.busy}
+        >
           {attempt.busy ? 'attempting…' : station.action}
         </button>
         {denial ? (
@@ -126,7 +154,7 @@ function IsolationStation({ apiKey }: { apiKey: string }) {
 
       {attempt.error ? <Failure error={attempt.error} /> : null}
       {denial ? (
-        <Result>
+        <Result tone="boundary">
           <p className="denial">403 — {denial}</p>
         </Result>
       ) : null}

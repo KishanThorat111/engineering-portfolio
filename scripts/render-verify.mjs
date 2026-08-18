@@ -411,6 +411,55 @@ try {
     await page.close();
   }
 
+  /* ---- 4c. THE HOMEPAGE'S LIVE PANEL IS HONEST ----------------------- */
+  console.log('\n=== the live estate panel ===');
+  {
+    /*
+     * The panel is the first thing a visitor meets, and it makes a claim about
+     * a system being alive. Three things have to hold, and the interesting two
+     * are the failure paths.
+     *
+     * Served from DEAD_PORT, where no control plane exists, so this is the real
+     * unreachable case rather than a stub.
+     */
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(`http://localhost:${DEAD_PORT}/`, { waitUntil: 'load' });
+    await page.waitForTimeout(3000);
+
+    const frame = page.locator('[data-live-panel]');
+    const rendered = (await frame.count()) > 0;
+    const state = await frame.getAttribute('data-state');
+    const status = (await frame.locator('[data-live-status-text]').innerText()).trim();
+    // The route in must survive the plane being down: /live/ has its own
+    // degraded mode and explains itself far better than a tile could.
+    const ctaHref = await frame.locator('a[href="/live/"]').first().getAttribute('href');
+    /*
+     * No figure may be shown that was never measured. `data-metric` marks only
+     * the two that require the API — latency and the demonstration count — so
+     * with the plane unreachable both must still be hidden. The architectural
+     * facts carry no such attribute because they are true regardless.
+     */
+    const metricsShown = await frame.locator('[data-metric]:not([hidden])').count();
+    const architecturalOnly = metricsShown === 0;
+
+    record(
+      'the panel renders and offers the route in even with no control plane',
+      `present: ${rendered}, cta: ${ctaHref}`,
+      rendered && ctaHref === '/live/',
+    );
+    record(
+      'with the plane unreachable the panel says so rather than claiming live',
+      `state: ${state}, status: "${status}"`,
+      state === 'down' && !/\blive\b/i.test(status),
+    );
+    record(
+      'no measured figure is shown that was never measured',
+      `${metricsShown} measured metric(s) visible — expected none`,
+      architecturalOnly,
+    );
+    await page.close();
+  }
+
   /* ---- 4b. THE SCENE ACTUALLY DREW SOMETHING ------------------------- */
   console.log('\n=== the scene is drawn, not merely mounted ===');
   {
@@ -794,13 +843,21 @@ try {
       await page.close();
     }
 
-    // The static surface loads no bundled JavaScript and has nothing to talk
-    // to, so it is permitted to open no connections at all.
+    /*
+     * The static surface may reach its OWN origin and nothing else.
+     *
+     * This was `connect-src 'none'` until the homepage gained a live estate
+     * panel that measures the control plane. The assertion is not relaxed, it
+     * is re-aimed: what matters is that no third-party host can ever be
+     * contacted from the pages carrying the published claims. 'self' says
+     * exactly that; a scheme or a hostname appearing here would not.
+     */
     const staticCsp = headerRules('/')['content-security-policy'] ?? '';
+    const connect = (staticCsp.match(/connect-src[^;]*/) ?? [''])[0].trim();
     record(
-      'the static surface forbids connections entirely',
-      staticCsp.includes("connect-src 'none'") ? "connect-src 'none'" : staticCsp.slice(0, 70),
-      staticCsp.includes("connect-src 'none'"),
+      'the static surface may reach only its own origin',
+      connect || 'no connect-src at all',
+      connect === "connect-src 'self'" || connect === "connect-src 'none'",
     );
 
     /*

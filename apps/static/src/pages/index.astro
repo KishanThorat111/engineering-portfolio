@@ -15,6 +15,7 @@ import SectionHeader from '../components/SectionHeader.astro';
 import EvidenceChip from '../components/EvidenceChip.astro';
 import SystemCard from '../components/SystemCard.astro';
 import Button from '../components/Button.astro';
+import LiveEstatePanel from '../components/LiveEstatePanel.astro';
 import { SITE, STATUS_CHIPS } from '../config/site';
 import { PILLARS } from '../config/pillars';
 
@@ -59,29 +60,26 @@ const stagger = (index: number) => `--reveal-delay: ${Math.min(index * 60, 240)}
         <Button href="/systems">See the systems</Button>
         <Button href="/cv.pdf" variant="secondary" download>Download CV</Button>
       </div>
-
-      {
-        /*
-          The live surface, reachable at last.
-
-          It shipped in P4–P6 and nothing on this site pointed at it, which made
-          the most unusual thing here the least discoverable. It is a separate
-          link rather than a third hero button because the two locked buttons
-          are blueprint §2's and their wording is not mine to reorder — and
-          because this is an invitation, not a call to action (§3.9).
-
-          The description is deliberately flat. "A real system you can attack"
-          is the claim; anything more excited would be the marketing voice §3.1
-          rules out, and the thing itself is more persuasive than an adjective.
-        */
-      }
-      <p class="live-invitation">
-        <a href="/live/">Or open the live system</a> — a real multi-tenant control plane on a demo plane,
-        built to be attacked. It provisions you a tenant, refuses your attempt to read another one, and
-        shows you the policy that stopped you.
-      </p>
     </div>
   </section>
+
+  {
+    /*
+      The live surface, given the weight its content earns.
+
+      It was a text link inside a paragraph — "Or open the live system" — which
+      made the one genuinely unusual thing on this site read as an aside. The
+      §12.1 hero buttons are still exactly the two blueprint §2 specifies, in
+      their order, with their wording: this adds no third hero button. It gives
+      the invitation its own surface instead, immediately below, where it is the
+      first thing a visitor meets after the claim.
+
+      §3.9 still holds — it invites rather than instructs, and the copy stays
+      flat. What changed is that the invitation is now visible, and carries real
+      measurements instead of asking to be believed.
+    */
+  }
+  <LiveEstatePanel />
 
   <!-- 2. Proof strip — every chip traceable, every figure dated. -->
   <section class="band" aria-labelledby="proof-heading">
@@ -177,13 +175,22 @@ const stagger = (index: number) => `--reveal-delay: ${Math.min(index * 60, 240)}
 </BaseLayout>
 
 <style>
+  /*
+   * Tightened so the live panel reaches the first viewport.
+   *
+   * The hero previously owned the whole screen and the panel began below the
+   * fold, which defeats its purpose: its job is to prove the site is a running
+   * system BEFORE a visitor decides whether to believe the claim above it. The
+   * two are one argument, so they are spaced as one block rather than as two
+   * bands with a full section gap between them.
+   */
   .hero {
-    padding-block: var(--space-16) var(--space-12);
+    padding-block: var(--space-12) var(--space-6);
   }
 
   @media (min-width: 768px) {
     .hero {
-      padding-block: var(--space-24) var(--space-12);
+      padding-block: var(--space-16) var(--space-8);
     }
   }
 
@@ -196,15 +203,17 @@ const stagger = (index: number) => `--reveal-delay: ${Math.min(index * 60, 240)}
     margin-block-end: var(--space-4);
   }
 
+  /*
+   * The display tier. The claim is the one thing on this page that should
+   * dominate its viewport, and it was rendering at the same size as a section
+   * heading — so the page opened with no focal point at all. Fluid, so it fills
+   * a phone and a 1440 desktop without a breakpoint.
+   */
   h1 {
-    font-size: var(--text-2xl);
-    max-width: 22ch;
-  }
-
-  @media (min-width: 768px) {
-    h1 {
-      font-size: var(--text-3xl);
-    }
+    font-size: var(--text-display);
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-display);
+    max-width: 18ch;
   }
 
   .subline {

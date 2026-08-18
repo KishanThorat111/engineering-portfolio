@@ -81,10 +81,25 @@ const COMMON = [
   "style-src 'self' 'unsafe-inline'",
 ];
 
+/*
+ * `connect-src 'self'`, changed from 'none' in the P9 redesign.
+ *
+ * 'none' was correct when it was written: the static surface loaded no bundled
+ * JavaScript and had nothing to talk to, so forbidding connections outright
+ * cost nothing. The homepage now carries a live estate panel that measures the
+ * control plane's round trip in the visitor's own browser and reads the
+ * demonstration catalogue — its own API, on its own origin.
+ *
+ * This is the correct policy for a page that legitimately makes a request, not
+ * a loosening: it is same-origin only, it admits no third party, and the static
+ * surface still ships zero bundled JavaScript. Everything the panel states
+ * without a network call is rendered server-side, so the page is complete and
+ * honest with scripting disabled.
+ */
 const staticCsp = [
   ...COMMON,
   `script-src 'self' ${scriptHashes.join(' ')}`.trim(),
-  "connect-src 'none'",
+  "connect-src 'self'",
 ].join('; ');
 
 /*

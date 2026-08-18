@@ -56,7 +56,7 @@ function Lattice({ quality }: { quality: QualitySettings }) {
        * volumes brighten on real load, packets exist only for real events. The
        * structure is visible at rest; the activity is still earned.
        */
-      uOpacity: { value: 0.38 },
+      uOpacity: { value: 0.26 },
       // Reach further before fading, so the world has depth instead of a
       // small lit patch surrounded by black.
       uFadeNear: { value: 22 },
