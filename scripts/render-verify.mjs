@@ -21,6 +21,7 @@
  * downloads no browser, which is why it never enters CI (Phase 3 decision 9).
  */
 import { chromium } from 'playwright-core';
+import sharp from 'sharp';
 import { createServer } from 'node:http';
 import { connect as netConnect } from 'node:net';
 import { readFile, stat } from 'node:fs/promises';
@@ -406,6 +407,90 @@ try {
       `replay badge: ${badge}, heading: ${heading}, claims live: ${claimsLive}, ` +
         `replayed events: ${events}`,
       badge && heading && !claimsLive && events > 0,
+    );
+    await page.close();
+  }
+
+  /* ---- 4b. THE SCENE ACTUALLY DREW SOMETHING ------------------------- */
+  console.log('\n=== the scene is drawn, not merely mounted ===');
+  {
+    /*
+     * EVERY OTHER CHECK IN THIS FILE CAN PASS WITH A BLANK CANVAS.
+     *
+     * Frame sampling measures requestAnimationFrame. Canvas dimensions measure
+     * layout. A React tree suspended forever still gives you both — a healthy
+     * rAF loop and a correctly sized canvas with nothing on it. That is exactly
+     * what shipped: drei's <Text> resolved glyphs through a CDN, this origin's
+     * connect-src 'self' refused the fetch, the Text suspended, and because the
+     * Canvas wraps the world in <Suspense fallback={null}> the ENTIRE scene
+     * rendered as zero pixels. The harness reported 37/37.
+     *
+     * So this reads the framebuffer and counts non-background pixels. It is the
+     * only check here that can tell "drawing" from "running".
+     */
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(`http://localhost:${PORT}/live/`, { waitUntil: 'load' });
+    await page.waitForTimeout(6000);
+
+    const hasCanvas = (await page.locator('canvas').count()) > 0;
+
+    /*
+     * Screenshot, not canvas.toDataURL.
+     *
+     * Reading the WebGL canvas directly returns an empty buffer, because
+     * preserveDrawingBuffer is off and the drawing buffer is gone by the time
+     * script runs — the first version of this check did exactly that and
+     * reported 0 pixels for a scene that may well have been fine. A screenshot
+     * captures what the compositor actually put on screen, which is the only
+     * thing that answers "did the visitor see anything".
+     *
+     * The strip sampled is the left margin beside the 62rem document column,
+     * where the scene is the ONLY thing on screen. Sampling the middle would
+     * measure the document's own cards.
+     */
+    /*
+     * DIFFERENCE, not absolute brightness.
+     *
+     * An earlier version thresholded raw pixel values and passed at "100% lit,
+     * brightest 45/765" — which was the near-black page background showing
+     * through a transparent canvas, not the scene. Any fixed threshold either
+     * sits below the background and passes on nothing, or above the scene's
+     * dimmest real output and fails on something. So this screenshots the same
+     * strip twice, once with the scene layer hidden, and asks whether the
+     * canvas changes what the visitor sees. Nothing else answers that.
+     */
+    const clip = { x: 0, y: 120, width: 180, height: 600 };
+    const withScene = await page.screenshot({ clip });
+    await page.evaluate(() => {
+      const layer = document.querySelector('.scene-layer');
+      if (layer instanceof HTMLElement) layer.style.display = 'none';
+    });
+    await page.waitForTimeout(250);
+    const withoutScene = await page.screenshot({ clip });
+
+    const [a, b] = await Promise.all([
+      sharp(withScene).raw().toBuffer({ resolveWithObject: true }),
+      sharp(withoutScene).raw().toBuffer({ resolveWithObject: true }),
+    ]);
+    let differing = 0;
+    let peak = 0;
+    const pixels = a.info.width * a.info.height;
+    for (let i = 0; i < a.data.length; i += a.info.channels) {
+      const delta =
+        Math.abs(a.data[i] - b.data[i]) +
+        Math.abs(a.data[i + 1] - b.data[i + 1]) +
+        Math.abs(a.data[i + 2] - b.data[i + 2]);
+      if (delta > peak) peak = delta;
+      if (delta > 6) differing += 1;
+    }
+
+    const ratio = differing / pixels;
+    record(
+      'the WebGL scene renders actual pixels, not an empty canvas',
+      hasCanvas
+        ? `${(ratio * 100).toFixed(1)}% of the strip changes when the scene is hidden, peak delta ${peak}`
+        : 'no canvas element at all',
+      hasCanvas && ratio > 0.02,
     );
     await page.close();
   }

@@ -71,6 +71,27 @@ function Lattice({ quality }: { quality: QualitySettings }) {
             to be structure rather than signage.
           */}
           <Text
+            /*
+             * THIS `font` IS WHY THE SCENE RENDERS AT ALL.
+             *
+             * Without it, troika resolves glyphs through
+             * cdn.jsdelivr.net/gh/lojjic/unicode-font-resolver — a cross-origin
+             * fetch that this origin's `connect-src 'self'` refuses. The Text
+             * then suspends forever, and because the Canvas wraps the world in
+             * <Suspense fallback={null}>, ONE unresolved child renders the
+             * entire scene as nothing. In production that looked like a broken
+             * page with no error: WebGL fine, canvas present, zero pixels.
+             *
+             * Self-hosted and same-origin, so it satisfies both connect-src and
+             * font-src.
+             *
+             * WOFF v1, NOT the woff2 the pages use. troika 0.52 contains the
+             * string "woff2" but its parser rejects the format at runtime with
+             * "woff2 fonts not supported" — a grep said yes and the browser said
+             * no, which is why this is the format the engine actually reads
+             * rather than the one it appears to mention.
+             */
+            font="/live/fonts/inter-latin-400-normal.woff"
             position={[-16, 0.35, -16]}
             rotation={[-Math.PI / 2, 0, 0]}
             fontSize={0.62}

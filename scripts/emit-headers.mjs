@@ -87,9 +87,33 @@ const staticCsp = [
   "connect-src 'none'",
 ].join('; ');
 
-const liveCsp = [...COMMON, "script-src 'self'", "connect-src 'self'", 'worker-src blob:'].join(
-  '; ',
-);
+/*
+ * `blob:` IN script-src IS REQUIRED, AND IT IS NOT DECORATION.
+ *
+ * troika-three-text — the text renderer behind the scene's plane labels —
+ * generates glyph SDFs in a worker spawned from a blob, and that worker then
+ * calls importScripts() on ANOTHER blob URL. Creating the worker is governed by
+ * worker-src, which was already allowed; the importScripts call inside it is
+ * governed by script-src, which was not. The browser refused it with
+ *
+ *   NetworkError: Failed to execute 'importScripts' on 'WorkerGlobalScope'
+ *   worker module init function failed to rehydrate
+ *
+ * so the text never resolved, and because the Canvas wraps the world in
+ * <Suspense fallback={null}>, one unresolved child rendered the ENTIRE scene as
+ * zero pixels. In production that was a blank page with no error visible to a
+ * visitor: WebGL fine, canvas present, nothing drawn.
+ *
+ * This is scoped to /live/* alone. The static surface keeps script-src pinned
+ * to 'self' plus per-script hashes and never gains blob:, so the pages that
+ * carry the published claims are unchanged.
+ */
+const liveCsp = [
+  ...COMMON,
+  "script-src 'self' blob:",
+  "connect-src 'self'",
+  'worker-src blob:',
+].join('; ');
 
 const SHARED = [
   '  X-Content-Type-Options: nosniff',
