@@ -1,20 +1,85 @@
 /*
- * Design tokens — blueprint §5, verbatim values.
- * Single dark theme; a light theme is deliberately out of scope for the core
- * build. Accent colours carry meaning (status), never mood — see blueprint §5.
+ * Design tokens.
+ *
+ * THE ONE IDEA: COLOUR IS A REGISTER, NOT A THEME.
+ *
+ * This file used to hold a single green accent that did five unrelated jobs —
+ * links, the LIVE badge, focus rings, the contact button, text selection. When
+ * one colour means five things it means nothing, and a page where every
+ * interactive and every status shares one hue is indistinguishable from every
+ * other dark developer template. That was the single largest reason this site
+ * read as generic.
+ *
+ * So colour now carries exactly one axis of meaning: WHAT STATE IS THIS THING
+ * IN. Five registers, each with one job, none of them decorative:
+ *
+ *   signal     running in production, right now
+ *   pending    built, not yet live
+ *   isolation  a tenancy boundary — and nothing else, ever (§12.1 locked)
+ *   record     the written record: decisions, evidence, lessons, sources
+ *   fault      limitations, denials, failures
+ *
+ * Interaction is deliberately NOT in the register. Links are text-coloured
+ * with an underline that fills on hover, because a link is not a status and
+ * painting it green was the site telling the visitor something untrue about
+ * itself. This one reassignment changes the character of every page.
+ *
+ * Blueprint §5 assigned the green accent to links and focus states. That
+ * clause is amended here on the owner's explicit instruction to take the
+ * colour decisions; the Truth Constitution is untouched, and the locked
+ * meaning of isolation-cyan is not loosened but tightened.
  */
 :root {
-  /* Colour */
-  --bg: #0b0e14; /* near-black blue-slate */
-  --bg-raised: #12161f; /* cards, code, chips */
-  --border: #232936;
-  --text: #e8eaf0;
-  --text-muted: #9aa3b2;
-  --accent: #4ade80; /* production green — links, LIVE badge, focus states */
-  --accent-warm: #fbbf24; /* amber — PRE-LAUNCH badge, caution notes */
-  --accent-danger: #f87171; /* limitations markers only, sparingly */
+  /* --- Ground -------------------------------------------------------- */
+  /*
+   * Deeper than before. The old #0b0e14 sat too close to the raised surface
+   * for either to read as a distinct plane, so everything flattened into one
+   * grey. This gives the page real depth range: a ground, a raised plane for
+   * material, and an inset plane for things that are recessed INTO the page
+   * rather than floating above it — instruments, terminals, live readouts.
+   */
+  --bg: #0a0e15;
+  --bg-raised: #121722;
+  --bg-inset: #05070c;
+  --border: #1c2230;
+  --border-strong: #2b3345;
 
-  /* Typography */
+  --text: #e9ecf3;
+  --text-muted: #98a1b3;
+  /*
+   * Lightened from #667085, which measured 3.89:1 on the page ground and 3.60:1
+   * on a raised surface — under the 4.5:1 minimum. It was carrying real text
+   * (stack lists, the "as of Jul 2026" qualifiers, post dates), not just
+   * decoration, so it was a genuine AA failure the moment the redesign started
+   * using it for content. This value clears 4.5:1 on all three grounds and is
+   * also the default link underline, where it clears the 3:1 non-text minimum
+   * comfortably.
+   */
+  --text-faint: #768095;
+
+  /* --- The register: colour means state, and only state --------------- */
+  /** Running in production, now. Never used for anything that is not. */
+  --signal: #4ade80;
+  /** Built and not yet live. */
+  --pending: #fbbf24;
+  /** A tenancy boundary. Locked meaning (§12.1) — never decorative. */
+  --isolation: #67e8f9;
+  /** The written record: decisions, evidence, lessons, sources. */
+  --record: #a78bfa;
+  /** Limitations, denials, failures. Used where something did not work. */
+  --fault: #f87171;
+
+  /*
+   * Retained aliases. Nineteen call sites referenced --accent and --accent-warm
+   * before the register existed; rather than a sweeping rename that would touch
+   * files this redesign does not otherwise need to open, the old names now
+   * point at their correct register entry. New code uses the register names.
+   */
+  --accent: var(--signal);
+  --accent-warm: var(--pending);
+  --accent-danger: var(--fault);
+
+  /* --- Typography ----------------------------------------------------- */
   --font-sans:
     'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
     sans-serif;
@@ -22,7 +87,6 @@
     'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono',
     monospace;
 
-  /* Type scale (rem) — blueprint §5 */
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
@@ -32,14 +96,28 @@
   --text-2xl: 2.25rem;
   --text-3xl: 3rem;
 
+  /*
+   * Two display tiers, not one. A page needs a size for its single dominant
+   * claim AND a size for opening a section with type instead of with a small
+   * heading above a grid. Having only the latter is why every section looked
+   * the same weight as every other.
+   */
+  --text-display: clamp(2.75rem, 7vw, 5rem);
+  --text-mega: clamp(2rem, 4.5vw, 3.25rem);
+  --leading-display: 1.02;
+  --tracking-display: -0.03em;
+
+  /** Mono, tabular, for live figures. Numbers must not reflow as they change. */
+  --text-metric: clamp(1.75rem, 3.4vw, 2.25rem);
+
   --leading-body: 1.65;
   --leading-heading: 1.15;
 
   --weight-regular: 400;
   --weight-medium: 500;
-  --weight-semibold: 650; /* variable-font weight — Inter only */
+  --weight-semibold: 650;
 
-  /* Spacing — 4px base scale (4–96px) */
+  /* --- Spacing -------------------------------------------------------- */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -49,56 +127,53 @@
   --space-12: 3rem;
   --space-16: 4rem;
   --space-24: 6rem;
+  --space-32: 8rem;
 
-  /* Layout */
+  /* --- Layout --------------------------------------------------------- */
   --max-width: 1120px;
+  --wide-width: 1400px;
   --prose-width: 720px;
   --measure: 72ch;
 
-  /* Shape — 6px radius and 1px borders everywhere; elevation via border + bg
-     shift, not shadows (blueprint §5). */
+  /*
+   * THE INDEX GUTTER — the site's structural signature.
+   *
+   * Every major block is numbered in the left margin in mono, against a
+   * hairline rule that runs the height of the page. It reads as a schematic or
+   * a listing rather than as a marketing page, which is what this site is: an
+   * indexed estate of systems. It is also load-bearing for the composition —
+   * it gives every section a fixed left edge to hang from, so sections can vary
+   * wildly in shape without the page losing its spine.
+   */
+  --gutter: 4.5rem;
+
   --radius: 6px;
   --border-width: 1px;
 
   /*
-   * DISPLAY AND METRIC TIERS — added in the P9 redesign.
+   * MATERIALS. Three, not one.
    *
-   * The blueprint's eight-step scale was correct and barely used: pages reached
-   * for three sizes, so nothing on screen carried more weight than anything
-   * else and every panel read as equally important. These add the two tiers a
-   * status page actually needs — a display size for the one claim that should
-   * dominate a viewport, and a tabular metric size for numbers that must be
-   * read as instrument output rather than prose.
-   *
-   * `--text-display` is fluid so the hero fills a phone and a 1440 desktop
-   * without a breakpoint, and stays inside the §5 scale's intent at both ends.
-   */
-  --text-display: clamp(2.5rem, 6vw, 4rem);
-  --leading-display: 1.04;
-  --tracking-display: -0.022em;
-
-  /** Mono, tabular, for live figures. Numbers must not reflow as they change. */
-  --text-metric: clamp(1.75rem, 3.4vw, 2.25rem);
-
-  /*
-   * MATERIALS.
-   *
-   * Everything on this site was one material: --bg-raised with a 1px border.
-   * Repeated thirty times a page it stops being a card and becomes wallpaper.
-   * `--surface-instrument` is the second material — a translucent panel that
-   * reads as live apparatus rather than a document, used only where something
-   * is genuinely reporting state. Elevation still comes from border and
-   * background shift, never shadow (blueprint §5).
+   * Everything was --bg-raised with a 1px border, thirty times a page, which
+   * is how a card system becomes wallpaper. An instrument is translucent and
+   * reads as live apparatus; an inset is recessed and reads as a well cut into
+   * the page. Elevation still comes from border and background shift, never
+   * shadow.
    */
   --surface-instrument: color-mix(in srgb, var(--bg-raised) 78%, transparent);
-  --border-instrument: color-mix(in srgb, var(--accent) 22%, var(--border));
+  --border-instrument: color-mix(in srgb, var(--signal) 22%, var(--border));
 
-  /* Motion — blueprint §6. Confirms, never performs. */
+  /* --- Motion --------------------------------------------------------- */
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
   --duration-micro: 150ms;
   --duration-transition: 180ms;
   --duration-entrance: 200ms;
 
-  /* Focus ring — 2px accent, always visible on focus */
-  --focus-ring: 2px solid var(--accent);
+  /*
+   * Focus is its own colour, deliberately outside the register. It used to be
+   * production-green, which meant a keyboard user tabbing the page lit up
+   * every control in the colour that elsewhere means "this is running in a
+   * hospital right now". Focus is an interface state, not a system state.
+   */
+  --focus: #a5f3fc;
+  --focus-ring: 2px solid var(--focus);
 }

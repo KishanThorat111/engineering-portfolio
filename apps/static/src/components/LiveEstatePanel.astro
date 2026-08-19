@@ -45,8 +45,9 @@ const ARCHITECTURAL = [
 ];
 ---
 
-<section class="live-panel" aria-labelledby="live-panel-heading">
-  <div class="container">
+<section class="live-panel" aria-labelledby="live-panel-heading" data-field-node="3">
+  <div class="container section-inner">
+    <span class="section-index" aria-hidden="true">01</span>
     <div class="panel-frame" data-live-panel>
       <header class="panel-head">
         <p class="panel-status" data-live-status>
@@ -131,28 +132,72 @@ const ARCHITECTURAL = [
 </section>
 
 <style>
+  /*
+   * THE ONE RECESSED SECTION ON THE PAGE.
+   *
+   * This was a rounded card in a container — the same object as everything
+   * else, holding the only genuinely live thing on the site. It is now a well
+   * cut edge-to-edge into the page: the inset material, ruled top and bottom,
+   * running the full width. Nothing else on the homepage is full-bleed, so
+   * arriving here is a change of place rather than another block of content,
+   * which is the point. The site's one running system should be the moment the
+   * page opens out.
+   */
   .live-panel {
-    /* Sits directly under the hero: one argument, not two bands. */
-    padding-block: 0 var(--space-16);
+    background: var(--bg-inset);
+    border-block: var(--border-width) solid var(--border);
+    padding-block: var(--space-16);
+  }
+
+  @media (min-width: 1000px) {
+    .live-panel {
+      padding-block: var(--space-24);
+    }
+  }
+
+  .panel-frame {
+    position: relative;
   }
 
   /*
-   * The instrument material: translucent rather than raised, with a border that
-   * carries a trace of the accent. It should read as apparatus reporting state,
-   * not as another document card — that distinction is the whole point of
-   * having a second material at all.
+   * Two columns on a wide screen: the argument on the left, the instrument
+   * reading on the right. Laid out by area rather than by reordering the DOM,
+   * because the document order — what this is, what it measures, what it means,
+   * how to enter — is the order it should be read and announced in.
    */
-  .panel-frame {
-    position: relative;
-    background: var(--surface-instrument);
-    border: var(--border-width) solid var(--border-instrument);
-    border-radius: var(--radius);
-    padding: var(--space-8) var(--space-6);
-  }
-
-  @media (min-width: 768px) {
+  @media (min-width: 900px) {
     .panel-frame {
-      padding: var(--space-12) var(--space-8);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-areas:
+        'head readout'
+        'copy readout'
+        'actions readout';
+      column-gap: var(--space-16);
+      align-content: start;
+    }
+
+    .panel-head {
+      grid-area: head;
+    }
+
+    .metrics {
+      grid-area: readout;
+      align-self: start;
+    }
+
+    .trace {
+      grid-area: readout;
+      align-self: end;
+    }
+
+    .panel-copy {
+      margin-block-start: var(--space-6);
+      grid-area: copy;
+    }
+
+    .panel-actions {
+      grid-area: actions;
     }
   }
 
@@ -194,22 +239,31 @@ const ARCHITECTURAL = [
   }
 
   h2 {
-    font-size: var(--text-2xl);
-    line-height: var(--leading-heading);
-    margin-block: var(--space-3) 0;
-    max-width: 18ch;
+    font-size: var(--text-mega);
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-display);
+    margin-block: var(--space-4) 0;
+    max-width: 14ch;
   }
 
+  /*
+   * Two columns, and two columns at every width. It was four across on desktop,
+   * which worked while the panel was full-width and broke the moment the panel
+   * became two columns: four metric labels crushed into half a page wrapped
+   * mid-phrase. Two also degrades honestly — when the control plane does not
+   * answer, the two measured figures are withheld and the two architectural
+   * ones still fill the block rather than leaving a gap where numbers should be.
+   */
   .metrics {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-6) var(--space-8);
+    gap: var(--space-8);
     margin-block: var(--space-8) var(--space-6);
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 900px) {
     .metrics {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      margin-block-start: var(--space-2);
     }
   }
 

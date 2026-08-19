@@ -1,18 +1,41 @@
 ---
 /**
- * /systems — the index.
+ * /systems — the register.
  *
- * Three cards, nothing else. Blueprint §4.4 puts the "more systems" strip on
- * /experience, not here: this page is the three platforms that get full case
- * studies, and mixing compact side-project cards in would blur exactly the
- * distinction it exists to draw.
+ * WHY THIS IS NOT THREE CARDS ANY MORE
+ *
+ * It was three tiles in a grid: title, status, one-line problem, stack, link.
+ * Which is to say the page that the homepage's primary button leads to said
+ * almost nothing the homepage had not already said, in a shape a visitor has
+ * seen on every portfolio they have ever opened. Three equal tiles also assert
+ * that the three systems are equivalent, and they are not — one runs in a
+ * hospital, one takes money, one has no users at all.
+ *
+ * Each system now gets a full register entry: its number, its real status, the
+ * sentence that says why it is interesting, its own measured figures, and —
+ * the part no card grid can carry — the limitation it discloses about itself.
+ *
+ * PUTTING THE LIMITATION ON THE INDEX IS THE POINT.
+ *
+ * Every one of these already had a limitations section in its case study,
+ * because constitution rule 3 requires it. Burying it three clicks in and
+ * leading with a tidy card is how most portfolios would handle that
+ * requirement. Surfacing it on the index — before a visitor has committed to
+ * reading anything — is the single most distinguishing thing this page can do,
+ * and it costs nothing but nerve. The text is the content collection's own,
+ * unedited.
+ *
+ * Blueprint §4.4 still governs scope: the three platforms that get full case
+ * studies, and no compact side-project cards mixed in.
  */
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import SystemCard from '../../components/SystemCard.astro';
 import { SITE } from '../../config/site';
+import { STATUS_LABELS } from '../../schemas/constitution';
 
 const systems = (await getCollection('systems')).sort((a, b) => a.data.order - b.data.order);
+
+const ordinal = (index: number) => String(index + 1).padStart(2, '0');
 ---
 
 <BaseLayout
@@ -21,7 +44,10 @@ const systems = (await getCollection('systems')).sort((a, b) => a.data.order - b
 >
   <section class="intro">
     <div class="container">
-      <p class="kicker">Systems</p>
+      <p class="eyebrow intro-eyebrow">
+        <span class="rule" aria-hidden="true"></span>
+        Systems
+      </p>
       <h1>Three platforms, one engineer, no hand-offs</h1>
       <p class="lede">
         Each of these was designed, built, secured, deployed, and then operated by me. Each case
@@ -31,85 +57,282 @@ const systems = (await getCollection('systems')).sort((a, b) => a.data.order - b
     </div>
   </section>
 
-  <section class="listing">
-    <div class="container">
-      {
-        /* headingLevel={2}: on this route the cards follow the h1 directly —
-          there is no section heading above them — so they are the page's
-          top-level sections. Leaving them at the default h3 skipped a level. */
-      }
-      <div class="system-grid">
-        {
-          systems.map((system, index) => (
-            <div data-reveal style={`--reveal-delay: ${Math.min(index * 60, 180)}ms`}>
-              <SystemCard
-                title={system.data.title}
-                status={system.data.status}
-                statusDetail={system.data.statusDetail}
-                problem={system.data.problem}
-                stack={system.data.stack}
-                href={`/systems/${system.id}`}
-                headingLevel={2}
-              />
+  <div class="register">
+    {
+      systems.map((system, index) => {
+        const status = STATUS_LABELS[system.data.status];
+        const metrics = system.data.metrics.slice(0, 3);
+        const limitation = system.data.limitations[0];
+        return (
+          <section class="entry" data-tone={status.tone} aria-labelledby={`sys-${system.id}`}>
+            <div class="container entry-inner">
+              <p class="entry-status">
+                <span class="entry-no" aria-hidden="true">
+                  {ordinal(index)}
+                </span>
+                <span class="entry-dot" aria-hidden="true" />
+                {status.label}
+                {system.data.statusDetail ? ` · ${system.data.statusDetail}` : ''}
+              </p>
+
+              <h2 id={`sys-${system.id}`}>{system.data.title}</h2>
+              <p class="entry-problem">{system.data.problem}</p>
+
+              {/* The system's own measured figures, each carrying its date. */}
+              <dl class="entry-metrics">
+                {metrics.map((metric) => (
+                  <div data-reveal>
+                    <dt>{metric.caption}</dt>
+                    <dd>
+                      <span class="figure">{metric.value}</span>
+                      <span class="when">{metric.qualifier}</span>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+
+              {/*
+                The disclosed limitation, verbatim from the collection. It is
+                marked in the fault colour and given a rule of its own, because
+                the register should not be able to show a system without
+                showing what is wrong with it.
+
+                A div, not an aside. It was an aside first, which made three
+                unnamed complementary landmarks on one page — html-validate
+                failed the build for it, correctly. A limitation a system
+                discloses about itself is not tangential to that entry; it is
+                the entry's most load-bearing sentence.
+              */}
+              <div class="entry-limit">
+                <p class="entry-limit-label eyebrow">Disclosed limitation</p>
+                <p class="entry-limit-text">{limitation.limitation}</p>
+              </div>
+
+              <p class="entry-stack">
+                {system.data.stack.map((item) => (
+                  <span>{item}</span>
+                ))}
+              </p>
+
+              <p class="entry-go">
+                <a href={`/systems/${system.id}`}>Read the case study →</a>
+              </p>
             </div>
-          ))
-        }
-      </div>
-    </div>
-  </section>
+          </section>
+        );
+      })
+    }
+  </div>
 </BaseLayout>
 
 <style>
   .intro {
-    padding-block: var(--space-16) var(--space-8);
+    padding-block: var(--space-16) var(--space-12);
   }
 
   @media (min-width: 768px) {
     .intro {
-      padding-block: var(--space-24) var(--space-12);
+      padding-block: var(--space-24) var(--space-16);
     }
   }
 
-  .kicker {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-block-end: var(--space-4);
+  .intro-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-block-end: var(--space-6);
+  }
+
+  .intro-eyebrow .rule {
+    width: 2.5rem;
+    height: 1px;
+    background: var(--border-strong);
   }
 
   h1 {
-    font-size: var(--text-xl);
-    max-width: 24ch;
-  }
-
-  @media (min-width: 768px) {
-    h1 {
-      font-size: var(--text-2xl);
-    }
+    font-size: var(--text-mega);
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-display);
+    max-width: 18ch;
   }
 
   .lede {
     margin-block-start: var(--space-6);
-    max-width: var(--measure);
+    max-width: 62ch;
     color: var(--text-muted);
     font-size: var(--text-md);
   }
 
-  .listing {
-    padding-block-end: var(--space-16);
+  /*
+   * Entries alternate ground and inset so the page reads as a sequence of
+   * distinct places rather than one long column. Each is full-bleed and ruled,
+   * which is what stops three systems looking like three tiles.
+   */
+  .entry {
+    border-block-start: var(--border-width) solid var(--border);
+    padding-block: var(--space-16);
   }
 
-  .system-grid {
+  .entry:nth-child(even) {
+    background: var(--bg-inset);
+  }
+
+  .entry:last-child {
+    border-block-end: var(--border-width) solid var(--border);
+  }
+
+  @media (min-width: 1000px) {
+    .entry {
+      padding-block: var(--space-24);
+    }
+  }
+
+  .entry[data-tone='accent'] {
+    --tone: var(--signal);
+  }
+
+  .entry[data-tone='warm'] {
+    --tone: var(--pending);
+  }
+
+  .entry[data-tone='muted'] {
+    --tone: var(--text-faint);
+  }
+
+  .entry-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+  }
+
+  .entry-no {
+    color: var(--text-faint);
+  }
+
+  .entry-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--tone);
+    margin-inline-start: var(--space-2);
+  }
+
+  .entry h2 {
+    margin-block-start: var(--space-4);
+    font-size: var(--text-mega);
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-display);
+    max-width: 16ch;
+  }
+
+  /* The hook, at pull-quote scale — the sentence that says why this one is
+     worth reading about. */
+  .entry-problem {
+    margin-block-start: var(--space-6);
+    font-size: var(--text-lg);
+    line-height: 1.45;
+    color: var(--text-muted);
+    max-width: 52ch;
+  }
+
+  .entry-metrics {
     display: grid;
-    gap: var(--space-4);
     grid-template-columns: 1fr;
+    gap: var(--space-6);
+    margin-block-start: var(--space-12);
+    border-block-start: var(--border-width) solid var(--border);
+    padding-block-start: var(--space-8);
   }
 
   @media (min-width: 768px) {
-    .system-grid {
-      grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    .entry-metrics {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-8);
     }
+  }
+
+  /* Figure first, caption under it — the caption is long and the number is the
+     thing being read, so the number leads and the words explain it. */
+  .entry-metrics div {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+  }
+
+  .entry-metrics dt {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    margin-block-start: var(--space-3);
+    max-width: 34ch;
+  }
+
+  .entry-metrics dd {
+    margin: 0;
+  }
+
+  .figure {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--text-metric);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .when {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-faint);
+    margin-block-start: var(--space-2);
+  }
+
+  /*
+   * The limitation. Fault-coloured rule, not a fault-coloured block — this is
+   * disclosure, not an error state, and colouring the whole panel red would
+   * dramatise something that is here to be read plainly.
+   */
+  .entry-limit {
+    margin-block-start: var(--space-12);
+    border-inline-start: 2px solid var(--fault);
+    padding-inline-start: var(--space-6);
+    max-width: 68ch;
+  }
+
+  .entry-limit-label {
+    color: var(--fault);
+  }
+
+  .entry-limit-text {
+    margin-block-start: var(--space-3);
+    color: var(--text-muted);
+  }
+
+  .entry-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+    margin-block-start: var(--space-8);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-faint);
+  }
+
+  .entry-stack span + span::before {
+    content: '·';
+    margin-inline-end: var(--space-3);
+  }
+
+  .entry-go {
+    margin-block-start: var(--space-8);
+    font-size: var(--text-md);
+  }
+
+  .entry-go a {
+    --link-rule: var(--tone);
   }
 </style>

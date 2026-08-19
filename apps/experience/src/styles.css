@@ -11,11 +11,19 @@
  */
 
 :root {
-  --bg: #0b0e14;
-  --bg-raised: #12161f;
-  --border: #232936;
-  --text: #e8eaf0;
-  --text-muted: #9aa3b2;
+  /*
+   * The same register the static surface uses (apps/static/src/styles/
+   * tokens.css). The two surfaces were drifting apart in ground colour and
+   * accent, which is a small thing that reads as a large one: crossing from the
+   * homepage into the live plane looked like crossing into a different site.
+   * These values are the ones the static contrast gate enforces.
+   */
+  --bg: #0a0e15;
+  --bg-raised: #121722;
+  --border: #1c2230;
+  --text: #e9ecf3;
+  --text-muted: #98a1b3;
+  --text-faint: #768095;
   --accent: #4ade80;
   --accent-warm: #fbbf24;
   --accent-danger: #f87171;
@@ -73,12 +81,37 @@ body {
   height: 100%;
 }
 
+/*
+ * THE DOCUMENT IS A COLUMN INSIDE A WORLD, NOT A PAGE WITH A PICTURE BEHIND IT.
+ *
+ * It was 62rem wide and centred. On any normal display that lays an opaque slab
+ * across the middle of the viewport and leaves the scene visible only as two
+ * strips down the edges — so the 3D became a texture in the margins, which is
+ * the exact failure the whole surface exists to avoid. A visitor was reading a
+ * document that happened to have a wireframe behind it.
+ *
+ * The column is now narrower and held to one side on a wide screen. The world
+ * gets real, continuous screen area to occupy; the panels read as instruments
+ * standing in a space rather than as a page laid over one. Nothing about the
+ * document order, the controls, or what any panel says has changed — this is
+ * where they sit, not what they are.
+ *
+ * It stays centred and full-width on narrow screens, where there is no spare
+ * room to give the world and legibility wins.
+ */
 .document {
   position: relative;
   z-index: 1;
-  max-width: 62rem;
+  max-width: 46rem;
   margin: 0 auto;
   padding: clamp(var(--space-6), 5vw, var(--space-12)) var(--space-4) var(--space-12);
+}
+
+@media (min-width: 1100px) {
+  .document {
+    max-width: 40rem;
+    margin-inline: clamp(var(--space-8), 7vw, 8rem) auto;
+  }
 }
 
 .skip-link {
@@ -212,10 +245,18 @@ h2 {
 
 /* --- panels -------------------------------------------------------- */
 
+/*
+ * More transparent than before, and blurred harder. At 82% opacity a panel was
+ * effectively solid and the scene stopped at its edge; at 62% with a heavier
+ * blur the world is continuously present through the instrument, which is what
+ * makes the panel feel placed in the space rather than pasted over it. The blur
+ * keeps the text on an even ground, so legibility does not depend on what
+ * happens to be behind it.
+ */
 .panel {
   border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg-raised) 82%, transparent);
-  backdrop-filter: blur(6px);
+  background: color-mix(in srgb, var(--bg-raised) 62%, transparent);
+  backdrop-filter: blur(18px) saturate(120%);
   border-radius: 8px;
   padding: var(--space-6);
   margin: 0 0 var(--space-6);

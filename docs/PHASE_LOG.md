@@ -2197,3 +2197,98 @@ Also recorded so it is not mistaken for a result: the local Redis rate-limit cou
 (`rl:*` only) were cleared between suites, because the load test legitimately exhausts the
 10/hour provisioning budget. That is local test-state hygiene. **No limit was changed**, and
 the limiter refusing was itself observed and recorded as correct behaviour.
+
+---
+
+## P9 — The redesign: colour becomes a register, and the world stops being wallpaper
+
+**Scheme: dossier §13 roadmap.** Owner-directed, following an explicit reset of the creative
+objective: the site was working, deployed and honest, and it still read as a conventional dark
+developer portfolio. Design decisions were delegated in full. Nothing in the Truth Constitution
+was touched.
+
+### The diagnosis, before any code
+
+Four structural causes, not a shortage of polish:
+
+1. **One accent doing five jobs.** Green was links, the LIVE badge, focus rings, the contact
+   button and text selection. When one colour means five things it means nothing, and a page
+   where every interactive and every status share a hue is indistinguishable from any other
+   dark template. This was the single largest cause.
+2. **One material.** `--bg-raised` with a 1px border, repeated until it was wallpaper.
+3. **One composition.** Six consecutive homepage sections were the same object: `.band` >
+   `.container` > `SectionHeader` > grid > link.
+4. **The live surface's 3D was decoration.** A 62rem opaque document column sat centred over
+   the scene, so the world survived only as two strips down the margins.
+
+### What changed
+
+- **A five-entry semantic register** (`--signal`, `--pending`, `--isolation`, `--record`,
+  `--fault`). Colour now carries exactly one axis: what state a thing is in. Old names are
+  retained as aliases so no call site was churned.
+- **Links left the accent.** They are text-coloured with a permanent underline that fills to
+  signal on hover — a *stronger* affordance than the old transparent-until-hover rule, and it
+  frees the register to mean something. Navigation is exempt: position already identifies those.
+- **The indexed section.** A numbered hairline spine anchored to the container, which is the
+  site's structural signature and lets sections differ wildly in shape without the page losing
+  its spine.
+- **The homepage became seven distinct compositional modes** — opening, evidence rail, recessed
+  live well, ledger, editorial post, manifest, closing — replacing six copies of one.
+- **`/systems` became a register**, and each entry now shows the limitation that system
+  discloses about itself, on the index, before a visitor has committed to reading anything.
+  The text is the collection's own. This is the page's most distinguishing feature and it cost
+  nothing but nerve.
+- **The live surface's document column was narrowed and moved off-centre**, so the world has
+  continuous screen area to occupy and the panels read as instruments standing in a space.
+  Panels went from 82% opaque to 62% with a heavier blur. Its palette was synced to the static
+  register: crossing from home into the live plane no longer looks like crossing sites.
+
+### Two real defects found in my own work, by measurement not by eye
+
+- **`--text-faint` failed AA at 3.89:1** on the page ground and 3.60:1 on a raised surface —
+  and it was carrying *content* (stack lists, "as of Jul 2026" qualifiers, post dates), not
+  decoration. Solved numerically to `#768095`, which clears 4.5:1 on all three grounds.
+- **The link underline was invisible** at 1.53:1. It is the affordance identifying every link
+  on the site. Now 4.87:1.
+
+### The gate was strengthened, never loosened
+
+`contrast-check` could not read `--accent: var(--signal)` and exited 1 — the gate reporting a
+palette failure when the only fault was its own parser. Aliases now resolve transitively, and
+the enforced list went from **12 pairings to 25**, including every new register entry on every
+ground it is painted on. Proven by injection: restoring the old `--text-faint` value produced
+three FAILs and a non-zero exit; reverting returned 25/25.
+
+### An amendment, recorded rather than assumed
+
+Blueprint §5 assigned the green accent to links and focus states. That clause is **amended**,
+on the owner's explicit instruction to take the colour decisions. The locked meaning of
+isolation-cyan (§12.1) was not loosened but tightened — it now names a tenancy boundary and
+nothing else, on both surfaces.
+
+### A locked-content removal I caught in my own diff
+
+Rebuilding the hero silently dropped the four locked §2 status chips, and **no gate covers
+them**. They are restored, verified present in the built output rather than in source. The
+wording is untouched. Worth noting as a gap: locked hero content has no automated guard.
+
+### Verified
+
+`npm run verify` 7/7 gates · typecheck 0 errors · `api:verify` 121/121 · `render-verify` 41/41
+including zero horizontal overflow at 390/834/1440 · `format:check` clean · homepage 7.3 KB gz
+against a 90 KB budget, static JS 0.02 KB gz against 15 KB · 25 contrast pairings.
+
+**Reduced motion was verified by execution, differentially**: under `reduce`, 16 reveal nodes
+are painted before any scroll and the observer is never armed; under `no-preference`, 14 are
+correctly staged. Content is never withheld from a visitor who asked for less motion.
+
+No change to `services/`, `infra/`, or `.github/` — confirmed at zero files. No secrets in the
+diff.
+
+### Not done, and not counted as done
+
+`/about`, `/experience` and `/engineering` inherit the new palette, type scale and section
+openings — verified rendering correctly — but keep their card-based internal layouts. They were
+lifted by upgrading `SectionHeader` rather than rebuilt. The 3D world's geometry is unchanged;
+what changed is the composition it sits in. The mid-range device measurement carried from P4
+remains outstanding.

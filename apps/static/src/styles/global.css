@@ -1,7 +1,7 @@
 /*
  * Global base styles. Component-specific styles are co-located with their
- * components (blueprint §7.2); only element defaults and shared utilities
- * live here.
+ * components (blueprint §7.2); only element defaults, the structural spine,
+ * and shared utilities live here.
  */
 
 *,
@@ -61,16 +61,51 @@ kbd {
   font-family: var(--font-mono);
 }
 
+/*
+ * LINKS ARE NOT A STATUS.
+ *
+ * Every link on this site was production-green — the same colour the LIVE
+ * badge uses to mean "a hospital is running this right now". So the page said
+ * nothing with colour, because colour was everywhere. A link is now text
+ * coloured, marked by a permanent hairline underline that fills to signal on
+ * hover. The affordance is stronger than before (the underline is always
+ * visible, where the old one was transparent until hover) and the register is
+ * left free to carry meaning.
+ */
 a {
-  color: var(--accent);
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  text-underline-offset: 0.2em;
-  transition: text-decoration-color var(--duration-micro) var(--ease-out);
+  color: var(--text);
+  text-decoration: none;
+  background-image: linear-gradient(
+    var(--link-rule, var(--text-faint)),
+    var(--link-rule, var(--text-faint))
+  );
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 1px;
+  padding-block-end: 0.08em;
+  transition:
+    background-size var(--duration-micro) var(--ease-out),
+    color var(--duration-micro) var(--ease-out);
 }
 
 a:hover {
-  text-decoration-color: currentColor;
+  --link-rule: var(--signal);
+  background-size: 100% 2px;
+}
+
+/*
+ * Navigation is exempt from the underline. In prose, an underline is what
+ * identifies a link without relying on colour (SC 1.4.1); in a masthead or a
+ * footer row, position and grouping already do that, and ruling every item
+ * turned the header into a strip of boxes. They keep a colour shift on hover
+ * and the focus ring, and no nav item is the only route to its destination.
+ */
+.site-nav a,
+.brand,
+.skip-link,
+.site-footer nav a {
+  background-image: none;
+  padding-block-end: 0;
 }
 
 :focus-visible {
@@ -80,14 +115,14 @@ a:hover {
 }
 
 ::selection {
-  background: var(--accent);
+  background: var(--isolation);
   color: var(--bg);
 }
 
 /*
  * Available to screen readers, absent from the visual design. Used where a
  * section needs a heading to sit correctly in the document outline but the
- * design carries no visible title — the Home proof strip, for one.
+ * design carries no visible title.
  */
 .visually-hidden {
   position: absolute;
@@ -108,10 +143,106 @@ a:hover {
   padding-inline: var(--space-4);
 }
 
+/** For blocks that need to breathe past the reading measure. */
+.container-wide {
+  width: 100%;
+  max-width: var(--wide-width);
+  margin-inline: auto;
+  padding-inline: var(--space-4);
+}
+
 @media (min-width: 768px) {
   .container {
     padding-inline: var(--space-6);
   }
+
+  .container-wide {
+    padding-inline: var(--space-8);
+  }
+}
+
+/*
+ * THE INDEXED SECTION — the site's structural signature.
+ *
+ * A numbered block hanging off a hairline rule that runs its full height. It
+ * replaces the old `.band`, which was padding and nothing else, and which is
+ * why six consecutive sections were visually identical: they had no structure
+ * of their own to differ in.
+ *
+ * The rule is drawn on the CONTAINER, not the section. Drawn on the section it
+ * sat at the viewport edge — 180px of empty page away from the content it was
+ * supposed to be indexing, which made it read as two stray marks in the corner
+ * rather than as a spine. Anchored to the container it lands just outside the
+ * text it belongs to, and the content is inset to clear it, which is where the
+ * page gets its asymmetry from.
+ *
+ * The index is presentational and aria-hidden at the call site; every section
+ * still carries a real heading for the document outline.
+ */
+.section {
+  position: relative;
+  padding-block: var(--space-16);
+}
+
+.section-inner {
+  position: relative;
+}
+
+@media (min-width: 1000px) {
+  .section {
+    padding-block: var(--space-24);
+  }
+
+  .section-inner {
+    padding-inline-start: var(--gutter);
+  }
+
+  .section-inner::before {
+    content: '';
+    position: absolute;
+    inset-block: calc(var(--space-8) * -1) calc(var(--space-8) * -1);
+    inset-inline-start: 0;
+    width: 1px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      var(--border) 10%,
+      var(--border) 90%,
+      transparent
+    );
+  }
+}
+
+.section-index {
+  display: none;
+}
+
+@media (min-width: 1000px) {
+  .section-index {
+    display: block;
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-start: 0;
+    transform: translateX(-50%);
+    background: var(--bg);
+    padding-block: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-faint);
+    letter-spacing: 0.1em;
+  }
+}
+
+/*
+ * A section's own eyebrow: mono, uppercase, tight. Used where a block needs
+ * naming inline rather than through the margin index.
+ */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--text-faint);
 }
 
 /*
@@ -148,6 +279,7 @@ a:hover {
 }
 
 .live-invitation a {
-  color: var(--accent);
+  --link-rule: var(--isolation);
+  color: var(--text);
   font-weight: 500;
 }

@@ -25,29 +25,65 @@ const { kicker, title, level: Tag = 'h2', id } = Astro.props;
 ---
 
 <header class="section-header">
-  {kicker && <p class="kicker">{kicker}</p>}
+  {
+    kicker && (
+      <p class="kicker">
+        <span class="rule" aria-hidden="true" />
+        {kicker}
+      </p>
+    )
+  }
   <Tag id={id}>{title}</Tag>
 </header>
 
 <style>
+  /*
+   * Brought onto the redesign's type and eyebrow system.
+   *
+   * This component sets the opening of nearly every section on /about,
+   * /engineering, /experience and the case studies. It was a small grey kicker
+   * over a --text-xl heading, which is why those pages read a full tier quieter
+   * than the pages that were rebuilt by hand — same site, two different voices.
+   * Changing it here rather than page by page is what makes the whole surface
+   * agree, and it is the reason those pages needed no edits of their own.
+   *
+   * The leading rule is the same mark the home and register openings carry: it
+   * is how a section announces itself across this site.
+   */
   .section-header {
-    margin-block-end: var(--space-8);
+    margin-block-end: var(--space-12);
   }
 
   .kicker {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
     font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--text-muted);
+    font-size: var(--text-xs);
+    color: var(--text-faint);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-block-end: var(--space-2);
+    letter-spacing: 0.16em;
+    margin-block-end: var(--space-4);
+  }
+
+  .kicker .rule {
+    width: 2.5rem;
+    height: 1px;
+    flex: none;
+    background: var(--border-strong);
   }
 
   h2 {
-    font-size: var(--text-xl);
+    font-size: var(--text-mega);
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-display);
+    max-width: 20ch;
   }
 
+  /* h3 stays a subsection: it sits INSIDE a section that already opened at the
+     display tier, so matching that size would flatten the hierarchy again. */
   h3 {
     font-size: var(--text-lg);
+    letter-spacing: -0.015em;
   }
 </style>

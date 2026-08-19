@@ -1,23 +1,40 @@
 ---
 /**
- * Home — blueprint §2 section ordering.
+ * Home.
  *
- * Sections 3 and 4 are driven by the `systems` and `experience` collections,
- * which Phases 4–6 author. They render nothing while those collections are
- * empty, so those phases light them up by adding content and never by editing
- * this page. That is deliberate: constitution rule 9 forbids shipping a
- * placeholder, and the CI link gate forbids a card linking to a route that
- * does not exist yet. An absent section is honest; a stubbed one is not.
+ * WHY THIS PAGE LOOKS NOTHING LIKE IT DID
+ *
+ * Every section on this page used to be the same object: `.band` > `.container`
+ * > `SectionHeader` > a grid > a link. Six of them in a row. The content
+ * differed and the composition never did, so the page read as one component
+ * repeated until it ran out of data — which is the definition of a template,
+ * and no amount of colour or spacing work fixes it.
+ *
+ * Each section now has a shape that belongs to its content, hung off one
+ * continuous spine (the indexed rule in the left margin, `.section` in
+ * global.css):
+ *
+ *   —   opening      asymmetric, display type beside the live estate diagram
+ *   —   rail         a full-bleed instrument strip of dated evidence
+ *   01  live plane   an inset well containing a genuinely running system
+ *   02  estate       a ledger of large numbered rows, not a card grid
+ *   03  post         one editorial statement at pull-quote scale
+ *   04  practice     a numbered manifest in type, no boxes at all
+ *   05  closing      a single sentence at display size
+ *
+ * The collection-driven sections still render nothing while their collections
+ * are empty (constitution rule 9), so content lights them up rather than edits
+ * here.
  */
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import SectionHeader from '../components/SectionHeader.astro';
 import EvidenceChip from '../components/EvidenceChip.astro';
-import SystemCard from '../components/SystemCard.astro';
 import Button from '../components/Button.astro';
 import LiveEstatePanel from '../components/LiveEstatePanel.astro';
+import SystemField from '../components/SystemField.astro';
 import { SITE, STATUS_CHIPS } from '../config/site';
 import { PILLARS } from '../config/pillars';
+import { STATUS_LABELS } from '../schemas/constitution';
 
 const chips = (await getCollection('evidenceChips')).sort((a, b) => a.data.order - b.data.order);
 const systems = (await getCollection('systems')).sort((a, b) => a.data.order - b.data.order);
@@ -30,62 +47,67 @@ const title = `${SITE.name} — ${SITE.claim}`;
 
 /** Blueprint §6: stagger entrances by no more than 60ms. */
 const stagger = (index: number) => `--reveal-delay: ${Math.min(index * 60, 240)}ms`;
+
+/** Ledger rows are numbered from one, in the margin, in mono. */
+const ordinal = (index: number) => String(index + 1).padStart(2, '0');
 ---
 
 <BaseLayout title={title} description={SITE.subline}>
-  <!-- 1. Hero — locked claim, sub-line, and status chips (blueprint §1). -->
-  <section class="hero">
-    <div class="container">
-      <p class="kicker">{SITE.role}</p>
-      <h1>{SITE.claim}</h1>
-      <p class="subline">{SITE.subline}</p>
+  {
+    /* ── OPENING ─────────────────────────────────────────────────────────
+      Asymmetric and full-bleed. The claim takes the display tier and the
+      estate sits beside it, so the assertion and the evidence for it arrive
+      in the same screen rather than the evidence waiting below the fold. */
+  }
+  <section class="opening" aria-labelledby="claim">
+    <div class="container-wide opening-grid">
+      <div class="opening-claim">
+        <p class="eyebrow opening-eyebrow">
+          <span class="rule" aria-hidden="true"></span>
+          {SITE.role}
+        </p>
+        <h1 id="claim">{SITE.claim}</h1>
+        <p class="subline">{SITE.subline}</p>
 
-      <ul class="chip-strip">
         {
-          STATUS_CHIPS.map((chip) => (
-            <li>
-              <EvidenceChip fact={chip} />
-            </li>
-          ))
+          /*
+            The locked §2 status chips. They were dropped when this hero was
+            rebuilt and nothing caught it — no gate covers them — which made it
+            a silent removal of locked content during what was supposed to be a
+            visual change. They are back, set as a compact mono row rather than
+            as pill badges, because four bordered pills under a display heading
+            fought the claim for attention. The wording is untouched.
+          */
         }
-      </ul>
+        <ul class="opening-chips">
+          {STATUS_CHIPS.map((chip) => <li>{chip}</li>)}
+        </ul>
 
-      <div class="hero-actions">
-        {
-          /* Both buttons blueprint §2 specifies, locked wording. "See the
-            systems" was held back in Phase 3 because /systems did not exist
-            and a dead link fails the gate; Phase 5 shipped the index, so it
-            is restored. */
-        }
-        <Button href="/systems">See the systems</Button>
-        <Button href="/cv.pdf" variant="secondary" download>Download CV</Button>
+        <div class="opening-actions">
+          {/* Both buttons blueprint §2 specifies, locked wording. */}
+          <Button href="/systems">See the systems</Button>
+          <Button href="/cv.pdf" variant="secondary" download>Download CV</Button>
+        </div>
+      </div>
+
+      <div class="opening-estate">
+        <SystemField />
       </div>
     </div>
   </section>
 
   {
-    /*
-      The live surface, given the weight its content earns.
-
-      It was a text link inside a paragraph — "Or open the live system" — which
-      made the one genuinely unusual thing on this site read as an aside. The
-      §12.1 hero buttons are still exactly the two blueprint §2 specifies, in
-      their order, with their wording: this adds no third hero button. It gives
-      the invitation its own surface instead, immediately below, where it is the
-      first thing a visitor meets after the claim.
-
-      §3.9 still holds — it invites rather than instructs, and the copy stays
-      flat. What changed is that the invitation is now visible, and carries real
-      measurements instead of asking to be believed.
-    */
+    /* ── EVIDENCE RAIL ───────────────────────────────────────────────────
+      The proof strip was a band of chips floating in a container, which is
+      to say it looked like more content. It is now a full-bleed instrument
+      rail ruled off from the page above and below — the shape a status
+      readout takes, carrying the same traceable, dated facts it always did. */
   }
-  <LiveEstatePanel />
-
-  <!-- 2. Proof strip — every chip traceable, every figure dated. -->
-  <section class="band" aria-labelledby="proof-heading">
-    <div class="container">
-      <h2 id="proof-heading" class="visually-hidden">Evidence</h2>
-      <ul class="chip-strip">
+  <section class="rail" aria-labelledby="evidence-heading">
+    <h2 id="evidence-heading" class="visually-hidden">Evidence</h2>
+    <div class="container-wide rail-inner">
+      <p class="rail-label eyebrow">Verified</p>
+      <ul class="rail-items">
         {
           chips.map((chip, index) => (
             <li data-reveal style={stagger(index)}>
@@ -97,42 +119,96 @@ const stagger = (index: number) => `--reveal-delay: ${Math.min(index * 60, 240)}
     </div>
   </section>
 
-  <!-- 3. Featured systems — appears when Phases 4–5 author the collection. -->
+  {
+    /* ── 01 · THE LIVE PLANE ─────────────────────────────────────────────
+      An inset well: the one section recessed into the page rather than sat
+      on it, because what is inside it is a running system and not a
+      description of one. §3.9 still holds — it invites, it does not instruct. */
+  }
+  <LiveEstatePanel />
+
+  {
+    /* ── 02 · THE ESTATE ─────────────────────────────────────────────────
+      A ledger, not a card grid. Three cards side by side made three systems
+      look like three equivalent tiles; a ledger gives each one a full row, a
+      number, a status in the register's colour, and room for the sentence
+      that says why it is interesting. */
+  }
   {
     systems.length > 0 && (
-      <section class="band">
-        <div class="container">
-          <SectionHeader kicker="Systems" title="Built, secured, and operated end to end" />
-          <div class="system-grid">
-            {systems.slice(0, 3).map((system, index) => (
-              <div data-reveal style={stagger(index)}>
-                <SystemCard
-                  title={system.data.title}
-                  status={system.data.status}
-                  statusDetail={system.data.statusDetail}
-                  problem={system.data.problem}
-                  stack={system.data.stack}
-                  href={`/systems/${system.id}`}
-                />
-              </div>
-            ))}
+      <section class="section estate" aria-labelledby="estate-heading">
+        <div class="container section-inner">
+          <span class="section-index" aria-hidden="true">
+            02
+          </span>
+          <div class="section-open">
+            <p class="eyebrow">The estate</p>
+            <h2 id="estate-heading">Built, secured, and operated end to end.</h2>
           </div>
+
+          <ol class="ledger">
+            {systems.slice(0, 3).map((system, index) => {
+              const status = STATUS_LABELS[system.data.status];
+              return (
+                <li data-reveal style={stagger(index)} data-tone={status.tone}>
+                  <a class="ledger-row" href={`/systems/${system.id}`}>
+                    <span class="ledger-no" aria-hidden="true">
+                      {ordinal(index)}
+                    </span>
+                    <span class="ledger-body">
+                      <span class="ledger-head">
+                        <span class="ledger-title">{system.data.title}</span>
+                        <span class="ledger-status">
+                          <span class="ledger-dot" aria-hidden="true" />
+                          {status.label}
+                          {system.data.statusDetail ? ` · ${system.data.statusDetail}` : ''}
+                        </span>
+                      </span>
+                      <span class="ledger-problem">{system.data.problem}</span>
+                      <span class="ledger-stack">
+                        {system.data.stack.map((item) => (
+                          <span>{item}</span>
+                        ))}
+                      </span>
+                    </span>
+                    <span class="ledger-go" aria-hidden="true">
+                      →
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
+          </ol>
         </div>
       </section>
     )
   }
 
-  <!-- 4. Current role snapshot — appears when Phase 6 authors the collection. -->
+  {
+    /* ── 03 · THE POST ───────────────────────────────────────────────────
+      One statement at pull-quote scale with its meta set in the margin.
+      This was a heading, a mono line, a paragraph and a link inside a
+      container — indistinguishable from the section above it. */
+  }
   {
     currentRole && (
-      <section class="band">
-        <div class="container">
-          <SectionHeader kicker="Current role" title={currentRole.data.role} />
-          <div class="body-copy narrow" data-reveal>
-            <p class="role-org">
-              {currentRole.data.organisation} · {currentRole.data.from} – {currentRole.data.to}
+      <section class="section post" aria-labelledby="role-heading">
+        <div class="container section-inner post-grid">
+          <span class="section-index" aria-hidden="true">
+            03
+          </span>
+          <div class="post-meta">
+            <p class="eyebrow">Current post</p>
+            <p class="post-org">{currentRole.data.organisation}</p>
+            <p class="post-dates">
+              {currentRole.data.from} – {currentRole.data.to}
             </p>
-            <p>{currentRole.data.bullets[0]}</p>
+          </div>
+          <div class="post-body">
+            <h2 id="role-heading">{currentRole.data.role}</h2>
+            <p class="post-lead" data-reveal>
+              {currentRole.data.bullets[0]}
+            </p>
             <p class="section-link">
               <a href="/experience">The rest of the experience →</a>
             </p>
@@ -142,30 +218,51 @@ const stagger = (index: number) => `--reveal-delay: ${Math.min(index * 60, 240)}
     )
   }
 
-  <!-- 5. How I work — the five pillars, one line each (blueprint §1). -->
-  <section class="band">
-    <div class="container">
-      <SectionHeader kicker="How I work" title="Five things I hold to" />
-      <ul class="pillars">
+  {
+    /* ── 04 · THE PRACTICE ───────────────────────────────────────────────
+      A manifest. Five numbered entries in type with a hairline between
+      them — no cards, no boxes, no grid of equal tiles. The number carries
+      the structure so the words can carry the weight. */
+  }
+  <section class="section practice" aria-labelledby="practice-heading">
+    <div class="container section-inner">
+      <span class="section-index" aria-hidden="true">04</span>
+      <div class="section-open">
+        <p class="eyebrow">The practice</p>
+        <h2 id="practice-heading">Five things I hold to.</h2>
+      </div>
+
+      <ol class="manifest">
         {
           PILLARS.map((pillar, index) => (
             <li data-reveal style={stagger(index)}>
+              <span class="manifest-no" aria-hidden="true">
+                {ordinal(index)}
+              </span>
               <h3>{pillar.title}</h3>
               <p>{pillar.line}</p>
             </li>
           ))
         }
-      </ul>
-      <p class="section-link body-copy" data-reveal>
+      </ol>
+
+      <p class="section-link" data-reveal>
         <a href="/engineering">The evidence for each, plus what I got wrong →</a>
       </p>
     </div>
   </section>
 
-  <!-- 6. Closing — availability and contact. -->
-  <section class="band closing">
-    <div class="container">
-      <SectionHeader kicker="Availability" title={SITE.availability} />
+  {
+    /* ── 05 · CLOSING ────────────────────────────────────────────────────
+      One sentence at display size. A closing section that opens with a small
+      kicker and a heading is a sixth repetition of the same shape; a closing
+      section that is mostly one large sentence is an ending. */
+  }
+  <section class="section closing" aria-labelledby="closing-heading">
+    <div class="container section-inner">
+      <span class="section-index" aria-hidden="true">05</span>
+      <p class="eyebrow">Availability</p>
+      <h2 id="closing-heading">{SITE.availability}</h2>
       <div class="closing-actions" data-reveal>
         <Button href={`mailto:${SITE.email}`}>Email me</Button>
         <Button href={SITE.linkedin} variant="secondary" rel="me noopener">LinkedIn</Button>
@@ -175,142 +272,422 @@ const stagger = (index: number) => `--reveal-delay: ${Math.min(index * 60, 240)}
 </BaseLayout>
 
 <style>
-  /*
-   * Tightened so the live panel reaches the first viewport.
-   *
-   * The hero previously owned the whole screen and the panel began below the
-   * fold, which defeats its purpose: its job is to prove the site is a running
-   * system BEFORE a visitor decides whether to believe the claim above it. The
-   * two are one argument, so they are spaced as one block rather than as two
-   * bands with a full section gap between them.
-   */
-  .hero {
-    padding-block: var(--space-12) var(--space-6);
+  /* ── OPENING ───────────────────────────────────────────────────────── */
+  .opening {
+    padding-block: var(--space-16) var(--space-12);
   }
 
-  @media (min-width: 768px) {
-    .hero {
-      padding-block: var(--space-16) var(--space-8);
+  @media (min-width: 900px) {
+    .opening {
+      padding-block: var(--space-24) var(--space-16);
     }
   }
 
-  .kicker {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-block-end: var(--space-4);
+  .opening-grid {
+    display: grid;
+    gap: var(--space-12);
+    align-items: center;
   }
 
-  /*
-   * The display tier. The claim is the one thing on this page that should
-   * dominate its viewport, and it was rendering at the same size as a section
-   * heading — so the page opened with no focal point at all. Fluid, so it fills
-   * a phone and a 1440 desktop without a breakpoint.
-   */
+  @media (min-width: 900px) {
+    .opening-grid {
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      gap: var(--space-16);
+    }
+  }
+
+  /* The eyebrow is drawn with a rule running into it — the first mark of the
+     schematic language the rest of the page is built on. */
+  .opening-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-block-end: var(--space-6);
+  }
+
+  .opening-eyebrow .rule {
+    width: 2.5rem;
+    height: 1px;
+    background: var(--border-strong);
+  }
+
   h1 {
     font-size: var(--text-display);
     line-height: var(--leading-display);
     letter-spacing: var(--tracking-display);
-    max-width: 18ch;
+    max-width: 15ch;
   }
 
   .subline {
     margin-block-start: var(--space-6);
-    max-width: var(--measure);
+    max-width: 56ch;
     color: var(--text-muted);
     font-size: var(--text-md);
   }
 
-  /* One list shape for both kinds of chip. They share this visual form and
-     nothing else: the hero's are locked §1 status wording, the proof strip's
-     are the evidenceChips collection. */
-  .chip-strip {
+  /*
+   * Mono, ruled between, no boxes. The evidence rail below already carries
+   * bordered chips; repeating that shape here would make the page open with two
+   * rows of the same object.
+   */
+  .opening-chips {
     list-style: none;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2);
-    margin: var(--space-8) 0 0;
+    gap: var(--space-2) var(--space-4);
+    margin: var(--space-6) 0 0;
     padding: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
   }
 
-  .hero-actions {
+  .opening-chips li + li::before {
+    content: '·';
+    margin-inline-end: var(--space-4);
+  }
+
+  .opening-actions {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-3);
     margin-block-start: var(--space-8);
   }
 
-  .band {
-    padding-block: var(--space-12);
+  /* ── EVIDENCE RAIL ─────────────────────────────────────────────────── */
+  /*
+   * Full-bleed and ruled top and bottom. It reads as instrumentation strapped
+   * across the page rather than as another block of content.
+   */
+  .rail {
+    border-block: var(--border-width) solid var(--border);
+    background: var(--bg-inset);
+    padding-block: var(--space-6);
   }
 
-  .band .chip-strip {
-    margin-block-start: 0;
-  }
-
-  .system-grid {
+  .rail-inner {
     display: grid;
     gap: var(--space-4);
-    grid-template-columns: 1fr;
+    align-items: center;
   }
 
-  @media (min-width: 768px) {
-    .system-grid {
-      grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
-    }
-  }
-
-  .narrow {
-    max-width: var(--measure);
-  }
-
-  .role-org {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--text-muted);
-    margin-block-end: var(--space-3);
-  }
-
-  .pillars {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: var(--space-6);
-  }
-
-  @media (min-width: 768px) {
-    .pillars {
-      grid-template-columns: repeat(2, 1fr);
+  @media (min-width: 900px) {
+    .rail-inner {
+      grid-template-columns: auto 1fr;
       gap: var(--space-8);
     }
   }
 
-  .pillars h3 {
-    font-size: var(--text-base);
-    margin-block-end: var(--space-2);
+  /*
+   * The rail label takes the record colour. It is the register's fifth entry
+   * and this is what it names: the written, cited, dated record — every chip
+   * in this strip traces to a knowledge base or the CV, which is the one thing
+   * that separates this row from a row of badges.
+   */
+  .rail-label {
+    white-space: nowrap;
+    color: var(--record);
   }
 
-  .pillars p {
+  .rail-items {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+  }
+
+  /* ── SHARED SECTION OPENER ─────────────────────────────────────────── */
+  .section-open {
+    margin-block-end: var(--space-12);
+  }
+
+  .section-open .eyebrow {
+    margin-block-end: var(--space-4);
+  }
+
+  .section-open h2,
+  .closing h2 {
+    font-size: var(--text-mega);
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-display);
+    max-width: 20ch;
+  }
+
+  /* ── 02 · THE LEDGER ───────────────────────────────────────────────── */
+  .ledger {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-block-start: var(--border-width) solid var(--border);
+  }
+
+  .ledger li {
+    border-block-end: var(--border-width) solid var(--border);
+  }
+
+  /*
+   * Each row carries its own status colour as --tone, so the register does the
+   * work: green rows are running in production, amber is not launched yet.
+   * Nothing else on the row is coloured.
+   */
+  .ledger li[data-tone='accent'] {
+    --tone: var(--signal);
+  }
+
+  .ledger li[data-tone='warm'] {
+    --tone: var(--pending);
+  }
+
+  .ledger li[data-tone='muted'] {
+    --tone: var(--text-faint);
+  }
+
+  .ledger-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-4);
+    padding-block: var(--space-8);
+    padding-inline: var(--space-4);
+    margin-inline: calc(var(--space-4) * -1);
+    text-decoration: none;
+    background-image: none;
+    position: relative;
+    transition: background-color var(--duration-transition) var(--ease-out);
+  }
+
+  @media (min-width: 768px) {
+    .ledger-row {
+      grid-template-columns: auto 1fr auto;
+      gap: var(--space-8);
+      align-items: start;
+    }
+  }
+
+  /* The row lights in its own status colour — a wash plus a leading edge. */
+  .ledger-row::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 2px;
+    background: var(--tone);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform var(--duration-transition) var(--ease-out);
+  }
+
+  .ledger-row:hover,
+  .ledger-row:focus-visible {
+    background-color: color-mix(in srgb, var(--tone) 6%, transparent);
+  }
+
+  .ledger-row:hover::before,
+  .ledger-row:focus-visible::before {
+    transform: scaleY(1);
+  }
+
+  .ledger-no {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--text-faint);
+    padding-block-start: 0.35em;
+  }
+
+  .ledger-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2) var(--space-4);
+  }
+
+  .ledger-title {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-heading);
+    letter-spacing: -0.015em;
+    color: var(--text);
+  }
+
+  .ledger-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .ledger-dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: var(--tone);
+  }
+
+  .ledger-problem {
+    display: block;
+    margin-block-start: var(--space-4);
+    max-width: 60ch;
+    color: var(--text-muted);
+    font-size: var(--text-md);
+  }
+
+  .ledger-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+    margin-block-start: var(--space-4);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-faint);
+  }
+
+  /* Interpuncts between stack items, drawn rather than written so they are
+     never read aloud as content. */
+  .ledger-stack span + span::before {
+    content: '·';
+    margin-inline-end: var(--space-3);
+  }
+
+  .ledger-go {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .ledger-go {
+      display: block;
+      color: var(--text-faint);
+      font-size: var(--text-lg);
+      padding-block-start: 0.1em;
+      transition:
+        transform var(--duration-transition) var(--ease-out),
+        color var(--duration-transition) var(--ease-out);
+    }
+
+    .ledger-row:hover .ledger-go,
+    .ledger-row:focus-visible .ledger-go {
+      color: var(--tone);
+      transform: translateX(4px);
+    }
+  }
+
+  /* ── 03 · THE POST ─────────────────────────────────────────────────── */
+  .post-grid {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 900px) {
+    .post-grid {
+      grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
+      gap: var(--space-12);
+    }
+  }
+
+  .post-org {
+    margin-block-start: var(--space-4);
+    color: var(--text);
+    font-size: var(--text-sm);
+  }
+
+  .post-dates {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-faint);
+    margin-block-start: var(--space-1);
+  }
+
+  .post-body h2 {
+    font-size: var(--text-xl);
+    letter-spacing: -0.015em;
+  }
+
+  /*
+   * The lead runs at pull-quote scale. This is the one paragraph on the page
+   * given that treatment, which is what makes it a moment rather than another
+   * block of body copy.
+   */
+  .post-lead {
+    margin-block-start: var(--space-6);
+    font-size: var(--text-lg);
+    line-height: 1.45;
+    color: var(--text-muted);
+    max-width: 44ch;
+    text-wrap: pretty;
+  }
+
+  /* ── 04 · THE MANIFEST ─────────────────────────────────────────────── */
+  .manifest {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .manifest li {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: var(--space-2) var(--space-4);
+    padding-block: var(--space-6);
+    border-block-start: var(--border-width) solid var(--border);
+  }
+
+  @media (min-width: 900px) {
+    .manifest li {
+      grid-template-columns: 3rem minmax(0, 22ch) minmax(0, 1fr);
+      gap: var(--space-8);
+      align-items: baseline;
+      padding-block: var(--space-8);
+    }
+  }
+
+  .manifest-no {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-faint);
+    grid-row: 1;
+  }
+
+  .manifest h3 {
+    font-size: var(--text-md);
+    font-weight: var(--weight-medium);
+    letter-spacing: -0.01em;
+  }
+
+  .manifest p {
     color: var(--text-muted);
     font-size: var(--text-sm);
-    max-width: 46ch;
+    grid-column: 2;
+  }
+
+  @media (min-width: 900px) {
+    .manifest p {
+      grid-column: 3;
+      font-size: var(--text-base);
+      max-width: 46ch;
+    }
   }
 
   .section-link {
-    margin-block-start: var(--space-6);
+    margin-block-start: var(--space-8);
     font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+
+  /* ── 05 · CLOSING ──────────────────────────────────────────────────── */
+  .closing h2 {
+    margin-block-start: var(--space-4);
+    max-width: 16ch;
   }
 
   .closing-actions {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-3);
-  }
-
-  .closing {
-    padding-block-end: var(--space-16);
+    margin-block-start: var(--space-8);
   }
 </style>

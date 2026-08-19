@@ -1,0 +1,304 @@
+---
+/**
+ * The estate — the four systems, drawn as what they are.
+ *
+ * WHY THIS EXISTS, AND WHY IT IS NOT A BACKGROUND
+ * The homepage opened with a claim and asked to be believed. This puts the
+ * thing itself beside the claim: four nodes, the three platforms and the demo
+ * plane, at the scale of a diagram rather than a texture. It was a full-bleed
+ * field behind the page first, and that was the same mistake the 3D made —
+ * anything placed behind text becomes wallpaper no matter how real its data is.
+ * So it sits in the composition instead, with room of its own.
+ *
+ * EVERYTHING HERE IS THE REAL ESTATE
+ * Nodes come from the same content collection the cards and the machine layer
+ * read. Colour is the real status: green for what runs, amber for what has not
+ * launched, and the isolation colour for the plane a visitor may attack. There
+ * are four because four is what exists (§2.7) — nothing is added to balance the
+ * composition.
+ *
+ * WHY CANVAS AND NOT THE 3D ENGINE
+ * The live surface's renderer is 390KB gzipped; this surface's budget is 15KB
+ * of JavaScript and LCP under 1.8s on a mid-range phone. Those budgets are the
+ * design — a portfolio about operating systems well should not ship half a
+ * megabyte to look serious.
+ */
+import { getCollection } from 'astro:content';
+import { STATUS_LABELS } from '../schemas/constitution';
+
+const systems = (await getCollection('systems')).sort((a, b) => a.data.order - b.data.order);
+
+const nodes = [
+  ...systems.map((system) => ({
+    label: system.data.title,
+    status: STATUS_LABELS[system.data.status].label,
+    tone: STATUS_LABELS[system.data.status].tone,
+    demo: false,
+  })),
+  {
+    label: 'This demonstration plane',
+    status: 'LIVE — YOURS TO BREAK',
+    tone: 'live',
+    demo: true,
+  },
+];
+---
+
+<figure class="estate" data-estate data-nodes={JSON.stringify(nodes)}>
+  <canvas data-estate-canvas aria-hidden="true"></canvas>
+  {
+    /* The canvas is a second rendering of this list. The list is the accessible
+      one, and it is what a reader gets with no JavaScript at all. */
+  }
+  <figcaption>
+    <p class="estate-title">The estate</p>
+    <ul>
+      {
+        nodes.map((node) => (
+          <li data-tone={node.tone}>
+            <span class="dot" aria-hidden="true" />
+            <span class="name">{node.label}</span>
+            <span class="state">{node.status}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </figcaption>
+</figure>
+
+<style>
+  .estate {
+    position: relative;
+    margin: 0;
+  }
+
+  /*
+   * The canvas is the diagram; the caption is the key. On a phone the diagram
+   * is dropped entirely rather than shrunk into illegibility — a 340px-wide
+   * node graph communicates nothing, and the list already carries the same
+   * facts in a form that reads well small.
+   */
+  .estate canvas {
+    display: none;
+  }
+
+  @media (min-width: 900px) {
+    .estate canvas {
+      display: block;
+      width: 100%;
+      height: 300px;
+    }
+  }
+
+  figcaption {
+    margin-block-start: var(--space-6);
+  }
+
+  @media (min-width: 900px) {
+    figcaption {
+      margin-block-start: var(--space-4);
+    }
+  }
+
+  .estate-title {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-muted);
+    margin: 0 0 var(--space-4);
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: baseline;
+    gap: var(--space-3);
+    font-size: var(--text-sm);
+    padding-block-end: var(--space-3);
+    border-block-end: 1px solid var(--border);
+  }
+
+  li:last-child {
+    border-block-end: 0;
+  }
+
+  .dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--tone, var(--text-muted));
+    transform: translateY(-0.1em);
+  }
+
+  li[data-tone='accent'] {
+    --tone: var(--accent);
+  }
+
+  li[data-tone='warm'] {
+    --tone: var(--accent-warm);
+  }
+
+  li[data-tone='live'] {
+    --tone: var(--isolation, #a8f0ff);
+  }
+
+  .name {
+    color: var(--text);
+  }
+
+  .state {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    text-align: right;
+  }
+</style>
+
+<script>
+  /*
+   * Draws the estate and, on a pointer device, lets a reader move it.
+   *
+   * The one interaction is deliberate: the constellation responds to the
+   * pointer with a small parallax, so the diagram reads as a space with depth
+   * rather than a flat picture. It is the only motion here that is not carrying
+   * data, and it is bounded to a few pixels — enough to feel dimensional, not
+   * enough to become an effect.
+   */
+  const root = document.querySelector('[data-estate]');
+  const canvas = root?.querySelector('canvas');
+  const ctx = canvas?.getContext('2d');
+
+  if (root instanceof HTMLElement && canvas instanceof HTMLCanvasElement && ctx) {
+    const nodes = JSON.parse(root.dataset.nodes ?? '[]') as Array<{
+      label: string;
+      tone: string;
+      demo: boolean;
+    }>;
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const TONE: Record<string, string> = {
+      accent: '74, 222, 128',
+      warm: '251, 191, 36',
+      live: '168, 240, 255',
+      muted: '154, 163, 178',
+    };
+
+    /*
+     * A fixed constellation, not a simulation. The estate has a shape and it
+     * should be the same shape on every visit — a layout that rearranges itself
+     * each load is a toy, not a diagram. The demo plane sits low and apart:
+     * it is the one a visitor may enter.
+     */
+    const layout = [
+      { x: 0.22, y: 0.24 },
+      { x: 0.74, y: 0.18 },
+      { x: 0.82, y: 0.62 },
+      { x: 0.36, y: 0.78 },
+    ];
+
+    let w = 0;
+    let h = 0;
+    let px = 0;
+    let py = 0;
+
+    const resize = () => {
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      w = canvas.clientWidth;
+      h = canvas.clientHeight;
+      if (w === 0 || h === 0) return;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+
+    const draw = () => {
+      if (w === 0 || h === 0) return;
+      ctx.clearRect(0, 0, w, h);
+
+      const pts = nodes.map((node, i) => {
+        const spot = layout[i % layout.length];
+        // Depth: the demo plane sits nearest, so it travels furthest.
+        const depth = node.demo ? 1.6 : 1;
+        return { x: spot.x * w + px * depth, y: spot.y * h + py * depth };
+      });
+
+      for (let i = 0; i < pts.length; i += 1) {
+        for (let j = i + 1; j < pts.length; j += 1) {
+          ctx.strokeStyle = 'rgba(154, 163, 178, 0.16)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(pts[i].x, pts[i].y);
+          ctx.lineTo(pts[j].x, pts[j].y);
+          ctx.stroke();
+        }
+      }
+
+      nodes.forEach((node, i) => {
+        const p = pts[i];
+        const rgb = TONE[node.tone] ?? TONE.muted;
+        const r = node.demo ? 8 : 6;
+
+        const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, node.demo ? 60 : 40);
+        glow.addColorStop(0, 'rgba(' + rgb + ', ' + (node.demo ? 0.26 : 0.16) + ')');
+        glow.addColorStop(1, 'rgba(' + rgb + ', 0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, node.demo ? 60 : 40, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(' + rgb + ', 0.92)';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        // The demo plane carries a ring — the one node a visitor may enter.
+        if (node.demo) {
+          ctx.strokeStyle = 'rgba(' + rgb + ', 0.55)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r + 8, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      });
+    };
+
+    const render = () => {
+      resize();
+      draw();
+    };
+    render();
+    addEventListener('resize', render, { passive: true });
+
+    if (!still && matchMedia('(pointer: fine)').matches) {
+      let target = { x: 0, y: 0 };
+      addEventListener(
+        'pointermove',
+        (event) => {
+          const box = canvas.getBoundingClientRect();
+          // Bounded to ±10px: dimensional, never an effect.
+          target = {
+            x: ((event.clientX - box.left) / box.width - 0.5) * 20,
+            y: ((event.clientY - box.top) / box.height - 0.5) * 20,
+          };
+        },
+        { passive: true },
+      );
+      const ease = () => {
+        px += (target.x - px) * 0.06;
+        py += (target.y - py) * 0.06;
+        draw();
+        requestAnimationFrame(ease);
+      };
+      ease();
+    }
+  }
+</script>
