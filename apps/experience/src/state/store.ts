@@ -20,6 +20,7 @@ import type { BreakOutState } from '../beats/choreography.ts';
 import { NEUTRAL } from '../beats/choreography.ts';
 import type { EdgeReading } from '../live/api.ts';
 import type { Station } from '../router.ts';
+import type { StationId as NarrativeStation } from '../kit/stations.ts';
 
 /** A tenant volume, derived entirely from events that mentioned it. */
 export type Volume = {
@@ -95,6 +96,21 @@ export type WorldState = {
   /** The most recent denial, for the membrane flare. Cyan means this and only this. */
   lastDenialAt: number | null;
   frame: { p50: number; p95: number; fps: number };
+  /**
+   * Which of the ten narrative stations the camera is at, and where it has
+   * been.
+   *
+   * Separate from `station`, which is the five DEMONSTRATION routes
+   * (isolation, payments, fraud, ai, limits). Those are things a visitor
+   * operates; these are places the camera stands. Keeping them apart means
+   * neither routing scheme has to know about the other.
+   *
+   * `visited` is what station 10 reads to show the visitor their own path —
+   * a marker for a station they never reached would describe a journey that
+   * did not happen.
+   */
+  narrative: NarrativeStation;
+  visited: NarrativeStation[];
 
   setBeat: (beat: Beat) => void;
   setEdge: (edge: EdgeReading) => void;
@@ -117,6 +133,7 @@ export type WorldState = {
   setSource: (state: SourceState) => void;
   setTier: (tier: Tier, reason: string) => void;
   setFrame: (frame: { p50: number; p95: number; fps: number }) => void;
+  setNarrative: (id: NarrativeStation) => void;
   setReducedMotion: (value: boolean) => void;
   setWebglAvailable: (value: boolean) => void;
   retirePackets: (now: number, max: number) => void;
@@ -175,6 +192,8 @@ export const useWorld = create<WorldState>((set) => ({
   log: [],
   lastDenialAt: null,
   frame: { p50: 0, p95: 0, fps: 0 },
+  narrative: 'enter',
+  visited: ['enter'],
 
   ingest: (event) =>
     set((state) => {
@@ -223,6 +242,18 @@ export const useWorld = create<WorldState>((set) => ({
   setBreakOut: (breakOut) => set({ breakOut }),
   runBreakOut: () => set((s) => ({ breakOutTrigger: s.breakOutTrigger + 1 })),
   setStation: (station) => set({ station }),
+
+  setNarrative: (narrative) =>
+    set((state) =>
+      state.narrative === narrative
+        ? state
+        : {
+            narrative,
+            visited: state.visited.includes(narrative)
+              ? state.visited
+              : [...state.visited, narrative],
+          },
+    ),
 
   setSource: (source) => set({ source }),
   setTier: (tier, tierReason) => set({ tier, tierReason }),

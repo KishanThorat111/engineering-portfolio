@@ -2292,3 +2292,456 @@ openings — verified rendering correctly — but keep their card-based internal
 lifted by upgrading `SectionHeader` rather than rebuilt. The 3D world's geometry is unchanged;
 what changed is the composition it sits in. The mid-range device measurement carried from P4
 remains outstanding.
+
+
+---
+
+## R0/R1 — The reference reconstruction: decomposition, two rulings, and the kit · 22 August 2026
+
+**Scheme: a new one, and it is named here to stop a third numbering fight.** `R0..R6` is the
+reference-reconstruction roadmap in `docs/REFERENCE_DECOMPOSITION.md` §4. It is not the dossier
+§13 `P0..P8` roadmap, which completed at P8, and it is not the original static eight-phase plan.
+Owner-directed, following the delivery of ten approved visual references in `design-references/`.
+
+### What prompted it
+
+Ten reference images were supplied as approved visual targets — explicitly not inspiration, and
+explicitly not to be implemented as flat background images. The directive required each to be
+decomposed on thirteen axes, each major object assigned an implementation medium, and one shared
+visual system built rather than ten unrelated scenes.
+
+### Three collisions with locked items, found by reading the references against §12
+
+This is the finding the phase existed to produce, and it was found before any code:
+
+1. **Cyan.** §3.4/§12 lock cold white-cyan to the isolation boundary "and nothing else, ever."
+   Cyan is the most-used hue in the reference set — plate rims, grid lines, TLS arrows, packet
+   beads, LIVE glows. **Resolved without asking, because the rule permits one resolution:** a
+   rule may never be loosened. Structural edges took a new `--structure` tone that is
+   deliberately NOT a register entry, the data plane took ember as material temperature (which
+   §3.3 already sanctions as a measurement), and `isolationCyan` is unchanged and now rarer.
+2. **The register.** §3.2 records a design-review correction rejecting "volumetric glowing
+   shapes in darkness" as forgettable genre. The references are exactly that. **Escalated.**
+3. **The narrative.** §2.1/§12 lock a five-beat arc in one continuous take. The references show
+   a ten-section site with a persistent nav. **Escalated.**
+
+### The two rulings
+
+Put to the owner and answered the same day.
+
+- **C2 — reference form, evidence content.** Composition, lighting, depth and material language
+  are reconstructed at full fidelity. §3.2 survives as *provenance* rather than as restraint:
+  **nothing emits light unless it is carrying a real measurement; an unlit panel means idle, not
+  unstyled.** This is stricter than §3.2 as written — that clause restrained saturation, this
+  restrains cause.
+- **C3 — one take, ten camera stations.** The references' numbered nav becomes a visible station
+  index, not page links. Both were satisfiable at once because the reference nav is a persistent
+  overlay, not evidence of page loads.
+
+### The truth reconciliation, which is most of the design work
+
+The reference images are AI-generated and their numbers are inventions; several name figures the
+constitution specifically forbids. Every one was checked and dispositioned in
+`REFERENCE_DECOMPOSITION.md` §3 — uptime percentages, tenant and user counts, throughput,
+service and region counts, and six fabricated archive totals are all struck. **The composition
+survives in every case; only the content of the slot changes.** Two are worth naming here: the
+demo plane is unlabelled in references 02 and 06 and gains a label under rule 11, and reference
+09's `7,842 / 128K / 14.6K / 22.1K` become the repository's real record — 12 decisions, 5
+evidence chips, 2 lessons, 14 integration tests, as of 22 Aug 2026. Two orders of magnitude
+smaller, and the correct outcome: the drawer labelled DECISIONS opens onto twelve decisions a
+person actually wrote.
+
+### Shipped (R1 — the kit, no reference scene yet)
+
+- `kit/glow.ts` — the glow rule as a module rather than a comment, so violating it has to be
+  deliberate. `Measurement = number | null`, and null returns darkness rather than a default.
+- `kit/Plate.tsx` (K1), `kit/Chip.tsx` (K2), `kit/Conduit.tsx` (K3), `kit/Core.tsx` (K4).
+- `kit/stations.ts` — the ten camera stations in one coordinate space. This file is why the
+  result is one world rather than ten scenes.
+- `kit/CameraRig.tsx` — the only thing permitted to move the camera, which is what makes a cut
+  unwritable rather than merely discouraged.
+- `kit/LabelLayer.tsx`, `kit/InstrumentPanel.tsx`, `kit/kit.css` — every word in the references
+  as real HTML, projected in one pass.
+- `bench.html` + `src/bench.tsx` — dev-only, above reference 05's density.
+
+### Verification record
+
+- Experience typecheck: **0 errors** under `exactOptionalPropertyTypes`.
+- `npm run verify`: **exit 0**, all gates green — copy-check 17 markup + 7 machine artifacts,
+  link-check 177 references, contrast 25/25, confidential-parity 6, machine-parity 21,
+  fastlane 15. No shipped surface regressed.
+- **The glow rule proven by injection, not asserted.** 16/16 assertions pass. Then the classic
+  defect was injected — `measurement ?? 0` in `glow()` and `durationMs ?? 40` in
+  `speedFromLatency()` — and **5 of the 16 failed**, including "null measurement emits nothing"
+  and "null duration draws no packet". Reverted uncommitted; 16/16 restored. The check is real.
+- **The bench proven not to ship.** `npm run build:experience`, then grepped the whole of
+  `dist/` for its title: not found. Vite's build input is `index.html` alone, so a root-level
+  HTML file is served in dev and is not a build input.
+
+### Two defects found in my own kit, before anyone else saw it
+
+- `Conduit` oriented beads with `lookAt()` after writing the curve tangent into `Object3D.up`.
+  `lookAt` derives orientation *from* `up`, so the look direction and the up vector were
+  parallel and the result degenerate — beads would flip or collapse exactly where the curve
+  bends most, which is where the eye is. Replaced with `setFromUnitVectors`.
+- The same loop allocated a `Vector3` per bead per frame. At the bead counts references 02, 05
+  and 06 show, that is thousands of short-lived objects a second and a GC pause visible as a
+  dropped frame — which, in a world where motion is a measurement, is the renderer lying about
+  latency it did not have.
+
+### Not done, and not counted as done
+
+**No reference scene exists yet.** R1 is the kit and the bench only; references 01–10 are R2–R5.
+The 60fps claim is **not** made: the bench renders and typechecks, but no frame-time measurement
+was taken on a mid-range device, and the P4 mid-range measurement remains outstanding — this
+phase does not close it. `Housing` (K6), `Drawer` (K7), `Globe` (K8) and `Field` (K10) are
+specified in the decomposition and not built. The membrane (K9) already ships and was not
+touched. The "I operate." gradient in reference 01 is flagged as a register casualty with a
+recommendation recorded, awaiting an owner ruling.
+
+
+---
+
+## R2 — Reference 01 (ENTER), reconstructed from the kit · 22 August 2026
+
+**Scheme: reference-reconstruction roadmap** (`docs/REFERENCE_DECOMPOSITION.md` §4). The first
+reference scene, built entirely from the R1 kit. Owner-directed: stop expanding the planning
+layer, build 01-ENTER against the approved image, continue incrementally.
+
+### Shipped
+
+- `kit/CityField.tsx` (K5) — instanced terrain with a deterministic layout, plus a ground plane.
+- `scenes/enter.ts` — the scene as data: seven stack tiers and five capability satellites, so
+  the geometry and the annotation layer read one list and cannot drift apart.
+- `scenes/EnterScene.tsx` — the 3D half. Composed only of `Plate`, `Core`, `Conduit`,
+  `CityField`, `LabelProjector`. No geometry in it that another reference could not reuse.
+- `scenes/EnterOverlay.tsx` + `scenes/enter.css` — the interface half, every word real HTML.
+- `content/copy.ts` gains an `enter` block; A4 still holds, so it reaches `copy.json` and the
+  copy gate scans it.
+- `styles.css` gains the rest of the static surface's register and type scale.
+
+### Three defects found by rendering it, not by reading it
+
+1. **`LabelLayer` could not work as written.** It returned DOM but needed `useFrame`, so it was
+   mounted inside the Canvas and R3F handed the `<svg>` to the three.js reconciler:
+   "Svg is not part of the THREE namespace", and the entire scene rendered as nothing. DOM and
+   scene graph are two reconcilers and one component cannot be in both. Split into
+   `LabelProjector` (in-canvas, writes screen positions) and `LabelOverlay` (DOM), sharing one
+   mutable projection object.
+2. **The experience surface was missing half its design tokens.** `--text-display` was undefined
+   here, so reference 01's hero — the largest type in the entire design set — rendered at the
+   browser's default heading size. Anything styled against an undefined token fell back
+   silently, which is the worst failure mode a token can have.
+3. **The plate window mask streaked.** Built from box `uv`, which is 0..1 per face, so on a
+   21 x 0.5 slab a square cell stretched into a band down the sides. Rebuilt from local
+   position, which also gives cells a constant world size across plates of any footprint.
+
+### The glow rule leaked, and the leak was measured
+
+Rendering the scene with every measurement removed (`?dead=1`) showed a faint scatter of cells
+still emitting. The cause was a constant term — `(0.32 + 1.15 * uGlow)` — so at `uGlow = 0`, the
+honest value for a layer nothing has measured, six percent of cells still lit at 0.32. An idle
+plate was quietly claiming a trickle of activity it did not have.
+
+Scaling purely by `uGlow` fixed it. **Measured over the subject region: pixels above threshold
+went 0.86% to 0.34% unmeasured, against 13.79% measured — a 40x separation between a system that
+is working and one that is not.** The residual 0.34% is structural rim light, which is
+consistent with the precedent already shipped in `World.tsx`: structure is visible at rest,
+activity is earned.
+
+### A locked-content violation I introduced, caught, and then gated
+
+The hero was line-broken as **"I design, / I build, / and I operate"** — which matches the
+reference's rhythm and is **not** the locked claim. It silently added two pronouns to
+`SITE.claim`, wording that blueprint §1 locks and whose change requires an amendment. Reference
+fidelity lost; the locked sentence now reads verbatim down the lines.
+
+P9 recorded that locked hero content has **no automated guard**. R2 walked straight into that
+gap, so the gap is now closed: `copy-check` asserts that the experience hero's display lines,
+rejoined, are exactly the locked claim — against the **built** `copy.json`, not source.
+**Proven by injection:** restoring the defective lines produced
+`copy-check: FAILED — the experience hero is not the locked claim`, printed both strings, and
+exited 1. Reverted; passes. The gate was added, never loosened.
+
+### Post-processing is off, and that is a finding rather than a preference
+
+`@react-three/postprocessing` 3.0.5 / `postprocessing` 6.39.4 / three 0.185.1 / R3F 9.7.0 are
+all inside each other's declared peer ranges — checked, not assumed — and the composer still
+renders this scene roughly **four times darker** than no composer at all: mean 5.9 against 23.1
+over the subject region. Neither `frameBufferType={HalfFloatType}` nor `flat` (NoToneMapping)
+moved the number by a single unit, ruling out the two usual causes.
+
+Rather than light a scene around a bug I do not understand, the glow the reference needs comes
+from geometry I control: additive halos on cores, emissive cells on plates. That is also cheaper
+— no extra render targets — which the mid-range 60fps budget cares about more than it cares
+about mip-blurred bloom. `?bloom=1` still mounts the composer so the defect stays reproducible.
+**Recorded as unresolved, not as fixed.**
+
+### Verification record
+
+- Experience typecheck **0 errors** under `exactOptionalPropertyTypes`.
+- `npm run verify` **exit 0** — copy-check (now including the locked-claim assertion),
+  link-check 177, contrast 25/25, confidential-parity 6, machine-parity 21, fastlane 15.
+  `format:check` clean.
+- **The bench still does not ship.** Built, then grepped all of `dist/` for its title: absent.
+- The scene was verified **by looking at it**, seven captures at 1680x1050 through
+  `playwright-core`, each compared against `design-references/01-enter`. Framing, satellite
+  placement and cell density were each corrected against measured evidence rather than adjusted
+  by feel.
+
+### Reference fidelity: what matches and what does not
+
+Matching: the stepped seven-tier ziggurat, the plasma apex with vertical shafts, the left
+annotation column with hairline leader rules, the right-hand capability satellites on tethered
+conduits, the dark city receding into fog, the three-tier typographic hierarchy, the metrics
+row over a hairline, the bottom-centre trace panel, and the empty left third the type occupies.
+
+**Not yet matching, stated plainly:** the satellite labels overlap the geometry in places; the
+base plate runs past the right edge; the city is dimmer than the reference's; and there is no
+bloom, so emissive detail does not bleed the way the reference's does. None of these are
+blocking and all are tuning rather than structure.
+
+### Truth reconciliation applied to this frame
+
+The reference's `REQUESTS/MIN 2,487 · AVG LATENCY 32ms · UPTIME 99.99% · ERROR RATE 0.02%` is
+gone. Uptime and error rate are forbidden outright by rule 7; the other two are inventions. The
+four metrics are now things this page genuinely measures about the visitor's own session — edge
+round trip, events this session, tenant reference, tenant expiry — and each says *not measured*
+or *not provisioned* when it has none. The reference prints an IP address; this prints the real
+edge PoP, or nothing when the edge named none. The reference has **no demo label anywhere**;
+rule 11 requires one, so it takes the eyebrow slot above the hero — the most prominent position
+in the frame.
+
+### Not done, and not counted as done
+
+References 02–10 are unbuilt. The scene is **not yet wired to the live control plane** — it runs
+on synthetic measurements in the dev bench, which is labelled as such, and `App.tsx` is
+untouched, so the shipped `/live` surface is exactly as P9 left it. Wiring it in replaces
+composition shipped in P4/P5/P9 and is its own step. No frame-time measurement was taken on a
+mid-range device; the P4 mid-range measurement remains outstanding.
+
+
+---
+
+## R3 — Reference 02 (SYSTEMS), and a syntax failure worth recording · 22 August 2026
+
+**Scheme: reference-reconstruction roadmap.** Station 02 built from the R1 kit, plus the kit
+additions it forced. Also records a build failure caused by my own tooling habit.
+
+### Shipped
+
+- `scenes/systems.ts` — the estate as data: four islands, the shared core, the dissection index.
+- `scenes/SystemsScene.tsx` — 3D, composed only of `Plate`, `ChipField`, `Core`, `Conduit`,
+  `CityField`, `LabelProjector`. No geometry unique to this station.
+- `scenes/SystemsOverlay.tsx` + `scenes/systems.css` — hero, dissection index, island register,
+  estate overview.
+- `content/copy.ts` gains a `systems` block, so the copy gate scans it.
+- Kit additions, all reusable: `Plate` gained `shape: 'disc'`; `LabelLayer` gained gutter-aware
+  placement; projected labels gained a legibility shadow.
+
+### The failure that stopped the run
+
+`npm run check` exited 2 with `TS1005` and `TS1109` in `SystemsOverlay.tsx`. Cause: a scripted
+in-place patch left unbalanced JSX — it closed the register column early and emitted an extra
+closing tag. **The lesson is about method, not about JSX.** Structural edits to nested markup
+were being applied with text substitution, which cannot see nesting; the same habit produced two
+earlier defects this session, both times by putting a backtick inside a GLSL template literal
+and silently terminating the string. Structural edits now go through a real editor pass.
+
+### Four islands, not three, and the content is real
+
+The reference shows three platforms. There are four nodes, because §2.7 says the system the
+visitor was inside resolves into one node of four and is the smallest — so the demo plane is the
+fourth and is labelled a demo (rule 11). Titles are verbatim from
+`apps/static/src/content/systems/`. The reference's "HOSPITALITY OPERATIONS" is a misrendering of
+"hospital … operations" and rule 7 forbids naming the hospital regardless.
+
+**Each card carries the system's disclosed limitation, with its date qualifier, on the index** —
+rule 3, and the P9 precedent of disclosing before a visitor has committed to reading anything.
+The reference's "12 Services Online" is an invention; that slot reads *not measured*.
+
+### Six visual defects found by rendering, and what fixed them
+
+1. **The engineering core was square.** The reference's core is concentric machined discs.
+   `Plate` gained `shape: 'disc'`; reference 06's control ring will reuse it.
+2. **Chips rendered as black holes** in every island. They used `meshStandardMaterial` in a world
+   that has no key light (§3.7), so a 0.1 ambient multiplied them to black. Now unlit, like the
+   plates and the city, plus a structure floor so an unmeasured chip reads as present rather
+   than as a hole — most visible on the pre-launch island, which correctly has no traffic.
+3. **Labels overprinted the hero and the register.** Fixed in the kit, not per-scene:
+   `LabelProjection` now carries reserved gutters, and a label flips away from one or hides
+   rather than being drawn over body text. Anchor positions had been hand-nudged twice to dodge
+   this and broke on every camera change.
+4. **That gutter rule then regressed station 01** — its architecture column is *supposed* to sit
+   in the band left of the stack, and a left gutter flipped all of it onto the geometry. Caught
+   by re-rendering ENTER. Station 01 now declares no left gutter.
+5. **The estate overview fell below the fold.** It was last in the column with `margin-top:auto`,
+   which fails as soon as the cards exceed the viewport. Now `position: sticky; bottom: 0`, so it
+   holds at any height and any number of nodes.
+6. **Three labels clustered at the horizon.** The first attempt separated them by *height*, which
+   made it worse — distant objects compress toward the horizon under this camera, so height moved
+   two labels into the band the core label already owned. Separation comes from world placement;
+   label height only trims each to sit near its own island.
+
+### Verification record
+
+- Typecheck **0 errors**; `npm run verify` **exit 0** — copy-check including the locked-claim
+  assertion, link-check 177, contrast 25/25, confidential-parity 6, machine-parity 21,
+  fastlane 15. `format:check` clean.
+- **Station 01 re-verified after every shared-kit change.** The glow rule still separates a
+  working system from an idle one by **14.6x** measured lit pixels over the subject region
+  (40.8% against 2.8%).
+- The bench remains absent from `dist/`.
+
+### Not done, and not counted as done
+
+The fourth register card is partially behind the sticky overview at scroll-top; it clears on
+scroll. Stations 03–10 are unbuilt. Neither station is wired to the live control plane — both run
+on labelled synthetic measurements in the dev bench, and `App.tsx` is untouched, so the shipped
+`/live` surface is still exactly as P9 left it. No mid-range frame-time measurement has been
+taken; the P4 measurement remains outstanding.
+
+
+---
+
+## 03 / DISSECTION · 22 August 2026
+
+Third station of the ten-section reconstruction, built from the shared kit.
+
+### Shipped
+
+- `kit/Sparkline.tsx` — Canvas 2D trend line. Six of the ten references use one; an empty
+  series draws nothing rather than a flat line at zero, because an absent measurement and a
+  still system must not look alike.
+- `scenes/dissection.ts` — seven architecture layers, the tenant volumes, the trace stages.
+- `scenes/DissectionScene.tsx` — exploded frost slabs, tapered drop arrows, service-mesh core,
+  three tenant shells under the isolation boundary.
+- `scenes/DissectionOverlay.tsx` + `dissection.css` — hero, live health panel, metadata sidebar,
+  seven-stage request trace.
+- `Plate` gained `lift` and `opacity`, driving the reference's top-to-bottom glass gradient.
+
+### What is dissected, and why it is not what the reference dissects
+
+The reference dissects a named production platform. This dissects the **demo plane**. Station 02
+establishes the true claim that all four nodes run one stack, so the architecture is shared — but
+only the demo plane's internals can be opened live, and rule 7 forbids opening the hospital one
+at all. Dissecting a system we cannot show the inside of would make this frame a diagram.
+
+### Truth reconciliation
+
+The reference's health panel (availability 99.99%, error rate 0.02%, latency 35ms, throughput
+2.48K req/s) and quick stats (26 services, 3 databases, 7 event streams, 12.4K active users,
+99.90% uptime) are all forbidden or invented. Replaced with things this page measures about its
+own session, and with repository counts that are countable at build time. `KUBERNETES` corrected
+to Docker Compose; `AMS AP-SOUTH-1` to the real measured PoP or nothing; the `v3.7.4` row removed
+entirely rather than filled.
+
+**The trace strip is the sharpest case.** The reference prints a confident millisecond figure
+against all seven hops. This system times the span, not each hop inside it — so a stage shows a
+duration only where one was really recorded, the rest show an em-dash, and a filled node versus a
+hollow ring makes the difference visible without reading a number.
+
+### Visual corrections, each found by rendering
+
+1. Stack overflowed the frame and slabs spanned it edge to edge — footprints cut by ~35%, camera
+   pulled back and shifted so the label column gets its band.
+2. All seven layer labels flipped onto the slabs. A left gutter was declared for this station and
+   should not have been: like station 01, its label column belongs in the band left of the stack.
+3. Tiles read as a merged blob — spacing up, size down.
+4. **`frost` was declared per layer and never passed through**, so all seven slabs rendered
+   identically and the stack read as seven sheets rather than a section through one object.
+5. **A glow-rule failure, caught by measurement.** The frost edge terms were unconditional, so a
+   layer nothing had touched lit its glass as brightly as a busy one — measured separation
+   between a working stack and a dead one was **2.3x**. Tied to glow with a structural floor, the
+   same shape the PCB rim already used: now **32.4x**.
+
+### Verification
+
+- Typecheck **0 errors**; `npm run verify` **exit 0** (copy-check incl. locked-claim assertion,
+  link-check 177, contrast 25/25, confidential-parity 6, machine-parity 21, fastlane 15);
+  `format:check` clean.
+- Stations 01 and 02 re-rendered after every shared-kit change and unregressed; 01's glow-rule
+  separation still **14.6x**.
+
+### Not done
+
+The isolation label's second line still grazes a slab edge. Stations 04–10 unbuilt. No station is
+wired to the live control plane yet — all three run on labelled synthetic measurements in the dev
+bench, `App.tsx` untouched, shipped `/live` still as P9 left it. Mid-range frame-time measurement
+still outstanding.
+
+
+---
+
+## 04–10 · The remaining seven stations, in one continuous run · 22 August 2026
+
+Owner-directed: finish stations 04 through 10 without stopping between them. All seven are
+camera stations inside the world stations 01–03 already established — one coordinate space, one
+kit, one interface language.
+
+### Shared systems added
+
+- `kit/Housing.tsx` (K6) — machined enclosure. Datastores (04), lab core (05), control ring (06),
+  archive cabinet (09).
+- `kit/Field.tsx` (K10) — GPU point field, all motion in the vertex shader. 05's GPU field and
+  shader surface, 08's haze.
+- `kit/Globe.tsx` (K8) — earth as a wireframe graticule.
+- `kit/Sparkline.tsx` — Canvas 2D trend line, used by six references.
+- `Plate` gained `shape: 'disc'`, `lift`, `opacity`.
+- `scenes/StationChrome.tsx` — the top rail, extracted after it had been copied verbatim three
+  times. That duplication is exactly how ten camera stations quietly become ten websites.
+- `scenes/overlays.tsx` — the interface halves of 04–10 in one module, for the same reason.
+
+### The globe has no textures, and that is a truth decision
+
+The decomposition budgeted albedo, night-lights and normal maps for reference 06's earth. They
+were not built. The reference's globe is covered in glowing city lights across continents this
+project has no presence in — a map of a global footprint that does not exist. Rendering it fully
+lit would be a claim; lighting only the two real regions on a photographic earth would look
+broken. So the globe is a graticule, the two real places are marked and explicitly **unlit
+because unmeasured**, and the one genuinely measured reading — the visitor's own edge round trip
+— is the only lit marker on it. A control room showing one true reading and admitting the rest
+is a better object than one showing six invented ones. It also ships no image assets.
+
+### 07 has no portrait, and says so
+
+There is no headshot in this repository; `/about` already carries an OWNER-INPUT marker for one.
+A placeholder volume was tried at the subject's position and removed — at that camera it read as
+a black blob, which is worse than an absence. The frame is composed as a recently-vacated desk
+instead, which is what §4 asks for anyway, and the overlay states plainly that no owned
+photograph exists yet.
+
+### Visual corrections, all found by rendering
+
+- **04** camera was at ground level inside the scene; twice reframed. Its floor read as a few
+  enormous pale rectangles — `windows` is cells per world unit, so thinning it out did the
+  opposite of what was wanted. Density up, brightness down.
+- **05, 07, 09** all shipped over-bright floors for the same reason and were cut back.
+- **06** globe filled the frame; radius cut and camera pulled back. The platform row floated in
+  void until a deck was put under it — a control room needs a floor.
+- **09** camera was inside the cabinet; drawers were nearly as large as the housing.
+- **08, 10** read correctly first time.
+
+### The copy gate caught me
+
+`copy-check` failed on `dist/live/copy.json`: the word **placeholder**, which rule 9 bans in
+built output. It was in station 08's own copy, in a sentence saying the empty cube is *not* one.
+The gate was right and was not touched — a gate that reads intent is not a gate. Reworded.
+
+### Verification
+
+- Typecheck **0 errors** under `exactOptionalPropertyTypes`.
+- `npm run verify` **exit 0** — copy-check incl. the locked-claim assertion, link-check 177,
+  contrast 25/25, confidential-parity 6, machine-parity 21, fastlane 15. `format:check` clean.
+- **All ten stations rendered and inspected**; every one reports a live WebGL context and
+  projecting labels. Stations 01–03 re-verified unregressed after every shared-kit change.
+- Bench still absent from `dist/`. All seven new copy blocks confirmed reaching `copy.json`,
+  where the gate scans them.
+
+### Not done
+
+No station is wired to the live control plane — all ten run on labelled synthetic measurements in
+the dev bench, `App.tsx` is untouched, and the shipped `/live` surface is still exactly as P9 left
+it. That wiring, and the camera flights between stations, are the remaining work. No mid-range
+frame-time measurement has been taken; the P4 measurement is still outstanding. Reference 11
+(SYSTEM MAP) remains deliberately out of scope.

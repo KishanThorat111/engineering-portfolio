@@ -1,0 +1,432 @@
+/*
+ * 03 / DISSECTION. Composition.
+ *
+ * Inherits the top rail, hero scaffolding and scroll affordance from
+ * `enter.css`. What this station adds is what reference 03 adds: a health panel
+ * bottom-left, a metadata sidebar down the right, and a full-width request
+ * trace along the bottom.
+ *
+ * The reference's grid, measured off the image at 2528x1686:
+ *   hero          left 5%, top ~10%
+ *   health panel  left 5%, bottom ~28%
+ *   sidebar       right 2%, top 5%, width ~15%
+ *   trace strip   left 9% to right 18%, bottom ~3%
+ */
+
+.dissection__hero {
+  top: 12vh;
+  width: min(27rem, 34vw);
+}
+
+.dissection__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 var(--space-6);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--record);
+}
+
+.dissection__subject {
+  padding: 0.15rem 0.4rem;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  color: var(--pending);
+  letter-spacing: 0.14em;
+}
+
+.dissection__claim {
+  font-size: var(--text-mega);
+}
+
+/* The reference sets its emphasis word in a lighter, wider face than the rest
+   of the line. Italic serif would fight the sans display; a lighter weight at
+   the same size gives the same shift in voice without a third family. */
+.dissection__em {
+  font-style: normal;
+  font-weight: var(--weight-regular);
+  color: var(--text-muted);
+}
+
+.dissection__note {
+  margin: var(--space-4) 0 0;
+  max-width: 24rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.6;
+  color: var(--text-faint);
+}
+
+/* ------------------------------------------------------------------ *
+ * Live system health — bottom left
+ * ------------------------------------------------------------------ */
+
+.dissection__health {
+  position: absolute;
+  left: clamp(1rem, 5vw, 4rem);
+  bottom: clamp(9rem, 22vh, 13rem);
+  width: min(17rem, 22vw);
+}
+
+.dissection__health-rows {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0;
+}
+
+.dissection__health-rows dt {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 0.25rem;
+}
+
+.dissection__health-rows dd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.dissection__health-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.125rem;
+  color: var(--text);
+}
+
+.dissection__health-value[data-known='false'] {
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+
+.dissection__scroll {
+  margin-top: var(--space-4);
+}
+
+/* ------------------------------------------------------------------ *
+ * Sidebar — right
+ * ------------------------------------------------------------------ */
+
+.dissection__sidebar {
+  position: absolute;
+  top: 11vh;
+  bottom: clamp(11rem, 26vh, 15rem);
+  right: clamp(1rem, 2.5vw, 2rem);
+  width: min(15.5rem, 19vw);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.dissection__panel {
+  background: var(--instrument-bg);
+  backdrop-filter: blur(var(--instrument-blur));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.7rem 0.8rem;
+}
+
+.dissection__panel-title {
+  margin: 0 0 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.dissection__index {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.dissection__index-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.28rem 0.4rem;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+}
+
+/*
+ * The reference boxes its active row and rings it in cyan. Cyan is spoken for,
+ * so the active row takes a structure border instead — "where you are" is not
+ * a system state and must not borrow a register colour.
+ */
+.dissection__index-row[data-active='true'] {
+  color: var(--text);
+  background: color-mix(in srgb, var(--structure) 8%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--structure) 34%, transparent);
+}
+
+.dissection__index-num {
+  font-variant-numeric: tabular-nums;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--border-strong);
+}
+
+.dissection__meta {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.dissection__meta dt {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 0.15rem;
+}
+
+.dissection__meta dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.dissection__meta-strong {
+  font-weight: 500;
+}
+
+.dissection__meta dd[data-known='false'] {
+  color: var(--text-faint);
+}
+
+.dissection__stats {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.dissection__stats > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dissection__stats dt {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.dissection__stats dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
+  color: var(--text);
+}
+
+.dissection__stats-note {
+  margin: 0.6rem 0 0;
+  font-size: 0.5625rem;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
+/* ------------------------------------------------------------------ *
+ * Request trace — bottom strip
+ * ------------------------------------------------------------------ */
+
+.dissection__trace {
+  position: absolute;
+  left: clamp(1rem, 5vw, 4rem);
+  right: clamp(17rem, 23vw, 20rem);
+  bottom: clamp(1.5rem, 4vh, 2.5rem);
+  background: var(--instrument-bg);
+  backdrop-filter: blur(var(--instrument-blur));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem 0.85rem;
+}
+
+.dissection__trace-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.7rem;
+}
+
+.dissection__trace-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.dissection__trace-total {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.dissection__trace-total strong {
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.dissection__stages {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dissection__stage {
+  display: grid;
+  gap: 0.15rem;
+  position: relative;
+  padding-top: 0.9rem;
+}
+
+/*
+ * The connecting rule runs behind the nodes, drawn once per stage as a
+ * pseudo-element rather than as an SVG path, so it reflows with the grid at
+ * any width. The last stage does not draw one.
+ */
+.dissection__stage::before {
+  content: '';
+  position: absolute;
+  top: 0.28rem;
+  left: 0.5rem;
+  right: -0.5rem;
+  height: 1px;
+  background: var(--border-strong);
+}
+
+.dissection__stage:last-child::before {
+  display: none;
+}
+
+.dissection__stage-node {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-faint);
+  background: var(--bg);
+}
+
+/* A timed hop is filled; an untimed one is a hollow ring. The difference is
+   visible without reading the number, which is the point of it. */
+.dissection__stage-node[data-timed='true'] {
+  border-color: var(--signal);
+  background: var(--signal);
+}
+
+.dissection__stage-label {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.dissection__stage-role {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  line-height: 1.3;
+  color: var(--text-faint);
+}
+
+.dissection__stage-time {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.6875rem;
+  color: var(--signal);
+}
+
+.dissection__stage-time[data-known='false'] {
+  color: var(--text-faint);
+}
+
+.dissection__trace-note,
+.dissection__trace-empty {
+  margin: 0.6rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
+.dissection__trace-empty {
+  margin: 0;
+}
+
+.dissection__clear {
+  position: absolute;
+  left: 50%;
+  top: 6.5rem;
+  transform: translateX(-50%);
+  padding: 0.35rem 0.7rem;
+  background: var(--instrument-bg);
+  backdrop-filter: blur(var(--instrument-blur));
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
+  cursor: pointer;
+}
+
+@media (max-width: 1100px) {
+  .dissection__health,
+  .dissection__sidebar,
+  .dissection__trace {
+    position: static;
+    width: auto;
+    overflow: visible;
+    padding-inline: clamp(1rem, 5vw, 2rem);
+  }
+
+  .dissection__stages {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

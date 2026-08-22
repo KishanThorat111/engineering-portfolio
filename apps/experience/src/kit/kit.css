@@ -1,0 +1,283 @@
+/*
+ * KIT STYLES — the interface half of the reference reconstruction.
+ *
+ * Colour comes from the static surface's register (tokens.css) so the two
+ * surfaces cannot drift. Two additions exist here and only here:
+ *
+ *   --structure  plate rims, leader rules, hairlines. NOT a register entry:
+ *                structure describes where a thing is, not what state it is in,
+ *                so it must not be confusable with a status. This is the token
+ *                that let the references' pervasive cool edge light be
+ *                reproduced without spending isolation-cyan on scenery (C1).
+ *   --ember      the data plane's temperature. A measurement under §3.3, not a
+ *                decorative warm.
+ */
+
+:root {
+  --structure: #8fa3c8;
+  --ember: #f0913c;
+
+  /* The reference panels are ~62% opaque over a heavy blur — P9's measurement,
+   * and what makes them read as instruments in a space. */
+  --instrument-bg: color-mix(in srgb, var(--bg-raised, #121722) 62%, transparent);
+  --instrument-blur: 14px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Label layer — projected HTML annotations with SVG leader rules.
+ * ------------------------------------------------------------------ */
+
+.label-layer {
+  position: fixed;
+  inset: 0;
+  /* The layer never eats pointer events; individual labels opt back in. */
+  pointer-events: none;
+  z-index: 2;
+  /*
+   * A label anchored to geometry beyond the frame projects to a coordinate
+   * beyond the frame, and an absolutely-positioned child at x=601 in a 390px
+   * viewport extends the document and produces horizontal overflow. The
+   * projector already hides labels that fall outside the gutters; this is the
+   * guarantee that it cannot happen at all, at any viewport, for any scene.
+   */
+  overflow: hidden;
+}
+
+.label-layer__anchor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  /* Positions are written as custom properties by the projection pass, so the
+   * compositor places these and no layout is triggered. */
+  transform: translate3d(var(--x, 0), var(--y, 0), 0);
+  opacity: calc(0.45 + 0.55 * var(--depth, 1));
+  transition: opacity var(--duration-micro, 150ms) var(--ease-out, ease);
+  will-change: transform;
+}
+
+.label-layer__anchor[data-visible='false'] {
+  /* Hidden from sight AND from the accessibility tree, because a label for an
+   * object that is not in frame is not information. */
+  visibility: hidden;
+  opacity: 0;
+}
+
+.label-layer__anchor[data-side='left'] {
+  flex-direction: row-reverse;
+  transform: translate3d(calc(var(--x, 0) - 100%), var(--y, 0), 0);
+}
+
+.label-layer__leader {
+  width: 2.5rem;
+  height: 1px;
+  overflow: visible;
+  flex: none;
+}
+
+.label-layer__leader line {
+  stroke: var(--structure);
+  stroke-width: 1;
+  opacity: 0.5;
+}
+
+.label-layer__body {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: default;
+}
+
+button.label-layer__body {
+  cursor: pointer;
+}
+
+/*
+ * Projected labels sit over live geometry, and the geometry moves. Anywhere a
+ * label crosses a lit plate the mono text lost contrast against it — visible
+ * on both stations, and unfixable by choosing a text colour because the
+ * background is different every frame. A tight dark shadow costs nothing,
+ * needs no backing plate over the world, and holds legibility over anything.
+ */
+.label-layer__label,
+.label-layer__detail {
+  text-shadow:
+    0 1px 2px var(--bg),
+    0 0 6px var(--bg),
+    0 0 12px var(--bg);
+}
+
+.label-layer__label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text, #e9ecf3);
+  white-space: nowrap;
+}
+
+.label-layer__detail {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  color: var(--text-faint, #768095);
+  white-space: nowrap;
+}
+
+.label-layer__dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  flex: none;
+}
+
+.label-layer__anchor[data-active='true'] .label-layer__label {
+  color: var(--signal, #4ade80);
+}
+
+.label-layer__anchor[data-active='true'] .label-layer__leader line {
+  opacity: 1;
+}
+
+/* ------------------------------------------------------------------ *
+ * Instrument panel — the component all ten references frame the world with.
+ * ------------------------------------------------------------------ */
+
+.instrument {
+  background: var(--instrument-bg);
+  backdrop-filter: blur(var(--instrument-blur));
+  border: 1px solid var(--border, #1c2230);
+  border-radius: var(--radius, 6px);
+  padding: 0.75rem 0.875rem;
+  min-width: 0;
+}
+
+.instrument__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.625rem;
+}
+
+.instrument__title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted, #98a1b3);
+}
+
+.instrument__dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  flex: none;
+}
+
+.instrument__source {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.5625rem;
+  letter-spacing: 0.16em;
+  padding: 0.1rem 0.35rem;
+  border-radius: 2px;
+  border: 1px solid currentColor;
+}
+
+.instrument__source[data-source='live'] {
+  color: var(--signal, #4ade80);
+}
+
+/* Replay and unknown are visually distinct from live, deliberately. A degraded
+ * state that looks like a healthy one is the exact failure rule 12 forbids. */
+.instrument__source[data-source='replay'] {
+  color: var(--pending, #fbbf24);
+}
+
+.instrument__source[data-source='unknown'] {
+  color: var(--text-faint, #768095);
+}
+
+.instrument__readings {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.instrument__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.instrument__label {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint, #768095);
+}
+
+.instrument__value {
+  margin: 0;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  /* Tabular, because a live figure that reflows as it ticks is unreadable. */
+  font-variant-numeric: tabular-nums;
+  font-size: 1rem;
+  color: var(--text, #e9ecf3);
+}
+
+/*
+ * The unknown state. It is quiet but it is never hidden — the visitor should
+ * be able to see that the system knows the difference between zero and
+ * not-measured, because that distinction is a large part of what this site is
+ * arguing about itself.
+ */
+.instrument__value[data-known='false'] {
+  color: var(--text-faint, #768095);
+}
+
+.instrument__unknown {
+  margin-left: 0.4rem;
+  font-size: 0.5625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.instrument__asof {
+  margin-left: 0.35rem;
+  font-size: 0.5625rem;
+  letter-spacing: 0.06em;
+  color: var(--text-faint, #768095);
+  text-transform: none;
+}
+
+/* ------------------------------------------------------------------ *
+ * Reduced motion. §11: transform animation collapses to opacity or instant,
+ * and this must hold for the annotation layer too — labels that slide with a
+ * flying camera are the most motion-heavy thing on the screen.
+ * ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .label-layer__anchor {
+    transition: none;
+  }
+}

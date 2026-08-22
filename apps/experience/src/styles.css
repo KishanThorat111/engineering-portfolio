@@ -41,6 +41,53 @@
   --space-6: 1.5rem;
   --space-8: 2rem;
   --space-12: 3rem;
+
+  /*
+   * R2 — the rest of the static surface's register and type scale.
+   *
+   * This surface carried a SUBSET of the tokens above, and the reference
+   * reconstruction needs the rest. The gap was not cosmetic: `--text-display`
+   * was undefined here, so reference 01's hero — the largest type in the whole
+   * design set — rendered at the browser's default heading size. Anything
+   * styled against a token this file did not define fell back silently, which
+   * is the worst failure mode a design token can have.
+   *
+   * Values are copied from apps/static/src/styles/tokens.css deliberately and
+   * must not drift: the static contrast gate enforces them, and P9's whole
+   * point was that crossing from the homepage into the live plane should not
+   * look like crossing sites.
+   */
+  --bg-inset: #05070c;
+  --border-strong: #2b3345;
+
+  /* The register. One colour, one meaning (tokens.css). */
+  --signal: #4ade80;
+  --pending: #fbbf24;
+  --record: #a78bfa;
+  --fault: #f87171;
+  /*
+   * NOTE, deliberately not "fixed": --isolation is #a8f0ff on this surface and
+   * #67e8f9 on the static one. That divergence predates R2 and is shipped in
+   * both the membrane shader and the static contrast gate's enforced pairings,
+   * so reconciling it is a palette change under §12.1 — an owner decision, not
+   * a tidy-up to fold into a scene commit.
+   */
+
+  --text-display: clamp(2.75rem, 7vw, 5rem);
+  --text-mega: clamp(2rem, 4.5vw, 3.25rem);
+  --leading-display: 1.02;
+  --tracking-display: -0.03em;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 650;
+
+  --space-16: 4rem;
+  --space-24: 6rem;
+
+  --radius: 6px;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --duration-micro: 150ms;
 }
 
 * {
@@ -79,6 +126,121 @@ body {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+/*
+ * THE SCROLL TRACK.
+ *
+ * Ten viewports tall, one per station, and completely empty. It is the only
+ * scrollable height on the page above the document, so the scrollbar becomes
+ * an honest depth gauge of how far through the world the visitor has travelled.
+ * Behind everything, inert to the pointer, hidden from assistive technology.
+ */
+.station-track {
+  position: relative;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/*
+ * `.enter` itself is declared in scenes/enter.css, which every station overlay
+ * reuses. Only the pointer rule lives here, because it applies to both class
+ * names and enter.css does not know about `.station`.
+ */
+.enter > *,
+.station > * {
+  pointer-events: auto;
+}
+
+/*
+ * NARROW VIEWPORTS ARE RECOMPOSED, NOT SHRUNK.
+ *
+ * The frame stays FIXED at every width, so scrolling always means "travel to
+ * the next station" rather than "read further down a page". A stacked,
+ * document-style mobile layout was tried and abandoned: it collapsed the
+ * scroll track to one viewport, which silently removed the only way to move
+ * the camera on a phone and left the world showing station 01 forever.
+ *
+ * What changes instead is density. The projected annotation layer is dropped,
+ * the hero shrinks, and the instrument rail moves to the foot of the screen as
+ * a single strip. Hierarchy survives: eyebrow, display claim, sub-line, then
+ * the instruments.
+ */
+@media (max-width: 900px) {
+  /*
+   * THE PROJECTED LABELS ARE THE ONE THING THAT CANNOT SURVIVE A PHONE, and
+   * they were also the sole cause of 211px of horizontal overflow — a label
+   * anchored to geometry off the right of a 390px frame projects to x=601 and
+   * drags the document with it. They are 3D annotations at 11px over a busy
+   * scene; at this width they are unreadable even when they fit. Every word
+   * they carry is also in the overlay panels, which remain.
+   */
+  .label-layer {
+    display: none;
+  }
+
+  .enter__hero,
+  .station__hero,
+  .dissection__hero,
+  .systems__hero,
+  .think__hero {
+    top: 8.5vh;
+    width: auto;
+    right: clamp(1rem, 5vw, 2rem);
+  }
+
+  .enter__claim,
+  .station__claim,
+  .systems__claim,
+  .dissection__claim {
+    font-size: clamp(1.9rem, 9vw, 2.6rem);
+  }
+
+  .think__claim {
+    font-size: clamp(1.5rem, 7vw, 2rem);
+  }
+
+  /* One strip at the foot of the screen, scrolled horizontally by nobody:
+     it wraps instead, and it is capped so it never eats the whole frame. */
+  .station__rail,
+  .systems__column,
+  .dissection__sidebar,
+  .dissection__health,
+  .systems__overview,
+  .station__actions,
+  .think__lower,
+  .think__diagram,
+  .end__footer,
+  .enter__metrics,
+  .enter__trace,
+  .dissection__trace {
+    position: absolute;
+    inset: auto clamp(0.75rem, 4vw, 1rem) clamp(0.75rem, 2vh, 1rem) clamp(0.75rem, 4vw, 1rem);
+    width: auto;
+    max-height: 42vh;
+    overflow-y: auto;
+    transform: none;
+  }
+
+  .think__diagram,
+  .enter__metrics {
+    display: none;
+  }
+
+  .enter__nav ol {
+    gap: 0.6rem;
+  }
+
+  .enter__status {
+    display: none;
+  }
+}
+
+/* Below 560px the station index is the only chrome worth keeping. */
+@media (max-width: 560px) {
+  .enter__nav-name {
+    display: none;
+  }
 }
 
 /*

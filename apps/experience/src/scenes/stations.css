@@ -1,0 +1,532 @@
+/*
+ * Shared composition for stations 04–10.
+ *
+ * These seven differ in content, not in interface language: a hero in the left
+ * column, a rail of instrument panels on the right, and — for 07 and 10 — a
+ * different typographic register because those two frames are about a person
+ * and an ending rather than about a machine.
+ *
+ * Everything structural is inherited from enter.css.
+ */
+
+.station__hero {
+  top: 14vh;
+  width: min(28rem, 34vw);
+}
+
+.station__eyebrow {
+  margin: 0 0 var(--space-6);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--record);
+}
+
+.station__claim {
+  font-size: var(--text-mega);
+}
+
+.station__note {
+  margin: var(--space-4) 0 0;
+  max-width: 24rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.6;
+  color: var(--text-faint);
+}
+
+.station__note--tight {
+  margin-top: 0.6rem;
+  font-size: 0.625rem;
+}
+
+.station__panel-title {
+  margin: 0 0 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.station__link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--text-faint);
+  text-underline-offset: 4px;
+}
+
+.station__link:hover {
+  text-decoration-color: var(--signal);
+}
+
+/* The right-hand instrument rail, shared by 04, 05, 06, 08, 09. */
+.station__rail {
+  position: absolute;
+  top: 12vh;
+  bottom: clamp(1.5rem, 5vh, 3rem);
+  right: clamp(1rem, 2.5vw, 2rem);
+  width: min(17rem, 21vw);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.station__rail--wide {
+  width: min(20rem, 24vw);
+}
+
+/* --- 04: hop list ---------------------------------------------------- */
+
+.station__hops {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.station__hops li {
+  display: grid;
+  grid-template-columns: 0.7rem 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+}
+
+.station__hop-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  border: 1px solid var(--text-faint);
+}
+
+/* Filled means timed. The difference is readable without the number. */
+.station__hop-dot[data-timed='true'] {
+  background: var(--signal);
+  border-color: var(--signal);
+}
+
+.station__hop-label {
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.station__hop-time {
+  font-variant-numeric: tabular-nums;
+  color: var(--signal);
+}
+
+.station__hop-time[data-known='false'] {
+  color: var(--text-faint);
+}
+
+.station__alert {
+  margin: 0.6rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--fault) 30%, transparent);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--fault);
+}
+
+/* --- 05: zone selector ----------------------------------------------- */
+
+.station__zones {
+  background: var(--instrument-bg);
+  backdrop-filter: blur(var(--instrument-blur));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.7rem 0.8rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.station__zones-title {
+  margin: 0 0 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.station__zone {
+  display: grid;
+  grid-template-columns: 0.5rem 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.4rem;
+  background: none;
+  border: 0;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-align: left;
+}
+
+.station__zone[data-active='true'] {
+  color: var(--text);
+  background: color-mix(in srgb, var(--structure) 10%, transparent);
+}
+
+.station__zone-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+}
+
+.station__zone-source {
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* --- 06: event feed -------------------------------------------------- */
+
+.station__feed {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.station__feed li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+}
+
+.station__feed-at {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.station__feed-action {
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- 08: actions ----------------------------------------------------- */
+
+.station__actions {
+  position: absolute;
+  left: clamp(1rem, 5vw, 4rem);
+  bottom: clamp(3rem, 12vh, 7rem);
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+}
+
+.station__available {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.station__available strong {
+  color: var(--signal);
+  font-weight: 400;
+}
+
+.station__available-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--signal);
+}
+
+.station__links {
+  display: flex;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.station__links a {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 4px;
+}
+
+.station__links a:hover {
+  color: var(--text);
+  text-decoration-color: var(--signal);
+}
+
+/* --- 07: the human station ------------------------------------------- */
+
+.think__hero {
+  top: 13vh;
+  width: min(34rem, 40vw);
+}
+
+/*
+ * The set's one serif. Judgment is a different register from systems, and the
+ * reference marks that with a different family rather than a different size.
+ * Georgia is a system serif — no webfont is downloaded for one heading.
+ */
+.think__claim {
+  margin: 0 0 var(--space-6);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 400;
+  line-height: 1.14;
+  letter-spacing: -0.015em;
+  color: var(--text);
+  display: grid;
+  gap: 0.2rem;
+}
+
+.think__claim-em {
+  color: var(--record);
+  font-style: italic;
+}
+
+.think__diagram {
+  position: absolute;
+  top: 8vh;
+  right: 6vw;
+  width: min(26rem, 30vw);
+  pointer-events: none;
+}
+
+.think__orbit {
+  width: 100%;
+  height: auto;
+}
+
+.think__axes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.16em;
+  color: var(--text-faint);
+}
+
+.think__lower {
+  position: absolute;
+  left: clamp(1rem, 5vw, 4rem);
+  right: clamp(1rem, 5vw, 4rem);
+  bottom: clamp(1.5rem, 5vh, 3rem);
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: var(--space-8);
+  align-items: start;
+}
+
+.think__held ol,
+.think__wrong ul {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.think__held li {
+  display: grid;
+  grid-template-columns: 1.2rem 1fr;
+  gap: 0.5rem;
+}
+
+.think__held-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--record);
+}
+
+.think__wrong li {
+  padding-left: 0.9rem;
+  border-left: 2px solid color-mix(in srgb, var(--fault) 40%, transparent);
+}
+
+.think__pending {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+
+/* --- 09: drawers ------------------------------------------------------ */
+
+.proof__drawers {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.proof__drawer {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1.4rem 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.4rem;
+  background: none;
+  border: 0;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-align: left;
+}
+
+.proof__drawer[data-open='true'] {
+  color: var(--text);
+  background: color-mix(in srgb, var(--record) 12%, transparent);
+}
+
+.proof__drawer-index {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.proof__drawer-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--record);
+}
+
+.proof__drawer-link {
+  margin-left: 2rem;
+}
+
+/* --- 10: the ending --------------------------------------------------- */
+
+.end__hero {
+  top: 22vh;
+}
+
+.end__state {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin: var(--space-6) 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.end__state em {
+  display: block;
+  font-style: normal;
+  font-size: 0.5625rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 0.3rem;
+}
+
+/* [ UNKNOWN ] is the note the world ends on. It gets the record colour and
+   nothing louder — it is a statement about the limits of what is known. */
+.end__state strong {
+  font-weight: 400;
+  color: var(--record);
+}
+
+.end__footer {
+  position: absolute;
+  left: clamp(1rem, 5vw, 4rem);
+  right: clamp(1rem, 5vw, 4rem);
+  bottom: clamp(1.5rem, 4vh, 2.5rem);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-8);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--text-faint);
+}
+
+.end__closing {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.end__identity {
+  margin: 0;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.end__identity strong {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.end__visited {
+  margin: 0 0 0 auto;
+}
+
+.end__visited em {
+  font-style: normal;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-right: 0.5rem;
+}
+
+@media (max-width: 1100px) {
+  .station__rail,
+  .station__actions,
+  .think__diagram,
+  .think__lower,
+  .end__footer {
+    position: static;
+    width: auto;
+    overflow: visible;
+    padding: 1.5rem clamp(1rem, 5vw, 2rem) 0;
+  }
+
+  .think__lower {
+    grid-template-columns: 1fr;
+  }
+}
