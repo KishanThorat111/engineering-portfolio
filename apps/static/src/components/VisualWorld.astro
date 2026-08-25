@@ -1,0 +1,229 @@
+---
+/**
+ * THE ENVIRONMENTAL BACKGROUND LAYER — one component, ten stations.
+ *
+ * Renders a station's cinematic plate behind the interface, with parallax,
+ * atmospheric overlays and a technical grid. The plate is decorative artwork;
+ * every readable thing on the page is real HTML above it.
+ *
+ * WHY THE PLATE IS A CSS BACKGROUND AND NOT AN <img>
+ * It must cover an arbitrarily tall section, hold its focal point at every
+ * aspect ratio, and never contribute to the accessibility tree. `background-
+ * image` with `object-position`-style control does all three. An <img> would
+ * need alt handling, would participate in layout, and would fight the section
+ * height.
+ *
+ * WHY THERE ARE THREE LAYERS AND NOT ONE
+ * Depth. The plate moves slowest, the atmosphere a little faster, the technical
+ * grid faster still, and the interface above them fastest of all because it
+ * does not move at all. That difference is what produces parallax; a single
+ * layer sliding would just be a moving picture.
+ *
+ * DEGRADES TO NOTHING, DELIBERATELY
+ * If the plate is missing or slow, the graphite ground and its gradients remain
+ * and the station is still complete. That is not only a loading state — as of
+ * 25 Aug 2026 the plates are not yet in the repository, and the site is
+ * expected to look intentional without them.
+ */
+import {
+  plateUrl,
+  plateExists,
+  station,
+  nextStation,
+  type StationId,
+} from '../config/visual-world';
+
+interface Props {
+  id: StationId;
+  /**
+   * Fetch priority. The first station on a page is eager; everything below the
+   * fold waits until it is close. Ten plates on first paint is not a design,
+   * it is a download.
+   */
+  priority?: 'eager' | 'lazy';
+  /** Strength of the parallax drift, 0 disables it for this station. */
+  depth?: number;
+  /** Adds the fine technical grid. Off for the quietest stations. */
+  grid?: boolean;
+}
+
+const { id, priority = 'lazy', depth = 1, grid = true } = Astro.props;
+const current = station(id);
+const url = plateUrl(id);
+const next = nextStation(id);
+
+/*
+ * Resolved at build time. A station never emits a reference to artwork that is
+ * not there — the link gate treats a missing plate as the broken reference it
+ * is, and it is right to. When the plates land this flips to true on the next
+ * build with no other change.
+ */
+const hasPlate = plateExists(id);
+const nextHasPlate = next ? plateExists(next.id) : false;
+---
+
+<div class="vw" data-station={id} data-depth={depth} data-priority={priority} aria-hidden="true">
+  {
+    /*
+    The plate. ALWAYS `data-src`, never an inline background-image.
+
+    The eager station used to inline its url so the artwork was present in the
+    first paint. The HTML gate rejects inline styles outright and it is right
+    to: an inline style is unhashable under the CSP this site ships, so the
+    exception would have had to be bought with a policy that permits inline
+    styling everywhere. The plate is decorative, the script that promotes it is
+    a deferred module, and the station is complete without it — so paying for a
+    few hundred milliseconds of graphite ground is the correct trade.
+  */
+  }
+  {hasPlate && <div class="vw__plate" data-plate data-src={url} data-priority={priority} />}
+
+  {
+    /* Atmosphere: the haze that gives the plate depth and holds the palette
+      when no plate is present. */
+  }
+  <div class="vw__atmosphere"></div>
+
+  {
+    /* The technical grid — fine lines, precision geometry, one of the approved
+      language's signatures. Pure CSS, no asset. */
+  }
+  {grid && <div class="vw__grid" />}
+
+  {
+    /* The vignette that lets interface text sit on top and stay legible.
+      Without it, a bright region of a plate can put white type on white. */
+  }
+  <div class="vw__scrim"></div>
+</div>
+
+{
+  /* Preload exactly one station ahead, and only for the eager (first) plate on
+     a page. This is the whole loading strategy: one now, one warmed. */
+  priority === 'eager' && next && nextHasPlate && (
+    <link rel="prefetch" as="image" href={plateUrl(next.id)} fetchpriority="low" />
+  )
+}
+
+<style>
+  .vw {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    /* Behind every interface layer, and never interactive. */
+    z-index: 0;
+    pointer-events: none;
+    /* The graphite ground. This is what shows when a plate is absent, and it
+       is a deliberate colour rather than a fallback grey. */
+    background: var(--bg);
+  }
+
+  .vw__plate {
+    position: absolute;
+    /* Oversized so parallax translation never exposes an edge. */
+    inset: -8% -4%;
+    background-position: center 40%;
+    background-size: cover;
+    background-repeat: no-repeat;
+    /* Held back so interface type always wins. The plates are cinematic and
+       bright in places; the interface is the content. */
+    opacity: 0.55;
+    will-change: transform;
+    transform: translate3d(0, var(--vw-plate-y, 0), 0) scale(var(--vw-plate-scale, 1));
+  }
+
+  .vw__atmosphere {
+    position: absolute;
+    inset: -10%;
+    background:
+      radial-gradient(
+        60% 50% at 72% 30%,
+        color-mix(in srgb, var(--record) 12%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        50% 45% at 20% 70%,
+        color-mix(in srgb, var(--isolation) 7%, transparent),
+        transparent 72%
+      );
+    will-change: transform;
+    transform: translate3d(0, var(--vw-atmos-y, 0), 0);
+  }
+
+  /*
+   * Fine technical lines. 96px pitch, sub-1% opacity, and a mask that fades
+   * them out toward the edges so the grid reads as a drafting surface the
+   * subject sits on rather than as graph paper laid over the whole viewport.
+   */
+  .vw__grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(
+        to right,
+        color-mix(in srgb, var(--structure) 8%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--structure) 8%, transparent) 1px,
+        transparent 1px
+      );
+    background-size: 96px 96px;
+    mask-image: radial-gradient(80% 70% at 50% 45%, black, transparent 78%);
+    will-change: transform;
+    transform: translate3d(0, var(--vw-grid-y, 0), 0);
+  }
+
+  .vw__scrim {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(
+        to right,
+        var(--bg) 0%,
+        color-mix(in srgb, var(--bg) 62%, transparent) 34%,
+        transparent 62%
+      ),
+      linear-gradient(to bottom, var(--bg) 0%, transparent 22%, transparent 74%, var(--bg) 100%);
+  }
+
+  /*
+   * REDUCED MOTION: no parallax, no scale, no drift. The plate is simply
+   * placed. Nothing is hidden and no content is withheld — only the movement
+   * stops, which is exactly what the preference asks for.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .vw__plate,
+    .vw__atmosphere,
+    .vw__grid {
+      transform: none !important;
+      will-change: auto;
+    }
+  }
+
+  /*
+   * On narrow screens the plate holds its subject rather than its centre. A
+   * cinematic 3:2 plate cropped to a phone's centre loses the object the frame
+   * is about; biasing the position keeps it in view.
+   */
+  @media (max-width: 900px) {
+    .vw__plate {
+      background-position: 62% 38%;
+      opacity: 0.42;
+    }
+
+    .vw__grid {
+      background-size: 64px 64px;
+    }
+
+    .vw__scrim {
+      background: linear-gradient(
+        to bottom,
+        var(--bg) 0%,
+        color-mix(in srgb, var(--bg) 55%, transparent) 30%,
+        var(--bg) 92%
+      );
+    }
+  }
+</style>

@@ -1,0 +1,57 @@
+---
+/**
+ * A STATION — the section shell every one of the ten composes from.
+ *
+ * Full-bleed, its own environmental plate behind it, a numbered eyebrow, and a
+ * slot for whatever that station's reference puts in it. The old system's
+ * `.band > .container > SectionHeader > grid` is replaced by this: the
+ * references are not a stack of centred columns, they are places.
+ */
+import VisualWorld from './VisualWorld.astro';
+import type { StationId } from '../config/visual-world';
+import { station as lookup } from '../config/visual-world';
+
+interface Props {
+  id: StationId;
+  /** Anchor for deep links. Defaults to the station id. */
+  anchor?: string;
+  /** First station on the page loads its plate eagerly. */
+  priority?: 'eager' | 'lazy';
+  depth?: number;
+  grid?: boolean;
+  /** Accessible name for the section. */
+  labelledby: string;
+  class?: string;
+}
+
+const {
+  id,
+  anchor,
+  priority = 'lazy',
+  depth = 1,
+  grid = true,
+  labelledby,
+  class: className,
+} = Astro.props;
+const meta = lookup(id);
+---
+
+<section
+  class:list={['station', className]}
+  id={anchor ?? id}
+  aria-labelledby={labelledby}
+  data-station={id}
+>
+  <VisualWorld id={id} priority={priority} depth={depth} grid={grid} />
+
+  <div class="station__inner">
+    <p class="station__eyebrow">
+      <span class="station__eyebrow-index">{meta.index}</span>
+      <span aria-hidden="true">/</span>
+      <span>{meta.label}</span>
+      <span class="station__eyebrow-rule" aria-hidden="true"></span>
+    </p>
+
+    <slot />
+  </div>
+</section>

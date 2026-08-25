@@ -1,0 +1,590 @@
+---
+/**
+ * STATIONS 02–10 — the rest of the approved reference world.
+ *
+ * The homepage is the journey. Each station is a full-bleed section with its
+ * own environmental plate, its own composition from the shared primitives, and
+ * content that comes entirely from the repository's own collections and config.
+ *
+ * WHAT EACH REFERENCE CONTRIBUTES, AND WHAT REPLACED ITS INVENTED FIGURES
+ *   02 SYSTEMS     the estate register. The reference's "12 Services Online"
+ *                  does not exist; each entry carries its real status and the
+ *                  limitation it discloses about itself instead.
+ *   03 DISSECTION  the numbered case-study index. Real sections of real pages.
+ *   04 DATA        the evidence rail. Every chip is a dated, traceable fact.
+ *   05 LAB         what did not work. The two written-up lessons, with cost.
+ *   06 LIVE        the demo plane, labelled a demo (rule 11), linking out.
+ *   07 THINK       the five pillars, in the reference's numbered treatment.
+ *   08 BUILD       availability and contact. State: the next system.
+ *   09 PROOF       the archive, counted at build time. Two-digit real numbers,
+ *                  not the reference's fabricated 14.6K.
+ *   10 END         the quietest station. A closing line and the CV.
+ */
+import Station from './Station.astro';
+import { SITE } from '../config/site';
+import { PILLARS } from '../config/pillars';
+import { STATUS_LABELS } from '../schemas/constitution';
+import type { CollectionEntry } from 'astro:content';
+
+/*
+ * The real collection types, not hand-written shapes. Writing them out by hand
+ * drifted from the schemas immediately — evidence chips carry `fact` and
+ * `qualifier`, not `label` and `detail`, and entries key on `id` rather than
+ * `slug` in this Astro version. Importing the generated types means a schema
+ * change fails the build here instead of rendering the wrong field.
+ */
+interface Props {
+  systems: CollectionEntry<'systems'>[];
+  chips: CollectionEntry<'evidenceChips'>[];
+  lessons: CollectionEntry<'lessons'>[];
+  counts: { systems: number; decisions: number; tests: number; lessons: number; evidence: number };
+}
+
+const { systems, chips, lessons, counts } = Astro.props;
+
+const TONE: Record<string, string> = {
+  IN_PRODUCTION_HOSPITAL: 'signal',
+  LIVE: 'signal',
+  PRE_LAUNCH: 'pending',
+  CONFIDENTIAL: 'structure',
+};
+
+/** The sections a case study actually has, so each is a real destination. */
+const DISSECTION = [
+  { index: '01', label: 'Problem' },
+  { index: '02', label: 'Architecture' },
+  { index: '03', label: 'Data flow' },
+  { index: '04', label: 'Security' },
+  { index: '05', label: 'Deployment' },
+  { index: '06', label: 'Impact' },
+];
+---
+
+{/* ── 02 SYSTEMS ─────────────────────────────────────────────────── */}
+<Station id="systems" priority="lazy" depth={1.1} labelledby="st-systems">
+  <div class="station__grid">
+    <div>
+      <h2 class="station__claim" id="st-systems">
+        <span>Four systems.</span>
+        <span><em>Three of them</em></span>
+        <span>other people depend on.</span>
+      </h2>
+      <p class="station__lede">
+        One stack, operated end to end by one engineer. Each one below discloses the thing it does
+        worst, before you read anything else about it.
+      </p>
+      <div class="station__actions">
+        <a class="station-cta" href="/systems"
+          >Open the register <span aria-hidden="true">→</span></a
+        >
+      </div>
+    </div>
+
+    <ul class="register">
+      {
+        systems.map((s, i) => (
+          <li class="panel register__item">
+            <div class="panel__head">
+              <h3 class="panel__title">
+                <span class="register__index">{String(i + 1).padStart(2, '0')}</span>
+                {s.data.title}
+              </h3>
+              <span class="chip" data-tone={TONE[s.data.status]}>
+                <span class="chip__text">{STATUS_LABELS[s.data.status].label}</span>
+              </span>
+            </div>
+            <p class="register__line">{s.data.problem}</p>
+            <p class="register__limitation">
+              <span class="register__limitation-label">Discloses</span>
+              {s.data.limitations[0]?.limitation}
+            </p>
+            <a class="station-cta station-cta--quiet" href={`/systems/${s.id}`}>
+              Read the record
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</Station>
+
+{/* ── 03 DISSECTION ──────────────────────────────────────────────── */}
+<Station id="dissection" priority="lazy" depth={1} labelledby="st-dissection">
+  <div class="station__grid">
+    <div>
+      <h2 class="station__claim" id="st-dissection">
+        <span>How the system</span>
+        <span>actually <em>works.</em></span>
+      </h2>
+      <p class="station__lede">
+        Open the architecture. Follow the data. Understand the decisions. Every case study is
+        dissected the same way, in the same order.
+      </p>
+    </div>
+
+    <ol class="dissect">
+      {
+        DISSECTION.map((d) => (
+          <li class="dissect__row">
+            <span class="dissect__num">{d.index}</span>
+            <span class="dissect__label">{d.label}</span>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</Station>
+
+{/* ── 04 DATA ────────────────────────────────────────────────────── */}
+<Station id="data" anchor="data" priority="lazy" depth={1.05} labelledby="st-data">
+  <div class="station__grid">
+    <div>
+      <h2 class="station__claim" id="st-data">
+        <span>Follow a</span>
+        <span><em>request</em></span>
+        <span>through the system.</span>
+      </h2>
+      <p class="station__lede">
+        One request crosses boundaries, services and data layers before a response reaches you. Each
+        of these is a fact you can check, with the date it was true.
+      </p>
+    </div>
+
+    <ul class="evidence">
+      {
+        chips.map((c) => (
+          <li class="panel evidence__item">
+            <p class="evidence__detail">{c.data.fact}</p>
+            {/* Rule 2: every figure carries the date it was true. */}
+            {c.data.qualifier && <p class="evidence__qualifier">{c.data.qualifier}</p>}
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</Station>
+
+{/* ── 05 LAB ─────────────────────────────────────────────────────── */}
+<Station id="lab" anchor="lab" priority="lazy" depth={1.1} labelledby="st-lab">
+  <div class="station__grid">
+    <div>
+      <h2 class="station__claim" id="st-lab">
+        <span>Not everything</span>
+        <span>ships. <em>Everything</em></span>
+        <span>teaches.</span>
+      </h2>
+      <p class="station__lede">
+        Two things written up in full, with what they cost. A portfolio that only lists wins is a
+        portfolio you cannot calibrate.
+      </p>
+      <div class="station__actions">
+        <a class="station-cta" href="/engineering"
+          >Read the lessons <span aria-hidden="true">→</span></a
+        >
+      </div>
+    </div>
+
+    <ul class="lessons">
+      {
+        lessons.map((l) => (
+          <li class="panel lessons__item">
+            <span class="chip" data-tone="fault">
+              <span class="chip__text">Lesson</span>
+            </span>
+            <h3 class="lessons__title">{l.data.title}</h3>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</Station>
+
+{/* ── 06 LIVE ────────────────────────────────────────────────────── */}
+<Station id="live" priority="lazy" depth={1.2} labelledby="st-live">
+  <div class="station__grid">
+    <div>
+      <h2 class="station__claim" id="st-live">
+        <span>The control</span>
+        <span><em>room.</em></span>
+      </h2>
+      <p class="station__lede">
+        A real multi-tenant system you are invited to attack. Provisioned for you, stopped by real
+        defences, and destroyed on a TTL by a scheduled job.
+      </p>
+      <div class="station__actions">
+        <a class="station-cta" href="/live/"
+          >Enter the live plane <span aria-hidden="true">→</span></a
+        >
+      </div>
+    </div>
+
+    <div class="panel live-note">
+      <div class="panel__head">
+        <h3 class="panel__title">
+          <span class="panel__dot" data-tone="pending"></span>
+          Demo plane
+        </h3>
+        <span class="panel__tag" data-tone="pending">Demo</span>
+      </div>
+      {/* Rule 11: the demo says it is a demo, unprompted. */}
+      <p class="evidence__detail">
+        A physically separate database with no path to any production system. Every tenant it
+        creates is destroyed on a TTL. Nothing there is a simulation — every event is a committed
+        audit row.
+      </p>
+    </div>
+  </div>
+</Station>
+
+{/* ── 07 THINK ───────────────────────────────────────────────────── */}
+<Station id="think" priority="lazy" depth={0.9} grid={false} labelledby="st-think">
+  <div class="station__grid">
+    <div>
+      <h2 class="station__claim think__claim" id="st-think">
+        <span>Systems are only half the story.</span>
+        <span><em>The other half is judgment.</em></span>
+      </h2>
+      <p class="station__lede">
+        Knowing what to build, what not to build, what to measure, what to question, and when a
+        simpler system is the better system.
+      </p>
+    </div>
+
+    <ol class="pillars">
+      {
+        PILLARS.map((p, i) => (
+          <li class="pillars__item">
+            <span class="pillars__num">{i + 1}</span>
+            <div>
+              <h3 class="pillars__title">{p.title}</h3>
+              <p class="pillars__line">{p.line}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</Station>
+
+{/* ── 08 BUILD ───────────────────────────────────────────────────── */}
+<Station id="build" anchor="contact" priority="lazy" depth={1.15} labelledby="st-build">
+  <div class="station__grid">
+    <div>
+      <h2 class="station__claim" id="st-build">
+        <span>Have a difficult system?</span>
+        <span><em>Let's build something</em></span>
+        <span>worth operating.</span>
+      </h2>
+      <p class="station__lede">
+        Good engineering starts with the right problem. Bring the constraint.
+      </p>
+      <div class="station__actions">
+        <a class="station-cta" href={`mailto:${SITE.email}`}>
+          Start a conversation <span aria-hidden="true">→</span>
+        </a>
+        <a class="station-cta station-cta--quiet" href={SITE.linkedin}>LinkedIn</a>
+        <a class="station-cta station-cta--quiet" href={SITE.github}>GitHub</a>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__head">
+        <h3 class="panel__title">
+          <span class="panel__dot" data-tone="signal"></span>
+          Availability
+        </h3>
+      </div>
+      <p class="evidence__detail">{SITE.availability}</p>
+      <p class="evidence__detail evidence__detail--spaced">{SITE.location}</p>
+    </div>
+  </div>
+</Station>
+
+{/* ── 09 PROOF ───────────────────────────────────────────────────── */}
+<Station id="proof" priority="lazy" depth={1} labelledby="st-proof">
+  <div class="station__grid">
+    <div>
+      <h2 class="station__claim" id="st-proof">
+        <span>Inspect.</span>
+        <span><em>Understand.</em></span>
+        <span>Prove.</span>
+      </h2>
+      <p class="station__lede">
+        Every decision leaves a trace. These are counts of things a person actually wrote and you
+        can read in full — not rounded up, and not estimated.
+      </p>
+      <div class="station__actions">
+        <a class="station-cta" href="/engineering"
+          >Open the archive <span aria-hidden="true">→</span></a
+        >
+      </div>
+    </div>
+
+    <dl class="metrics proof__metrics">
+      <div class="metric">
+        <dt>Systems</dt>
+        <dd class="metric__value">{counts.systems}</dd>
+      </div>
+      <div class="metric">
+        <dt>Decisions</dt>
+        <dd class="metric__value">{counts.decisions}</dd>
+      </div>
+      <div class="metric">
+        <dt>Evidence</dt>
+        <dd class="metric__value">{counts.evidence}</dd>
+      </div>
+      <div class="metric">
+        <dt>Integration tests</dt>
+        <dd class="metric__value">{counts.tests}</dd>
+      </div>
+      <div class="metric">
+        <dt>Lessons</dt>
+        <dd class="metric__value">{counts.lessons}</dd>
+      </div>
+    </dl>
+  </div>
+</Station>
+
+{/* ── 10 END ─────────────────────────────────────────────────────── */}
+<Station id="end" priority="lazy" depth={0.8} grid={false} labelledby="st-end">
+  <div class="end">
+    <h2 class="station__claim" id="st-end">
+      <span>What's next?</span>
+      <span><em>Let's find out.</em></span>
+    </h2>
+    <p class="station__lede">
+      Good systems solve today's problem. Great engineering keeps asking what comes after.
+    </p>
+
+    <div class="end__state">
+      <span>
+        <em>System</em>
+        [ STANDBY ]
+      </span>
+      <span>
+        <em>Next problem</em>
+        {/* Rule 4 as a design element: unknown is stated, never estimated. */}
+        <strong>[ UNKNOWN ]</strong>
+      </span>
+    </div>
+
+    <div class="station__actions">
+      <a class="station-cta" href="/cv">Read the CV <span aria-hidden="true">→</span></a>
+      <a class="station-cta station-cta--quiet" href="/cv.pdf" download>Download PDF</a>
+    </div>
+
+    <p class="end__closing">Show the system. Show the decision. Show the evidence.</p>
+  </div>
+</Station>
+
+<style>
+  /* 02 — the estate register */
+  .register {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .register__index {
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .register__line {
+    margin: 0 0 0.6rem;
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    color: var(--text-muted);
+  }
+
+  /*
+   * The disclosed limitation. Ruled off in fault red, because it is the one
+   * thing a portfolio normally hides and making it quieter than the rest would
+   * be hiding it politely.
+   */
+  .register__limitation {
+    margin: 0 0 0.6rem;
+    padding-top: 0.55rem;
+    border-top: 1px solid color-mix(in srgb, var(--fault) 26%, transparent);
+    font-size: 0.6875rem;
+    line-height: 1.55;
+    color: var(--text-faint);
+  }
+
+  .register__limitation-label {
+    display: block;
+    margin-bottom: 0.2rem;
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--fault);
+  }
+
+  /* 03 — the dissection index */
+  .dissect {
+    display: grid;
+    gap: 0.15rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-width: 26rem;
+  }
+
+  .dissect__row {
+    display: grid;
+    grid-template-columns: 2.2rem 1fr;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border-left: 2px solid var(--border-strong);
+    background: color-mix(in srgb, var(--bg) 62%, transparent);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .dissect__num {
+    color: var(--record);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 04 — evidence */
+  .evidence {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .evidence__detail {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+  }
+
+  .evidence__detail--spaced {
+    margin-top: 0.6rem;
+  }
+
+  .evidence__qualifier {
+    margin: 0.5rem 0 0;
+    font-family: var(--font-mono);
+    font-size: 0.5938rem;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+  }
+
+  /* 05 — lessons */
+  .lessons {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .lessons__title {
+    margin: 0.5rem 0 0;
+    font-size: 0.9375rem;
+    font-weight: var(--weight-medium);
+    line-height: 1.4;
+    color: var(--text);
+  }
+
+  .live-note {
+    max-width: 28rem;
+  }
+
+  /* 07 — pillars */
+  .think__claim {
+    font-size: var(--text-mega);
+  }
+
+  .pillars {
+    display: grid;
+    gap: 0.9rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pillars__item {
+    display: grid;
+    grid-template-columns: 1.6rem 1fr;
+    gap: 0.75rem;
+    align-items: baseline;
+  }
+
+  .pillars__num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.75rem;
+    color: var(--record);
+  }
+
+  .pillars__title {
+    margin: 0 0 0.15rem;
+    font-size: 0.875rem;
+    font-weight: var(--weight-medium);
+    color: var(--text);
+  }
+
+  .pillars__line {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  .proof__metrics {
+    align-self: start;
+  }
+
+  /* 10 — the ending. The quietest station: one column, centred, no rail. */
+  .end {
+    max-width: 44rem;
+  }
+
+  .end__state {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8);
+    margin: 0 0 var(--space-6);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+  }
+
+  .end__state em {
+    display: block;
+    font-style: normal;
+    font-size: 0.5625rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 0.3rem;
+  }
+
+  .end__state strong {
+    font-weight: 400;
+    color: var(--record);
+  }
+
+  .end__closing {
+    margin: var(--space-8) 0 0;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+  }
+</style>

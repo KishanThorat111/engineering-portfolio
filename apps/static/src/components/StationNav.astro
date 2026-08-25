@@ -1,0 +1,172 @@
+---
+/**
+ * THE PERSISTENT STATION INDEX — the references' numbered top rail.
+ *
+ * Replaces the previous text navigation. Every reference in the set carries
+ * this exact object: a wordmark, ten numbered stations, and a status pill on
+ * the right. It is the single strongest signal that the ten frames are one
+ * world, so it is identical on every page and never restyled per section.
+ *
+ * REAL LINKS, NOT SCROLL HIJACKING.
+ * The static site is a set of real pages. Each station points at a real route
+ * or anchor, so the whole index works with JavaScript disabled, is keyboard
+ * reachable in source order, and every station is deep-linkable — which is
+ * what the approved navigation requires and what a scroll-jacked nav cannot
+ * offer.
+ */
+import { STATIONS, type StationId } from '../config/visual-world';
+
+interface Props {
+  /** Which station this page represents, for aria-current. */
+  current?: StationId;
+}
+
+const { current } = Astro.props;
+---
+
+<header class="station-nav">
+  <a class="station-nav__mark" href="/">
+    KT<span aria-hidden="true">.</span>
+    <span class="visually-hidden">Kishan Thorat — home</span>
+  </a>
+
+  <nav class="station-nav__index" aria-label="Stations">
+    <ol>
+      {
+        STATIONS.map((s) => (
+          <li>
+            <a
+              class="station-nav__link"
+              href={s.href}
+              aria-current={s.id === current ? 'page' : undefined}
+            >
+              <span class="station-nav__num">{s.index}</span>
+              <span class="station-nav__slash" aria-hidden="true">
+                /
+              </span>
+              <span class="station-nav__label">{s.label}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+  </nav>
+
+  <a class="station-nav__cta" href="/cv">CV</a>
+</header>
+
+<style>
+  .station-nav {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: clamp(1rem, 3vw, 2.5rem);
+    padding: clamp(0.875rem, 2vh, 1.25rem) var(--station-pad-x);
+    border-bottom: 1px solid var(--border);
+    /* Translucent over the world, like every panel. */
+    background: color-mix(in srgb, var(--bg) 72%, transparent);
+    backdrop-filter: blur(12px);
+  }
+
+  .station-nav__mark {
+    flex: none;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  /* Structure, not a register colour: a wordmark carries no state. */
+  .station-nav__mark span[aria-hidden] {
+    color: var(--structure);
+  }
+
+  .station-nav__index {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .station-nav__index ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(0.6rem, 1.6vw, 1.6rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .station-nav__link {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    padding: 0.2rem 0;
+    border-bottom: 2px solid transparent;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    text-decoration: none;
+    transition: color var(--duration-micro) var(--ease-out);
+  }
+
+  .station-nav__link:hover {
+    color: var(--text-muted);
+  }
+
+  /*
+   * "Where you are" is not one of the five registers and must not borrow one,
+   * so the active station takes text colour plus a structure rule.
+   */
+  .station-nav__link[aria-current='page'] {
+    color: var(--text);
+    border-bottom-color: var(--structure);
+  }
+
+  .station-nav__num {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .station-nav__slash {
+    color: var(--text-faint);
+  }
+
+  .station-nav__cta {
+    flex: none;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text);
+    text-decoration: underline;
+    text-decoration-color: var(--text-faint);
+    text-underline-offset: 5px;
+  }
+
+  .station-nav__cta:hover {
+    text-decoration-color: var(--signal);
+  }
+
+  /* Below 720px the ten labels cannot fit; the numbers alone still navigate,
+     and each link keeps its accessible name from the visually-hidden label. */
+  @media (max-width: 720px) {
+    .station-nav__label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .station-nav__slash {
+      display: none;
+    }
+
+    .station-nav__index ol {
+      gap: 0.75rem;
+    }
+  }
+</style>

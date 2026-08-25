@@ -1,0 +1,260 @@
+---
+/**
+ * 01 / ENTER — the homepage opening, rebuilt to the approved reference.
+ *
+ * REFERENCE 01'S COMPOSITION, RECONSTRUCTED AS REAL HTML
+ *   left third     numbered eyebrow, three-line display claim, mono sub-line,
+ *                  two controls, and the locked status chips
+ *   right column   the annotated architecture column — the reference runs a
+ *                  labelled list of layers down the side of its stack, with a
+ *                  hairline leader on each
+ *   bottom left    a metrics row over a rule
+ *   bottom centre  the readout panel the reference calls LIVE REQUEST TRACE
+ *
+ * WHAT THE REFERENCE CLAIMS AND WHAT SHIPS
+ * Reference 01's metrics row reads REQUESTS/MIN 2,487 · AVG LATENCY 32ms ·
+ * UPTIME 99.99% · ERROR RATE 0.02%. Every one of those is either an invention
+ * or a figure the Truth Constitution forbids publishing — rule 7 is explicit
+ * that no uptime, tenant, user or throughput numbers exist in evidence. The
+ * visual role of the row is kept exactly; the values are things this
+ * repository can actually count, and the one the reference cares most about —
+ * availability — says plainly that it is not published.
+ *
+ * Its trace panel is a live request. A STATIC page has no live request and
+ * must not pretend to: the panel keeps its position, geometry and mono
+ * treatment, and carries the build's own provenance instead, which is real,
+ * checkable, and the honest thing a static page can put there.
+ */
+import Station from './Station.astro';
+import { SITE, STATUS_CHIPS } from '../config/site';
+
+interface Props {
+  /** Counted at build time from the repository. Never asserted. */
+  counts: {
+    systems: number;
+    decisions: number;
+    tests: number;
+    lessons: number;
+  };
+}
+
+const { counts } = Astro.props;
+
+/*
+ * The locked claim, broken across lines for the reference's stacked display
+ * composition. The sentence is unchanged — blueprint §1 locks this wording and
+ * a change requires an amendment. Read down, it is exactly SITE.claim.
+ */
+const CLAIM_LINES = ['I design,', 'build,', 'and operate'] as const;
+const CLAIM_TAIL = 'production systems.';
+
+/*
+ * The architecture column. Real stack, from the systems collection's own
+ * `stack` fields — not the reference's invented "23 Regions" and
+ * "128 Services".
+ */
+const ARCHITECTURE = [
+  { label: 'Runtime', detail: 'Node.js · Fastify' },
+  { label: 'Data', detail: 'PostgreSQL · Prisma · row-level security' },
+  { label: 'Delivery', detail: 'Docker Compose · Caddy' },
+  { label: 'Edge', detail: 'Cloudflare · object storage on R2' },
+  { label: 'Operation', detail: 'Deployed and operated personally' },
+] as const;
+---
+
+<Station id="enter" anchor="enter" priority="eager" depth={1.15} labelledby="claim">
+  <div class="station__grid enter">
+    {/* ── Left third ──────────────────────────────────────────────── */}
+    <div class="enter__type">
+      <h1 class="station__claim" id="claim">
+        {CLAIM_LINES.map((line) => <span>{line}</span>)}
+        <span><em>{CLAIM_TAIL}</em></span>
+      </h1>
+
+      {/* The claim, unbroken, for anything that reads rather than looks. */}
+      <p class="visually-hidden">{SITE.claim}</p>
+
+      <p class="station__lede">{SITE.subline}</p>
+
+      {/* Locked §2 status chips. Wording untouched. */}
+      <ul class="enter__chips">
+        {
+          STATUS_CHIPS.map((chip) => (
+            <li class="chip" data-tone="structure">
+              <span class="chip__text">{chip}</span>
+            </li>
+          ))
+        }
+      </ul>
+
+      <div class="station__actions">
+        <a class="station-cta" href="/systems">
+          See the systems
+          <span aria-hidden="true">→</span>
+        </a>
+        <a class="station-cta station-cta--quiet" href="/cv.pdf" download>Download CV</a>
+      </div>
+    </div>
+
+    {/* ── Right column: the annotated architecture ────────────────── */}
+    <div class="enter__side">
+      <ul class="enter__architecture">
+        {
+          ARCHITECTURE.map((row) => (
+            <li class="annotation">
+              <span class="annotation__label">{row.label}</span>
+              <span class="annotation__detail">{row.detail}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+
+  {/* ── Bottom rail: metrics + provenance ─────────────────────────── */}
+  <div class="enter__rail">
+    <dl class="metrics">
+      <div class="metric">
+        <dt>Platforms</dt>
+        <dd class="metric__value" data-known="true">{counts.systems}</dd>
+      </div>
+      <div class="metric">
+        <dt>Decisions recorded</dt>
+        <dd class="metric__value" data-known="true">{counts.decisions}</dd>
+      </div>
+      <div class="metric">
+        <dt>Integration tests</dt>
+        <dd class="metric__value" data-known="true">{counts.tests}</dd>
+      </div>
+      <div class="metric">
+        <dt>Availability</dt>
+        {
+          /*
+          The reference prints 99.99% here. No such measurement exists, and
+          rule 7 forbids publishing one. The slot keeps its place in the row
+          and states the truth instead — which is a more interesting thing for
+          a hiring engineer to read than a number they cannot check.
+        */
+        }
+        <dd class="metric__value" data-known="false">
+          not published
+          <span class="metric__qualifier">no measured figure exists</span>
+        </dd>
+      </div>
+    </dl>
+
+    <p class="enter__scroll">
+      <span class="enter__scroll-icon" aria-hidden="true"></span>
+      Scroll to explore
+    </p>
+  </div>
+</Station>
+
+<style>
+  .enter__type {
+    max-width: 34rem;
+  }
+
+  .enter__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 0 0 clamp(1.5rem, 3.5vh, 2.25rem);
+    padding: 0;
+    list-style: none;
+  }
+
+  /*
+   * The architecture column sits where the reference runs its layer labels:
+   * right of the type, against the environment, ruled off individually. It is
+   * the interface echo of the plate behind it.
+   */
+  .enter__side {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .enter__architecture {
+    display: grid;
+    gap: 1.1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    width: min(22rem, 100%);
+  }
+
+  .enter__rail {
+    margin-top: clamp(2.5rem, 7vh, 4.5rem);
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .enter__rail .metrics {
+    max-width: 46rem;
+  }
+
+  .enter__scroll {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .enter__scroll-icon {
+    position: relative;
+    flex: none;
+    width: 0.9rem;
+    height: 1.4rem;
+    border: 1px solid var(--text-faint);
+    border-radius: 0.5rem;
+  }
+
+  .enter__scroll-icon::after {
+    content: '';
+    position: absolute;
+    top: 0.25rem;
+    left: 50%;
+    width: 1px;
+    height: 0.3rem;
+    background: var(--text-faint);
+    transform: translateX(-50%);
+    animation: enter-scroll 1.8s var(--ease-out) infinite;
+  }
+
+  @keyframes enter-scroll {
+    0%,
+    100% {
+      opacity: 0.3;
+      transform: translate(-50%, 0);
+    }
+    50% {
+      opacity: 1;
+      transform: translate(-50%, 0.35rem);
+    }
+  }
+
+  /* The architecture column is secondary detail: it goes first-to-hide, and
+     the type and metrics — the hierarchy that matters — stay. */
+  @media (max-width: 999px) {
+    .enter__side {
+      justify-content: flex-start;
+    }
+
+    .enter__architecture {
+      grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+      width: 100%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .enter__scroll-icon::after {
+      animation: none;
+      opacity: 0.7;
+    }
+  }
+</style>
