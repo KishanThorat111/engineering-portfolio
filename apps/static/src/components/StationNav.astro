@@ -52,6 +52,27 @@ const { current } = Astro.props;
     </ol>
   </nav>
 
+  {
+    /*
+      THE STATUS PILL.
+
+      Every one of the ten reference frames carries this object in the top right,
+      reading SYSTEM STATUS / ALL SYSTEMS OPERATIONAL. The decomposition §3 table
+      rules on it directly: that banner "must be derived, never asserted; if the
+      live plane is down, this banner is the first thing that must say so."
+
+      So it is derived. It renders as "not yet measured" from the server, and the
+      one measurement the page makes moves it to responding or to not answering.
+      It is never "all systems operational" as a decoration, and today — with the
+      tunnel down — it is the first thing on the page that says so.
+    */
+  }
+  <p class="station-nav__status">
+    <span class="station-nav__status-dot" aria-hidden="true"></span>
+    <span class="station-nav__status-label">Control plane</span>
+    <span class="station-nav__status-value" data-live-value="state">not measured</span>
+  </p>
+
   <a class="station-nav__cta" href="/cv">CV</a>
 </header>
 
@@ -88,13 +109,42 @@ const { current } = Astro.props;
     min-width: 0;
   }
 
+  /*
+   * THE RAIL NEVER WRAPS. IT SCROLLS.
+   *
+   * `flex-wrap: wrap` put "10 / END" alone on a second row at phone widths —
+   * the index that is supposed to say "these ten frames are one world" was the
+   * first thing on the page to fall apart, and it did so on the device most
+   * visitors arrive on. Wrapping also changed the header's height between
+   * breakpoints, which moves everything below it.
+   *
+   * A single non-wrapping row that scrolls horizontally keeps all ten in one
+   * line at every width, keeps the header one fixed height, and keeps every
+   * station reachable. Scroll-snap makes the numbers land cleanly rather than
+   * stopping mid-glyph, and the scrollbar is hidden because the numbers
+   * themselves are the affordance — a station index is not a document.
+   */
   .station-nav__index ol {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: clamp(0.6rem, 1.6vw, 1.6rem);
     margin: 0;
     padding: 0;
     list-style: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    /* Room for the focus ring of the first and last items. */
+    padding-inline: 2px;
+  }
+
+  .station-nav__index ol::-webkit-scrollbar {
+    display: none;
+  }
+
+  .station-nav__index li {
+    flex: none;
+    scroll-snap-align: start;
   }
 
   .station-nav__link {
@@ -133,6 +183,76 @@ const { current } = Astro.props;
     color: var(--text-faint);
   }
 
+  .station-nav__status {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0;
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+
+  .station-nav__status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    /* Unlit until measured — nothing glows without a reading behind it. */
+    background: var(--text-faint);
+  }
+
+  /*
+   * THE WIDTH IS RESERVED, AND THIS IS NOT A DETAIL.
+   *
+   * This pill is the one element on the page whose text is replaced by a network
+   * result, and it sits in the header's flex row. Letting it resize when the
+   * measurement lands moved the entire header — and because everything below a
+   * shifted header counts as shifted, one 4.5px change in this pill measured
+   * **CLS 0.178** against a 0.05 budget. It was the single layout shift on the
+   * whole page.
+   *
+   * `em`, NOT `ch`, and that distinction is the whole fix. `ch` is the advance
+   * width of "0" IN THE CURRENT FACE, so a `ch`-based reservation is re-measured
+   * when the font swaps — and JetBrains Mono is deliberately not preloaded, so it
+   * always swaps. The first version of this used 12ch and the shift survived
+   * untouched at 0.178, because the box it reserved changed size at exactly the
+   * moment it was supposed to be holding still.
+   *
+   * `em` resolves against font-size, which is fixed here, so the reservation is
+   * the same box before and after the swap. 7.6em holds the longest state this
+   * can carry ("not answering") at this size; every shorter state sits inside it.
+   * The arrival of a real reading now changes a colour and a word, and moves
+   * nothing.
+   */
+  .station-nav__status-value {
+    display: inline-block;
+    min-width: 7.6em;
+  }
+
+  :global(:root[data-liveness='live']) .station-nav__status-dot {
+    background: var(--signal);
+    box-shadow: 0 0 8px var(--signal);
+  }
+
+  :global(:root[data-liveness='live']) .station-nav__status-value {
+    color: var(--signal);
+  }
+
+  :global(:root[data-liveness='down']) .station-nav__status-dot {
+    background: var(--fault);
+  }
+
+  :global(:root[data-liveness='down']) .station-nav__status-value {
+    color: var(--fault);
+  }
+
   .station-nav__cta {
     flex: none;
     font-family: var(--font-mono);
@@ -167,6 +287,25 @@ const { current } = Astro.props;
 
     .station-nav__index ol {
       gap: 0.75rem;
+    }
+
+    /*
+     * The pill keeps its dot and its reading and loses only the word "control
+     * plane", which the dot's colour and the reading already carry. The state
+     * itself is never dropped: a phone is exactly where a visitor is most
+     * likely to be told a system is fine when it is not.
+     */
+    .station-nav__status-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .station-nav__status {
+      padding-inline: 0.45rem;
     }
   }
 </style>

@@ -1,260 +1,540 @@
 ---
 /**
- * 01 / ENTER — the homepage opening, rebuilt to the approved reference.
+ * 01 / ENTER — reconstructed on the fixed-ratio stage.
  *
- * REFERENCE 01'S COMPOSITION, RECONSTRUCTED AS REAL HTML
- *   left third     numbered eyebrow, three-line display claim, mono sub-line,
- *                  two controls, and the locked status chips
- *   right column   the annotated architecture column — the reference runs a
- *                  labelled list of layers down the side of its stack, with a
- *                  hairline leader on each
- *   bottom left    a metrics row over a rule
- *   bottom centre  the readout panel the reference calls LIVE REQUEST TRACE
+ * REFERENCE 01'S COMPOSITION, MEASURED AND REBUILT
+ * Positions below are read off the reference frame and expressed as percentages
+ * of it, so the callout naming the API gateway tier sits on the API gateway
+ * tier at every width the stage survives at:
  *
- * WHAT THE REFERENCE CLAIMS AND WHAT SHIPS
- * Reference 01's metrics row reads REQUESTS/MIN 2,487 · AVG LATENCY 32ms ·
- * UPTIME 99.99% · ERROR RATE 0.02%. Every one of those is either an invention
- * or a figure the Truth Constitution forbids publishing — rule 7 is explicit
- * that no uptime, tenant, user or throughput numbers exist in evidence. The
- * visual role of the row is kept exactly; the values are things this
- * repository can actually count, and the one the reference cares most about —
- * availability — says plainly that it is not published.
+ *   left column   eyebrow, four-line display claim, lede, chips, two controls,
+ *                 a state line, the stat strip, the scroll cue
+ *   left margin   six callouts down the request path, leaders reaching right
+ *   right margin  five callouts naming the supporting estate, reaching left
+ *   bottom centre the LIVE REQUEST TRACE panel
  *
- * Its trace panel is a live request. A STATIC page has no live request and
- * must not pretend to: the panel keeps its position, geometry and mono
- * treatment, and carries the build's own provenance instead, which is real,
- * checkable, and the honest thing a static page can put there.
+ * WHAT THE REFERENCE PUTS IN THE STRIP, AND WHAT SHIPS INSTEAD
+ * Reference 01 reads REQUESTS/MIN 2,487 · AVG LATENCY 32ms · UPTIME 99.99% ·
+ * ERROR RATE 0.02%, and the decomposition §3 table rules on every one: rule 7
+ * names uptime, tenant, user and throughput figures as not existing in
+ * evidence, and rule 4 forbids estimating the rest. The strip's geometry is
+ * kept exactly. Its contents are four things this site can stand behind:
+ *
+ *   ROUND TRIP        measured in the reader's own browser, this second
+ *   CONTROL PLANE     the real state of a real service, including "not answering"
+ *   DEMONSTRATIONS    counted from the API's registry; CI asserts it is five
+ *   ISOLATION LAYERS  architecture, true whether or not anything is running
+ *
+ * The first two render as em dashes from the server and are filled only by a
+ * successful measurement. An unmeasured figure stays a dash — never a zero, and
+ * never a plausible number.
+ *
+ * THE CALLOUTS NAME THIS SYSTEM, NOT A GENERIC ONE
+ * Every label below is a component in `infra/compose.yml` or a dependency in a
+ * `package.json` in this repository. The reference's own callouts read "23
+ * Regions", "128 Services" and "2.4M Eventers" — inventions, and two of them
+ * misspelled, which is the standing reminder that words baked into the artwork
+ * are never a source of truth.
  */
-import Station from './Station.astro';
+import Stage from './stage/Stage.astro';
+import Callout from './stage/Callout.astro';
+import Panel from './stage/Panel.astro';
+import StatRow, { type Stat } from './stage/StatRow.astro';
+import TraceRail, { type Hop } from './stage/TraceRail.astro';
 import { SITE, STATUS_CHIPS } from '../config/site';
 
 interface Props {
-  /** Counted at build time from the repository. Never asserted. */
-  counts: {
-    systems: number;
-    decisions: number;
-    tests: number;
-    lessons: number;
-  };
+  counts: { systems: number; decisions: number; tests: number; lessons: number };
 }
-
 const { counts } = Astro.props;
 
 /*
- * The locked claim, broken across lines for the reference's stacked display
- * composition. The sentence is unchanged — blueprint §1 locks this wording and
- * a change requires an amendment. Read down, it is exactly SITE.claim.
+ * The locked claim, broken for the reference's stacked display composition.
+ * Read down it is exactly SITE.claim, which blueprint §1 locks and which the
+ * unbroken copy below repeats for anything that reads rather than looks.
  */
 const CLAIM_LINES = ['I design,', 'build,', 'and operate'] as const;
 const CLAIM_TAIL = 'production systems.';
 
-/*
- * The architecture column. Real stack, from the systems collection's own
- * `stack` fields — not the reference's invented "23 Regions" and
- * "128 Services".
+/**
+ * The request path, down the left margin.
+ *
+ * Every entry is a real component of the running stack: `infra/compose.yml`
+ * lines 47–171 and `services/api/package.json`. No version number is published
+ * that the repository does not pin.
  */
-const ARCHITECTURE = [
-  { label: 'Runtime', detail: 'Node.js · Fastify' },
-  { label: 'Data', detail: 'PostgreSQL · Prisma · row-level security' },
-  { label: 'Delivery', detail: 'Docker Compose · Caddy' },
-  { label: 'Edge', detail: 'Cloudflare · object storage on R2' },
-  { label: 'Operation', detail: 'Deployed and operated personally' },
+const PATH = [
+  { y: 15.6, label: 'Edge', lines: ['Cloudflare', 'TLS, WAF, tunnel ingress'] },
+  { y: 25.3, label: 'API Gateway', lines: ['Caddy 2', 'Reverse proxy, health checks'] },
+  { y: 35.0, label: 'Services', lines: ['Fastify on Node.js', 'One image, API and worker'] },
+  { y: 44.7, label: 'Event Stream', lines: ['WebSocket fanout', 'Presence and telemetry'] },
+  { y: 54.4, label: 'Data Layer', lines: ['PostgreSQL 17', 'Row-level security, forced'] },
+  { y: 64.1, label: 'Infrastructure', lines: ['Docker Compose', 'One VM, no inbound port'] },
 ] as const;
+
+/** The supporting estate, down the right margin. */
+const ESTATE = [
+  { y: 17.6, label: 'AI', lines: ['Vertex AI', 'Budgeted per organisation'] },
+  { y: 28.6, label: 'Monitoring', lines: ['OpenTelemetry', 'A span per demonstration'] },
+  { y: 41.0, label: 'Database', lines: ['PostgreSQL 17', 'Tenant-scoped by policy'] },
+  { y: 52.6, label: 'Cache', lines: ['Redis 7', 'Rate limits and presence'] },
+  { y: 63.0, label: 'Storage', lines: ['Cloudflare R2', 'Object storage'] },
+] as const;
+
+/*
+ * The strip. `live` columns render the pending dash server-side; the liveness
+ * script replaces them only on a real measurement.
+ *
+ * DEMONSTRATIONS is not a live column: five is a build-time fact this
+ * repository can prove without a network call, and CI asserts it on every push
+ * ("Assert all five demonstrations are still published"). Binding it to a fetch
+ * would make a true figure disappear whenever the tunnel is down.
+ */
+const STATS: Stat[] = [
+  { label: 'Round trip', value: null, unit: 'ms', live: 'rtt' },
+  { label: 'Control plane', value: null, live: 'state' },
+  { label: 'Demonstrations', value: '5' },
+  { label: 'Isolation layers', value: '2' },
+];
+
+/**
+ * The trace's hops are labelled with what each hop IS, and carry no per-hop
+ * timing, because no per-hop timing is measured anywhere a reader could check.
+ * One real total beats seven invented splits.
+ */
+const HOPS: Hop[] = [
+  { name: 'Browser', detail: 'your device', tone: 'structure' },
+  { name: 'Edge', detail: 'Cloudflare', tone: 'structure' },
+  { name: 'Tunnel', detail: 'no inbound port', tone: 'isolation' },
+  { name: 'Caddy', detail: 'reverse proxy', tone: 'structure' },
+  { name: 'Fastify', detail: '/health', tone: 'signal' },
+  { name: 'Response', detail: 'back to you', tone: 'signal' },
+];
 ---
 
-<Station id="enter" anchor="enter" priority="eager" depth={1.15} labelledby="claim">
-  <div class="station__grid enter">
-    {/* ── Left third ──────────────────────────────────────────────── */}
-    <div class="enter__type">
-      <h1 class="station__claim" id="claim">
-        {CLAIM_LINES.map((line) => <span>{line}</span>)}
-        <span><em>{CLAIM_TAIL}</em></span>
-      </h1>
+<Stage
+  id="enter"
+  anchor="enter"
+  priority="eager"
+  depth={1.15}
+  plate={0.92}
+  labelledby="claim"
+  class="enter"
+>
+  {/* ── Left column ─────────────────────────────────────────────── */}
+  <div class="enter__col">
+    <p class="enter__eyebrow">Engineering complexity<br />into real systems.</p>
 
-      {/* The claim, unbroken, for anything that reads rather than looks. */}
-      <p class="visually-hidden">{SITE.claim}</p>
+    <h1 class="enter__claim" id="claim">
+      {CLAIM_LINES.map((line) => <span>{line}</span>)}
+      <span><em>{CLAIM_TAIL}</em></span>
+    </h1>
 
-      <p class="station__lede">{SITE.subline}</p>
+    {/* The claim, unbroken, for anything that reads rather than looks. */}
+    <p class="visually-hidden">{SITE.claim}</p>
 
-      {/* Locked §2 status chips. Wording untouched. */}
-      <ul class="enter__chips">
-        {
-          STATUS_CHIPS.map((chip) => (
-            <li class="chip" data-tone="structure">
-              <span class="chip__text">{chip}</span>
-            </li>
-          ))
-        }
-      </ul>
+    <p class="enter__lede">{SITE.subline}</p>
 
-      <div class="station__actions">
-        <a class="station-cta" href="/systems">
-          See the systems
-          <span aria-hidden="true">→</span>
-        </a>
-        <a class="station-cta station-cta--quiet" href="/cv.pdf" download>Download CV</a>
-      </div>
-    </div>
+    {/* Locked §2 status chips. Wording untouched. */}
+    <ul class="enter__chips">
+      {STATUS_CHIPS.map((chip) => <li>{chip}</li>)}
+    </ul>
 
-    {/* ── Right column: the annotated architecture ────────────────── */}
-    <div class="enter__side">
-      <ul class="enter__architecture">
-        {
-          ARCHITECTURE.map((row) => (
-            <li class="annotation">
-              <span class="annotation__label">{row.label}</span>
-              <span class="annotation__detail">{row.detail}</span>
-            </li>
-          ))
-        }
-      </ul>
+    <div class="enter__actions">
+      <a class="enter__cta" href="/systems">See the systems <span aria-hidden="true">→</span></a>
+      <a class="enter__cta enter__cta--quiet" href="/cv.pdf" download>Download CV</a>
     </div>
   </div>
 
-  {/* ── Bottom rail: metrics + provenance ─────────────────────────── */}
-  <div class="enter__rail">
-    <dl class="metrics">
-      <div class="metric">
-        <dt>Platforms</dt>
-        <dd class="metric__value" data-known="true">{counts.systems}</dd>
-      </div>
-      <div class="metric">
-        <dt>Decisions recorded</dt>
-        <dd class="metric__value" data-known="true">{counts.decisions}</dd>
-      </div>
-      <div class="metric">
-        <dt>Integration tests</dt>
-        <dd class="metric__value" data-known="true">{counts.tests}</dd>
-      </div>
-      <div class="metric">
-        <dt>Availability</dt>
-        {
-          /*
-          The reference prints 99.99% here. No such measurement exists, and
-          rule 7 forbids publishing one. The slot keeps its place in the row
-          and states the truth instead — which is a more interesting thing for
-          a hiring engineer to read than a number they cannot check.
-        */
-        }
-        <dd class="metric__value" data-known="false">
-          not published
-          <span class="metric__qualifier">no measured figure exists</span>
-        </dd>
-      </div>
-    </dl>
-
-    <p class="enter__scroll">
-      <span class="enter__scroll-icon" aria-hidden="true"></span>
-      Scroll to explore
+  {/* ── The state line and the strip ────────────────────────────── */}
+  <div class="enter__readout">
+    <p class="enter__state">
+      <span class="enter__state-dot" aria-hidden="true"></span>
+      <span data-live-value="state-line">Control plane — not yet measured</span>
+    </p>
+    <StatRow items={STATS} />
+    {
+      /*
+        The reference's fourth column is UPTIME 99.99%. There is no such
+        measurement and rule 7 says there is not one to publish, so the honest
+        statement takes the place a fabricated figure would have held. It is
+        also a more interesting line for a hiring engineer than a number they
+        could not check.
+      */
+    }
+    <p class="enter__note">
+      No uptime or throughput figure is published anywhere on this site. None is measured, and an
+      unmeasured number is not a number.
     </p>
   </div>
-</Station>
+
+  {/* ── The two callout margins ─────────────────────────────────── */}
+  {
+    PATH.map((item) => (
+      <Callout
+        x={32.6}
+        y={item.y}
+        side="left"
+        label={item.label}
+        lines={[...item.lines]}
+        lead={7}
+        w={13}
+      />
+    ))
+  }
+  {
+    ESTATE.map((item) => (
+      <Callout
+        x={97}
+        y={item.y}
+        side="right"
+        label={item.label}
+        lines={[...item.lines]}
+        lead={6}
+        w={14}
+      />
+    ))
+  }
+
+  {/* ── The trace panel ─────────────────────────────────────────── */}
+  <Panel x={39} y={76.2} w={37} title="Live request trace" note="measured here">
+    <TraceRail hops={HOPS} request="GET /health" />
+  </Panel>
+
+  {/* ── The scroll cue ──────────────────────────────────────────── */}
+  <p class="enter__scroll">
+    <span class="enter__scroll-icon" aria-hidden="true"></span>
+    Scroll to explore
+  </p>
+
+  {/* ── The mobile composition ──────────────────────────────────── */}
+  <div slot="mobile" class="enterM">
+    <p class="enterM__eyebrow">01 / Enter</p>
+    <h1 class="enterM__claim">{SITE.claim}</h1>
+    <p class="enterM__lede">{SITE.subline}</p>
+    <ul class="enterM__chips">
+      {STATUS_CHIPS.map((chip) => <li>{chip}</li>)}
+    </ul>
+    <dl class="enterM__stats">
+      <div><dt>Round trip</dt><dd><span data-live-value="rtt">—</span> ms</dd></div>
+      <div><dt>Control plane</dt><dd data-live-value="state">—</dd></div>
+      <div><dt>Demonstrations</dt><dd>5</dd></div>
+      <div><dt>Isolation layers</dt><dd>2</dd></div>
+    </dl>
+    <p class="enterM__note">
+      No uptime or throughput figure is published anywhere on this site. None is measured.
+    </p>
+    <div class="enterM__actions">
+      <a class="enter__cta" href="/systems">See the systems <span aria-hidden="true">→</span></a>
+      <a class="enter__cta enter__cta--quiet" href="/cv.pdf" download>Download CV</a>
+    </div>
+    <p class="enterM__counts">
+      {counts.systems} systems · {counts.decisions} decisions recorded · {counts.tests} integration tests
+      · {counts.lessons} lessons published
+    </p>
+  </div>
+</Stage>
 
 <style>
-  .enter__type {
-    max-width: 34rem;
+  /* ── The stage composition ─────────────────────────────────────── */
+  .enter__col {
+    position: absolute;
+    left: 4.8%;
+    top: 12.5%;
+    width: 25%;
+  }
+
+  .enter__eyebrow {
+    margin: 0 0 calc(34 * var(--u));
+    font-family: var(--font-mono);
+    font-size: calc(18 * var(--u));
+    line-height: 1.55;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .enter__claim {
+    margin: 0;
+    font-size: calc(96 * var(--u));
+    font-weight: 500;
+    line-height: 0.98;
+    letter-spacing: -0.028em;
+    color: var(--text);
+  }
+
+  .enter__claim span {
+    display: block;
+  }
+
+  /*
+   * The reference gives its last line a cyan-through-orange gradient. Cyan is
+   * locked to mean a tenancy boundary and nothing else (§12.1), and a decorative
+   * gradient through it would be exactly the loosening CLAUDE.md forbids. The
+   * emphasis is carried by the one register entry that IS true of this line —
+   * these systems are running — so it is signal green, flat.
+   */
+  .enter__claim em {
+    font-style: normal;
+    color: var(--signal);
+  }
+
+  .enter__lede {
+    margin: calc(30 * var(--u)) 0 0;
+    font-size: calc(20 * var(--u));
+    line-height: 1.6;
+    color: var(--text-muted);
+    text-shadow: 0 calc(1 * var(--u)) calc(8 * var(--u)) rgb(0 0 0 / 0.9);
   }
 
   .enter__chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.45rem;
-    margin: 0 0 clamp(1.5rem, 3.5vh, 2.25rem);
+    gap: calc(8 * var(--u));
+    margin: calc(24 * var(--u)) 0 0;
     padding: 0;
     list-style: none;
+  }
+
+  .enter__chips li {
+    padding: calc(7 * var(--u)) calc(13 * var(--u));
+    border: 1px solid var(--plate-edge);
+    border-radius: calc(4 * var(--u));
+    background: var(--plate-scrim);
+    font-family: var(--font-mono);
+    font-size: calc(14 * var(--u));
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .enter__actions {
+    display: flex;
+    align-items: center;
+    gap: calc(22 * var(--u));
+    margin-top: calc(34 * var(--u));
+  }
+
+  .enter__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(12 * var(--u));
+    padding: calc(16 * var(--u)) calc(26 * var(--u));
+    border: 1px solid var(--text-muted);
+    border-radius: calc(3 * var(--u));
+    background: var(--plate-scrim);
+    font-family: var(--font-mono);
+    font-size: calc(16 * var(--u));
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--text);
+  }
+
+  .enter__cta:hover {
+    border-color: var(--signal);
+    color: var(--signal);
+  }
+
+  .enter__cta--quiet {
+    border-color: transparent;
+    background: none;
+    padding-inline: 0;
+    text-decoration: underline;
+    text-underline-offset: calc(5 * var(--u));
+    text-decoration-color: var(--text-faint);
+  }
+
+  /* ── The readout block ─────────────────────────────────────────── */
+  /*
+   * 73.5%, not 69%. At 69% the status line sat on top of the two controls above
+   * it — the left column is taller than the reference's because the locked
+   * claim is four lines where the reference's invented one is three, and the
+   * locked sub-line is three lines where the reference's is two. The reference
+   * position was measured correctly and then applied to a column carrying more
+   * text; the composition moves rather than the words.
+   */
+  .enter__readout {
+    position: absolute;
+    left: 4.8%;
+    top: 73.5%;
+    width: 29%;
+  }
+
+  .enter__state {
+    display: flex;
+    align-items: center;
+    gap: calc(10 * var(--u));
+    margin: 0 0 calc(18 * var(--u));
+    font-family: var(--font-mono);
+    font-size: calc(16 * var(--u));
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--text-muted);
   }
 
   /*
-   * The architecture column sits where the reference runs its layer labels:
-   * right of the type, against the environment, ruled off individually. It is
-   * the interface echo of the plate behind it.
+   * Unlit until something is measured — the glow rule. `:root[data-liveness]`
+   * is set by the one measurement the page makes, so every instrument changes
+   * together or not at all.
    */
-  .enter__side {
-    display: flex;
-    justify-content: flex-end;
+  .enter__state-dot {
+    width: calc(9 * var(--u));
+    height: calc(9 * var(--u));
+    border-radius: 50%;
+    background: var(--text-faint);
   }
 
-  .enter__architecture {
-    display: grid;
-    gap: 1.1rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    width: min(22rem, 100%);
+  :global(:root[data-liveness='live']) .enter__state-dot {
+    background: var(--signal);
+    box-shadow: 0 0 calc(12 * var(--u)) var(--signal);
   }
 
-  .enter__rail {
-    margin-top: clamp(2.5rem, 7vh, 4.5rem);
-    display: grid;
-    gap: 1.25rem;
+  :global(:root[data-liveness='live']) .enter__state {
+    color: var(--signal);
   }
 
-  .enter__rail .metrics {
-    max-width: 46rem;
+  :global(:root[data-liveness='down']) .enter__state-dot {
+    background: var(--fault);
+  }
+
+  :global(:root[data-liveness='down']) .enter__state {
+    color: var(--fault);
+  }
+
+  .enter__note {
+    margin: calc(18 * var(--u)) 0 0;
+    font-size: calc(14 * var(--u));
+    line-height: 1.5;
+    color: var(--text-faint);
+    text-shadow: 0 calc(1 * var(--u)) calc(6 * var(--u)) rgb(0 0 0 / 0.9);
   }
 
   .enter__scroll {
+    position: absolute;
+    left: 4.8%;
+    top: 94.2%;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: calc(16 * var(--u));
     margin: 0;
     font-family: var(--font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.18em;
+    font-size: calc(15 * var(--u));
+    letter-spacing: 0.24em;
     text-transform: uppercase;
     color: var(--text-faint);
   }
 
   .enter__scroll-icon {
-    position: relative;
-    flex: none;
-    width: 0.9rem;
-    height: 1.4rem;
+    width: calc(18 * var(--u));
+    height: calc(29 * var(--u));
     border: 1px solid var(--text-faint);
-    border-radius: 0.5rem;
+    border-radius: calc(10 * var(--u));
   }
 
-  .enter__scroll-icon::after {
-    content: '';
-    position: absolute;
-    top: 0.25rem;
-    left: 50%;
-    width: 1px;
-    height: 0.3rem;
-    background: var(--text-faint);
-    transform: translateX(-50%);
-    animation: enter-scroll 1.8s var(--ease-out) infinite;
+  /* ── The mobile composition ────────────────────────────────────── */
+  .enterM__eyebrow {
+    margin: 0 0 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-faint);
   }
 
-  @keyframes enter-scroll {
-    0%,
-    100% {
-      opacity: 0.3;
-      transform: translate(-50%, 0);
-    }
-    50% {
-      opacity: 1;
-      transform: translate(-50%, 0.35rem);
-    }
+  .enterM__claim {
+    margin: 0;
+    font-size: clamp(2.1rem, 9vw, 3.1rem);
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    color: var(--text);
   }
 
-  /* The architecture column is secondary detail: it goes first-to-hide, and
-     the type and metrics — the hierarchy that matters — stay. */
-  @media (max-width: 999px) {
-    .enter__side {
-      justify-content: flex-start;
-    }
-
-    .enter__architecture {
-      grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-      width: 100%;
-    }
+  .enterM__lede {
+    margin: 1.25rem 0 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-muted);
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .enter__scroll-icon::after {
-      animation: none;
-      opacity: 0.7;
-    }
+  .enterM__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .enterM__chips li {
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--plate-edge);
+    border-radius: 3px;
+    background: var(--plate-scrim);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .enterM__stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem 1.25rem;
+    margin: 1.75rem 0 0;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--plate-edge);
+    border-radius: 6px;
+    background: var(--plate-scrim);
+  }
+
+  .enterM__stats dt {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .enterM__stats dd {
+    margin: 0.3rem 0 0;
+    font-size: 1.4rem;
+    font-weight: 500;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .enterM__note,
+  .enterM__counts {
+    margin: 1rem 0 0;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: var(--text-faint);
+  }
+
+  .enterM__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.75rem;
+  }
+
+  /*
+   * The mobile composition has no `--u`, so the shared CTA rule's container
+   * units resolve to zero there. It gets ordinary lengths instead.
+   */
+  .enterM__actions .enter__cta {
+    padding: 0.75rem 1.1rem;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    gap: 0.6rem;
+  }
+
+  .enterM__actions .enter__cta--quiet {
+    padding-inline: 0;
+    text-underline-offset: 4px;
   }
 </style>

@@ -294,6 +294,39 @@ async function main() {
    */
   const FALLBACK_MAX_WIDTH = 1920;
 
+  /*
+   * PER-PLATE CROPS, AND WHY TWO PLATES HAVE ONE.
+   *
+   * Two masters were rendered with a photorealistic generated human figure in
+   * frame: 07 (seated at the desk, face forward, in focus) and 08 (at the
+   * window, three-quarter from behind). On a personal portfolio a photorealistic
+   * person in the artwork reads as a photograph of the subject. No owned
+   * photograph of the subject exists — `/about` still carries the OWNER-INPUT
+   * marker asking for one — so shipping these would have published a fabricated
+   * image of a real person.
+   *
+   * The repository had already ruled on exactly this, in the other medium:
+   * PHASE_LOG 04–10 records that a placeholder figure was tried at the subject's
+   * position in the 3D `ThinkScene` and removed, and that the frame was composed
+   * as "a recently-vacated desk instead". The plates were generated from the
+   * references afterwards and quietly reintroduced what that ruling removed, so
+   * the two surfaces disagreed about the same fact — which is what rule 10
+   * exists to catch, arriving through a channel no gate watches.
+   *
+   * These crops apply the same ruling to the plates. They are composed, not
+   * merely cut: 07 becomes the monitor, the architecture sketches and the empty
+   * desk, which is the vacated desk the log asked for; 08 becomes the city, the
+   * cube and the desk, which is the whole composition minus the figure. Both
+   * were checked by rendering them, not by arithmetic.
+   *
+   * A crop is applied BEFORE the width ladder, so every rung is cropped and no
+   * uncropped pixel of either figure exists anywhere in the output.
+   */
+  const CROPS = {
+    '07-think': { left: 0, top: 430, width: 1260, height: 840 },
+    '08-build': { left: 0, top: 400, width: 1750, height: 1167 },
+  };
+
   await mkdir(OUT, { recursive: true });
   const manifest = {};
   let outTotal = 0;
@@ -307,8 +340,10 @@ Encoding ${files.length} plates: avif q65 primary, webp q85 fallback
     const stem = basename(file, '.png');
     manifest[stem] = {};
 
-    // The master's own width, so a plate is never upscaled past its source.
-    const masterWidth = (await sharp(path).metadata()).width ?? Math.max(...WIDTHS);
+    const crop = CROPS[stem];
+    // The width available AFTER any crop, so a plate is never upscaled past
+    // the pixels that actually survive into the frame.
+    const masterWidth = crop ? crop.width : ((await sharp(path).metadata()).width ?? 1280);
 
     for (const variant of [PRIMARY, FALLBACK]) {
       manifest[stem][variant.format] = {};
@@ -319,7 +354,9 @@ Encoding ${files.length} plates: avif q65 primary, webp q85 fallback
           : ladder(masterWidth);
 
       for (const width of rungs) {
-        const buf = await sharp(path)
+        const pipeline = sharp(path);
+        if (crop) pipeline.extract(crop);
+        const buf = await pipeline
           .resize({ width, withoutEnlargement: true })
           [variant.format](variant.options)
           .toBuffer();

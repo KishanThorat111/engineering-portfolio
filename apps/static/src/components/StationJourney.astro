@@ -1,38 +1,47 @@
 ---
 /**
- * STATIONS 02–10 — the rest of the approved reference world.
+ * STATIONS 02–10 — the rest of the reference world, on the fixed-ratio stage.
  *
- * The homepage is the journey. Each station is a full-bleed section with its
- * own environmental plate, its own composition from the shared primitives, and
- * content that comes entirely from the repository's own collections and config.
+ * Each station is a `Stage` locked to the plate's 3:2 ratio with its overlay
+ * positioned in percentages of that frame, so a label naming a thing in the
+ * artwork keeps naming it at every width. Below 1024px each one swaps to a
+ * separate stacked composition rather than shrinking the cinematic one.
  *
  * WHAT EACH REFERENCE CONTRIBUTES, AND WHAT REPLACED ITS INVENTED FIGURES
- *   02 SYSTEMS     the estate register. The reference's "12 Services Online"
- *                  does not exist; each entry carries its real status and the
- *                  limitation it discloses about itself instead.
- *   03 DISSECTION  the numbered case-study index. Real sections of real pages.
- *   04 DATA        the evidence rail. Every chip is a dated, traceable fact.
- *   05 LAB         what did not work. The two written-up lessons, with cost.
- *   06 LIVE        the demo plane, labelled a demo (rule 11), linking out.
- *   07 THINK       the five pillars, in the reference's numbered treatment.
- *   08 BUILD       availability and contact. State: the next system.
+ * The decomposition's §3 table ruled on every number baked into the artwork.
+ * The compositions survive intact; the contents are repository facts.
+ *
+ *   02 SYSTEMS     three real systems with real statuses. The reference's
+ *                  "12 Services Online", "TOTAL REGIONS 7" and "TOTAL SERVICES
+ *                  128" are cut — rule 4, an unpublished figure is unpublished.
+ *   03 DISSECTION  the layer stack of the flagship, with the case study's own
+ *                  six sections as the index. "KUBERNETES" and "AMS AP-SOUTH-1"
+ *                  are replaced by what this system actually runs on.
+ *   04 DATA        one request path. No per-hop timings, because none are
+ *                  measured; one measured total, in the reader's own browser.
+ *   05 LAB         what did not work. The reference's FPS 119 / PARTICLES 15.4M
+ *                  telemetry is cut entirely and the two written-up lessons
+ *                  take the frame.
+ *   06 LIVE        the control room, and the globe problem resolved in the open.
+ *   07 THINK       the five pillars in the reference's numbered treatment, and
+ *                  an empty chair where the reference has a generated face.
+ *   08 BUILD       availability and contact. STATE: UNDEFINED, which is true.
  *   09 PROOF       the archive, counted at build time. Two-digit real numbers,
- *                  not the reference's fabricated 14.6K.
- *   10 END         the quietest station. A closing line and the CV.
+ *                  which the decomposition explicitly tells this station to be
+ *                  designed for rather than the reference's fabricated 14.6K.
+ *   10 END         the closing line, and the ten stations named on one map.
  */
-import Station from './Station.astro';
+import Stage from './stage/Stage.astro';
+import Callout from './stage/Callout.astro';
+import Panel from './stage/Panel.astro';
+import Chip from './stage/Chip.astro';
+import StatRow, { type Stat } from './stage/StatRow.astro';
+import TraceRail, { type Hop } from './stage/TraceRail.astro';
 import { SITE } from '../config/site';
 import { PILLARS } from '../config/pillars';
 import { STATUS_LABELS } from '../schemas/constitution';
 import type { CollectionEntry } from 'astro:content';
 
-/*
- * The real collection types, not hand-written shapes. Writing them out by hand
- * drifted from the schemas immediately — evidence chips carry `fact` and
- * `qualifier`, not `label` and `detail`, and entries key on `id` rather than
- * `slug` in this Astro version. Importing the generated types means a schema
- * change fails the build here instead of rendering the wrong field.
- */
 interface Props {
   systems: CollectionEntry<'systems'>[];
   chips: CollectionEntry<'evidenceChips'>[];
@@ -42,11 +51,22 @@ interface Props {
 
 const { systems, chips, lessons, counts } = Astro.props;
 
-const TONE: Record<string, string> = {
+/*
+ * Status to register entry.
+ *
+ * `undefined` for CONFIDENTIAL is deliberate and is the rule rather than a gap:
+ * a panel gets a state dot only when it is carrying a state, and "confidential"
+ * describes what may be said about a system, not what the system is doing. The
+ * previous mapping sent it to `--structure`, which is a material token and not a
+ * register entry — colouring a state dot with it would have been exactly the
+ * confusion §3.4 forbids.
+ */
+type Register = 'signal' | 'pending' | 'isolation' | 'record' | 'fault';
+const TONE: Record<string, Register | undefined> = {
   IN_PRODUCTION_HOSPITAL: 'signal',
   LIVE: 'signal',
   PRE_LAUNCH: 'pending',
-  CONFIDENTIAL: 'structure',
+  CONFIDENTIAL: undefined,
 };
 
 /** The sections a case study actually has, so each is a real destination. */
@@ -57,534 +77,1214 @@ const DISSECTION = [
   { index: '04', label: 'Security' },
   { index: '05', label: 'Deployment' },
   { index: '06', label: 'Impact' },
+] as const;
+
+/*
+ * Counted, not claimed. Every one of these is a `length` over a collection or a
+ * directory in this repository, and the decomposition measured the same set on
+ * 22 Aug 2026 precisely so that the panels could be designed for two-digit
+ * numbers instead of the reference's fabricated thousands.
+ */
+const ARCHIVE = [
+  { label: 'Systems', value: counts.systems },
+  { label: 'Decisions', value: counts.decisions },
+  { label: 'Evidence', value: counts.evidence },
+  { label: 'Lessons', value: counts.lessons },
+  { label: 'Integration tests', value: counts.tests },
+] as const;
+
+/** The three statuses, derived rather than typed out. */
+const live = systems.filter(
+  (s) => s.data.status === 'IN_PRODUCTION_HOSPITAL' || s.data.status === 'LIVE',
+).length;
+const prelaunch = systems.filter((s) => s.data.status === 'PRE_LAUNCH').length;
+
+/** The flagship, for station 03's dissection. Falls back to the first entry. */
+const flagship = systems.find((s) => s.id === 'hospital-operations') ?? systems[0];
+
+/** The layer stack of the flagship. Real architecture, from its own case study. */
+const LAYERS = [
+  { y: 13.5, label: 'Client', lines: ['Web and mobile browsers', 'QR entry, no account needed'] },
+  { y: 24.5, label: 'Edge', lines: ['Caddy, TLS termination', 'Security boundary'] },
+  { y: 35.5, label: 'API', lines: ['Fastify routes', 'Auth, rate limit, routing'] },
+  { y: 46.5, label: 'Services', lines: ['Feature modules', 'One process, one database'] },
+  { y: 57.5, label: 'Data', lines: ['PostgreSQL', 'Tenant-scoped by policy'] },
+  { y: 68.5, label: 'Observability', lines: ['OpenTelemetry', 'Spans, logs, audit records'] },
+] as const;
+
+/** Reference 04's stage labels, carrying architecture rather than timings. */
+const STAGES = [
+  { x: 20, y: 30, label: 'Browser', lines: ['A request leaves'] },
+  { x: 35, y: 22, label: 'Edge', lines: ['TLS, WAF'] },
+  { x: 50, y: 30, label: 'Gateway', lines: ['Auth, rate limit'] },
+  { x: 64, y: 22, label: 'Service', lines: ['Business logic'] },
+  { x: 78, y: 30, label: 'Data', lines: ['Row-level security'] },
+] as const;
+
+const TRACE_HOPS: Hop[] = [
+  { name: 'Browser', detail: 'your device', tone: 'structure' },
+  { name: 'Edge', detail: 'Cloudflare', tone: 'structure' },
+  { name: 'Tunnel', detail: 'no inbound port', tone: 'isolation' },
+  { name: 'Caddy', detail: 'reverse proxy', tone: 'structure' },
+  { name: 'Fastify', detail: '/health', tone: 'signal' },
+  { name: 'Response', detail: 'back to you', tone: 'signal' },
 ];
+
+/** Station 06's readouts. Two measured, one counted, none invented. */
+const LIVE_STATS: Stat[] = [
+  { label: 'Round trip', value: null, unit: 'ms', live: 'rtt' },
+  { label: 'Control plane', value: null, live: 'state' },
+  { label: 'Demonstrations', value: '5' },
+];
+
+/** Station 10's map labels: the ten stations, named on one frame. */
+const MAP = [
+  { x: 36, y: 20, label: '02 · Systems', lines: ['Three platforms'] },
+  { x: 48, y: 29, label: '03 · Dissection', lines: ['Architecture layers'] },
+  { x: 33, y: 43, label: '04 · Data', lines: ['One request path'] },
+  { x: 55, y: 50, label: '06 · Live', lines: ['The control plane'] },
+  { x: 70, y: 56, label: '05 · Lab', lines: ['What did not work'] },
+  { x: 76, y: 44, label: '08 · Build', lines: ['The next system'] },
+  { x: 38, y: 60, label: '09 · Proof', lines: ['The archive'] },
+] as const;
 ---
 
-{/* ── 02 SYSTEMS ─────────────────────────────────────────────────── */}
-<Station id="systems" priority="lazy" depth={1.1} labelledby="st-systems">
-  <div class="station__grid">
-    <div>
-      <h2 class="station__claim" id="st-systems">
-        <span>Four systems.</span>
-        <span><em>Three of them</em></span>
-        <span>other people depend on.</span>
-      </h2>
-      <p class="station__lede">
-        One stack, operated end to end by one engineer. Each one below discloses the thing it does
-        worst, before you read anything else about it.
-      </p>
-      <div class="station__actions">
-        <a class="station-cta" href="/systems"
-          >Open the register <span aria-hidden="true">→</span></a
-        >
-      </div>
-    </div>
+{/* ══ 02 SYSTEMS ═══════════════════════════════════════════════════ */}
+<Stage id="systems" depth={1.1} plate={0.95} labelledby="st-systems">
+  <div class="col col--wide">
+    <p class="eyebrow">02 / Systems</p>
+    <h2 class="claim" id="st-systems">
+      <span>Explore the</span>
+      <span><em>systems</em> I build.</span>
+    </h2>
+    <p class="lede">
+      Production systems built to solve real problems. Each one below discloses the thing it does
+      worst, before you read anything else about it.
+    </p>
+    <a class="cta" href="/systems">Open the register <span aria-hidden="true">→</span></a>
 
-    <ul class="register">
+    <ol class="index">
       {
-        systems.map((s, i) => (
-          <li class="panel register__item">
-            <div class="panel__head">
-              <h3 class="panel__title">
-                <span class="register__index">{String(i + 1).padStart(2, '0')}</span>
-                {s.data.title}
-              </h3>
-              <span class="chip" data-tone={TONE[s.data.status]}>
-                <span class="chip__text">{STATUS_LABELS[s.data.status].label}</span>
-              </span>
-            </div>
-            <p class="register__line">{s.data.problem}</p>
-            <p class="register__limitation">
-              <span class="register__limitation-label">Discloses</span>
-              {s.data.limitations[0]?.limitation}
+        DISSECTION.map((row) => (
+          <li>
+            <span class="index__num">{row.index}</span>
+            <span>{row.label}</span>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+
+  {/* The three systems, over the plate, where the reference hangs its cards. */}
+  {
+    systems.slice(0, 3).map((system, i) => (
+      <Panel
+        x={[37, 68, 68][i] ?? 37}
+        y={[9, 9, 55][i] ?? 9}
+        w={22}
+        title={`0${i + 1}`}
+        note={STATUS_LABELS[system.data.status].label}
+        status={TONE[system.data.status]}
+      >
+        <p class={`sys__title sys__title--${TONE[system.data.status] ?? 'plain'}`}>
+          {system.data.title}
+        </p>
+        <p class="sys__line">{system.data.problem}</p>
+      </Panel>
+    ))
+  }
+
+  {
+    /*
+    The reference's centre label reads ENGINEERING CORE / "Shared foundations
+    powering all systems". That is a claim about shared infrastructure, and it is
+    not true: these three systems run separately, on separate machines, for
+    separate organisations. What they actually share is one operator and one set
+    of patterns, which is a more specific and more checkable statement, so it is
+    the one that ships.
+  */
+  }
+  <Panel x={40} y={42} w={20} title="What is shared" dense>
+    <p>
+      Not infrastructure. These three run separately, for separate organisations. What is shared is
+      one operator, and the same patterns applied each time: multi-tenant from the first migration,
+      a modular monolith, and the limitation written down.
+    </p>
+  </Panel>
+
+  {/* Real node names, from the systems' own declared stacks. */}
+  {
+    /*
+      Chips name nodes in the field, so they belong ON the field. The first
+      positions put three of them at x=28–31, inside the left text column, where
+      they read as stray labels floating over the headline rather than as names
+      attached to anything. Moved onto the plate and kept clear of the three
+      system panels and the estate readout.
+    */
+  }
+  <Chip x={45} y={30} label="Multi-tenant" />
+  <Chip x={38} y={52} label="PostgreSQL" />
+  <Chip x={47} y={70} label="Row-level security" />
+  <Chip x={62} y={82} label="Audit records" quiet />
+  <Chip x={90} y={38} label="Object storage" quiet />
+
+  <Panel x={72} y={78} w={25} title="Estate" note="as of Sep 2026">
+    <StatRow
+      items={[
+        { label: 'Platforms', value: String(counts.systems) },
+        { label: 'In production', value: String(live) },
+        { label: 'Pre-launch', value: String(prelaunch) },
+      ]}
+    />
+    <p class="note">
+      No service, region or tenant count is published. Those figures are not measured anywhere a
+      reader could check, so they are not printed anywhere a reader could believe them.
+    </p>
+  </Panel>
+
+  <div slot="mobile" class="m">
+    <p class="m__eyebrow">02 / Systems</p>
+    <h2 class="m__claim">Explore the systems I build.</h2>
+    <p class="m__lede">
+      Each one discloses the thing it does worst, before you read anything else about it.
+    </p>
+    <ul class="m__cards">
+      {
+        systems.slice(0, 3).map((system) => (
+          <li>
+            <p class="m__cardTitle">{system.data.title}</p>
+            <p class="m__cardStatus" data-tone={TONE[system.data.status]}>
+              {STATUS_LABELS[system.data.status].label}
             </p>
-            <a class="station-cta station-cta--quiet" href={`/systems/${s.id}`}>
-              Read the record
-            </a>
+            <p class="m__cardLine">{system.data.problem}</p>
           </li>
         ))
       }
     </ul>
+    <a class="cta cta--m" href="/systems">Open the register <span aria-hidden="true">→</span></a>
   </div>
-</Station>
+</Stage>
 
-{/* ── 03 DISSECTION ──────────────────────────────────────────────── */}
-<Station id="dissection" priority="lazy" depth={1} labelledby="st-dissection">
-  <div class="station__grid">
-    <div>
-      <h2 class="station__claim" id="st-dissection">
-        <span>How the system</span>
-        <span>actually <em>works.</em></span>
-      </h2>
-      <p class="station__lede">
-        Open the architecture. Follow the data. Understand the decisions. Every case study is
-        dissected the same way, in the same order.
-      </p>
-    </div>
-
-    <ol class="dissect">
-      {
-        DISSECTION.map((d) => (
-          <li class="dissect__row">
-            <span class="dissect__num">{d.index}</span>
-            <span class="dissect__label">{d.label}</span>
-          </li>
-        ))
-      }
-    </ol>
+{/* ══ 03 DISSECTION ════════════════════════════════════════════════ */}
+<Stage id="dissection" anchor="dissection" depth={1} plate={0.95} labelledby="st-dissect">
+  <div class="col">
+    <p class="eyebrow">System / {flagship?.data.title}</p>
+    <h2 class="claim" id="st-dissect">
+      <span>How the system</span>
+      <span>actually <em>works</em>.</span>
+    </h2>
+    <p class="lede">Open the architecture. Follow the data. Understand the decisions.</p>
   </div>
-</Station>
 
-{/* ── 04 DATA ────────────────────────────────────────────────────── */}
-<Station id="data" anchor="data" priority="lazy" depth={1.05} labelledby="st-data">
-  <div class="station__grid">
-    <div>
-      <h2 class="station__claim" id="st-data">
-        <span>Follow a</span>
-        <span><em>request</em></span>
-        <span>through the system.</span>
-      </h2>
-      <p class="station__lede">
-        One request crosses boundaries, services and data layers before a response reaches you. Each
-        of these is a fact you can check, with the date it was true.
-      </p>
-    </div>
+  {
+    LAYERS.map((layer) => (
+      <Callout
+        x={30}
+        y={layer.y}
+        side="left"
+        label={layer.label}
+        lines={[...layer.lines]}
+        lead={8}
+        w={13}
+      />
+    ))
+  }
 
-    <ul class="evidence">
-      {
-        chips.map((c) => (
-          <li class="panel evidence__item">
-            <p class="evidence__detail">{c.data.fact}</p>
-            {/* Rule 2: every figure carries the date it was true. */}
-            {c.data.qualifier && <p class="evidence__qualifier">{c.data.qualifier}</p>}
-          </li>
-        ))
-      }
-    </ul>
-  </div>
-</Station>
+  <Callout
+    x={97}
+    y={22}
+    side="right"
+    label="Tenant isolation"
+    lines={['Server-derived org scope', 'plus row-level security']}
+    lead={5}
+    tone="isolation"
+    w={15}
+  />
 
-{/* ── 05 LAB ─────────────────────────────────────────────────────── */}
-<Station id="lab" anchor="lab" priority="lazy" depth={1.1} labelledby="st-lab">
-  <div class="station__grid">
-    <div>
-      <h2 class="station__claim" id="st-lab">
-        <span>Not everything</span>
-        <span>ships. <em>Everything</em></span>
-        <span>teaches.</span>
-      </h2>
-      <p class="station__lede">
-        Two things written up in full, with what they cost. A portfolio that only lists wins is a
-        portfolio you cannot calibrate.
-      </p>
-      <div class="station__actions">
-        <a class="station-cta" href="/engineering"
-          >Read the lessons <span aria-hidden="true">→</span></a
-        >
-      </div>
-    </div>
-
-    <ul class="lessons">
-      {
-        lessons.map((l) => (
-          <li class="panel lessons__item">
-            <span class="chip" data-tone="fault">
-              <span class="chip__text">Lesson</span>
-            </span>
-            <h3 class="lessons__title">{l.data.title}</h3>
-          </li>
-        ))
-      }
-    </ul>
-  </div>
-</Station>
-
-{/* ── 06 LIVE ────────────────────────────────────────────────────── */}
-<Station id="live" priority="lazy" depth={1.2} labelledby="st-live">
-  <div class="station__grid">
-    <div>
-      <h2 class="station__claim" id="st-live">
-        <span>The control</span>
-        <span><em>room.</em></span>
-      </h2>
-      <p class="station__lede">
-        A real multi-tenant system you are invited to attack. Provisioned for you, stopped by real
-        defences, and destroyed on a TTL by a scheduled job.
-      </p>
-      <div class="station__actions">
-        <a class="station-cta" href="/live/"
-          >Enter the live plane <span aria-hidden="true">→</span></a
-        >
-      </div>
-    </div>
-
-    <div class="panel live-note">
-      <div class="panel__head">
-        <h3 class="panel__title">
-          <span class="panel__dot" data-tone="pending"></span>
-          Demo plane
-        </h3>
-        <span class="panel__tag" data-tone="pending">Demo</span>
-      </div>
-      {/* Rule 11: the demo says it is a demo, unprompted. */}
-      <p class="evidence__detail">
-        A physically separate database with no path to any production system. Every tenant it
-        creates is destroyed on a TTL. Nothing there is a simulation — every event is a committed
-        audit row.
-      </p>
-    </div>
-  </div>
-</Station>
-
-{/* ── 07 THINK ───────────────────────────────────────────────────── */}
-<Station id="think" priority="lazy" depth={0.9} grid={false} labelledby="st-think">
-  <div class="station__grid">
-    <div>
-      <h2 class="station__claim think__claim" id="st-think">
-        <span>Systems are only half the story.</span>
-        <span><em>The other half is judgment.</em></span>
-      </h2>
-      <p class="station__lede">
-        Knowing what to build, what not to build, what to measure, what to question, and when a
-        simpler system is the better system.
-      </p>
-    </div>
-
-    <ol class="pillars">
-      {
-        PILLARS.map((p, i) => (
-          <li class="pillars__item">
-            <span class="pillars__num">{i + 1}</span>
-            <div>
-              <h3 class="pillars__title">{p.title}</h3>
-              <p class="pillars__line">{p.line}</p>
-            </div>
-          </li>
-        ))
-      }
-    </ol>
-  </div>
-</Station>
-
-{/* ── 08 BUILD ───────────────────────────────────────────────────── */}
-<Station id="build" anchor="contact" priority="lazy" depth={1.15} labelledby="st-build">
-  <div class="station__grid">
-    <div>
-      <h2 class="station__claim" id="st-build">
-        <span>Have a difficult system?</span>
-        <span><em>Let's build something</em></span>
-        <span>worth operating.</span>
-      </h2>
-      <p class="station__lede">
-        Good engineering starts with the right problem. Bring the constraint.
-      </p>
-      <div class="station__actions">
-        <a class="station-cta" href={`mailto:${SITE.email}`}>
-          Start a conversation <span aria-hidden="true">→</span>
-        </a>
-        <a class="station-cta station-cta--quiet" href={SITE.linkedin}>LinkedIn</a>
-        <a class="station-cta station-cta--quiet" href={SITE.github}>GitHub</a>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel__head">
-        <h3 class="panel__title">
-          <span class="panel__dot" data-tone="signal"></span>
-          Availability
-        </h3>
-      </div>
-      <p class="evidence__detail">{SITE.availability}</p>
-      <p class="evidence__detail evidence__detail--spaced">{SITE.location}</p>
-    </div>
-  </div>
-</Station>
-
-{/* ── 09 PROOF ───────────────────────────────────────────────────── */}
-<Station id="proof" priority="lazy" depth={1} labelledby="st-proof">
-  <div class="station__grid">
-    <div>
-      <h2 class="station__claim" id="st-proof">
-        <span>Inspect.</span>
-        <span><em>Understand.</em></span>
-        <span>Prove.</span>
-      </h2>
-      <p class="station__lede">
-        Every decision leaves a trace. These are counts of things a person actually wrote and you
-        can read in full — not rounded up, and not estimated.
-      </p>
-      <div class="station__actions">
-        <a class="station-cta" href="/engineering"
-          >Open the archive <span aria-hidden="true">→</span></a
-        >
-      </div>
-    </div>
-
-    <dl class="metrics proof__metrics">
-      <div class="metric">
-        <dt>Systems</dt>
-        <dd class="metric__value">{counts.systems}</dd>
-      </div>
-      <div class="metric">
-        <dt>Decisions</dt>
-        <dd class="metric__value">{counts.decisions}</dd>
-      </div>
-      <div class="metric">
-        <dt>Evidence</dt>
-        <dd class="metric__value">{counts.evidence}</dd>
-      </div>
-      <div class="metric">
-        <dt>Integration tests</dt>
-        <dd class="metric__value">{counts.tests}</dd>
-      </div>
-      <div class="metric">
-        <dt>Lessons</dt>
-        <dd class="metric__value">{counts.lessons}</dd>
-      </div>
+  <Panel x={76} y={40} w={21} title="System" status="signal">
+    <dl class="facts">
+      <div><dt>Type</dt><dd>Multi-tenant platform</dd></div>
+      <div><dt>Status</dt><dd>In production</dd></div>
+      <div><dt>Deployment</dt><dd>Docker Compose, one VM</dd></div>
+      <div><dt>Isolation</dt><dd>Two layers, independent</dd></div>
     </dl>
-  </div>
-</Station>
+    <p class="note">
+      The reference names a region and a Kubernetes cluster here. This system runs on neither, and
+      its region is not published.
+    </p>
+  </Panel>
 
-{/* ── 10 END ─────────────────────────────────────────────────────── */}
-<Station id="end" priority="lazy" depth={0.8} grid={false} labelledby="st-end">
-  <div class="end">
-    <h2 class="station__claim" id="st-end">
+  <Panel x={4.8} y={62} w={22} title="Dissection" dense>
+    <ol class="index index--tight">
+      {
+        DISSECTION.map((row) => (
+          <li>
+            <span class="index__num">{row.index}</span>
+            <span>{row.label}</span>
+          </li>
+        ))
+      }
+    </ol>
+  </Panel>
+
+  <div slot="mobile" class="m">
+    <p class="m__eyebrow">03 / Dissection</p>
+    <h2 class="m__claim">How the system actually works.</h2>
+    <p class="m__lede">Open the architecture. Follow the data. Understand the decisions.</p>
+    <ol class="m__layers">
+      {
+        LAYERS.map((l) => (
+          <li>
+            <span>{l.label}</span>
+            <span>{l.lines[1]}</span>
+          </li>
+        ))
+      }
+    </ol>
+    <a class="cta cta--m" href={`/systems/${flagship?.id}`}>
+      Read the case study <span aria-hidden="true">→</span>
+    </a>
+  </div>
+</Stage>
+
+{/* ══ 04 DATA ══════════════════════════════════════════════════════ */}
+<Stage id="data" anchor="data" depth={1.05} plate={0.95} labelledby="st-data">
+  <div class="col">
+    <p class="eyebrow">04 / Request trace</p>
+    <h2 class="claim" id="st-data">
+      <span>Follow a <em>request</em></span>
+      <span>through the system.</span>
+    </h2>
+    <p class="lede">
+      From browser to data and back. One request crosses boundaries, services and data layers before
+      a response reaches the reader.
+    </p>
+  </div>
+
+  {
+    STAGES.map((s) => (
+      <Callout x={s.x} y={s.y} side="left" label={s.label} lines={[...s.lines]} lead={0} w={11} />
+    ))
+  }
+
+  <Panel x={38} y={72} w={57} title="Live request trace" note="measured in your browser">
+    <TraceRail hops={TRACE_HOPS} request="GET /health" />
+  </Panel>
+
+  <Panel x={4.8} y={58} w={24} title="Why no per-hop timings" dense>
+    <p>
+      The reference labels every hop with a millisecond figure. This site measures one number — the
+      round trip your own browser just made — and publishes that. Seven invented splits would look
+      more detailed and mean less.
+    </p>
+  </Panel>
+
+  <div slot="mobile" class="m">
+    <p class="m__eyebrow">04 / Request trace</p>
+    <h2 class="m__claim">Follow a request through the system.</h2>
+    <p class="m__lede">
+      One request crosses boundaries, services and data layers before a response reaches you.
+    </p>
+    <ol class="m__layers">
+      {
+        TRACE_HOPS.map((h) => (
+          <li>
+            <span>{h.name}</span>
+            <span>{h.detail}</span>
+          </li>
+        ))
+      }
+    </ol>
+    <p class="m__note">
+      Round trip measured here: <span data-live-value="rtt">—</span> ms.
+    </p>
+  </div>
+</Stage>
+
+{/* ══ 05 LAB ═══════════════════════════════════════════════════════ */}
+<Stage id="lab" anchor="lab" depth={1.1} plate={0.95} labelledby="st-lab">
+  <div class="col">
+    <p class="eyebrow">05 / Lab</p>
+    <h2 class="claim" id="st-lab">
+      <span>Not everything ships.</span>
+      <span><em>Everything</em> teaches.</span>
+    </h2>
+    <p class="lede">
+      Written up in full, with what each one cost. A portfolio that only lists wins is a portfolio
+      you cannot calibrate.
+    </p>
+    <a class="cta" href="/engineering#lessons">Read the lessons <span aria-hidden="true">→</span></a
+    >
+  </div>
+
+  {
+    lessons.slice(0, 2).map((lesson, i) => (
+      <Panel x={40} y={i === 0 ? 14 : 44} w={34} title={`Lesson 0${i + 1}`} status="fault">
+        <p class="sys__title sys__title--fault">{lesson.data.title}</p>
+        <p class="sys__line">{lesson.data.whatHappened}</p>
+      </Panel>
+    ))
+  }
+
+  <Panel x={78} y={70} w={18} title="What is measured here" dense>
+    <p>
+      {counts.lessons} lessons published, {counts.decisions} decisions recorded. The reference puts frame
+      rates and particle counts in this frame; none of them exist, so none of them ship.
+    </p>
+  </Panel>
+
+  <div slot="mobile" class="m">
+    <p class="m__eyebrow">05 / Lab</p>
+    <h2 class="m__claim">Not everything ships. Everything teaches.</h2>
+    <ul class="m__cards">
+      {
+        lessons.slice(0, 2).map((lesson) => (
+          <li>
+            <p class="m__cardTitle">{lesson.data.title}</p>
+            <p class="m__cardLine">{lesson.data.whatHappened}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <a class="cta cta--m" href="/engineering#lessons">
+      Read the lessons <span aria-hidden="true">→</span>
+    </a>
+  </div>
+</Stage>
+
+{/* ══ 06 LIVE ══════════════════════════════════════════════════════ */}
+<Stage id="live" depth={1} plate={0.95} labelledby="st-live">
+  <div class="col">
+    <p class="eyebrow">06 / Live</p>
+    <h2 class="claim" id="st-live">
+      <span>The control</span>
+      <span><em>room</em>.</span>
+    </h2>
+    <p class="lede">
+      Observe what is happening. Follow the signal. See the system respond. Nothing here is
+      simulated for appearance.
+    </p>
+    <a class="cta" href="/live/">Enter the live plane <span aria-hidden="true">→</span></a>
+  </div>
+
+  {
+    /*
+    THE GLOBE, RESOLVED IN THE OPEN.
+
+    Reference 06's earth is covered in city lights across every continent — a
+    picture of a global footprint that does not exist. The 3D scene refused to
+    render it for exactly that reason and shipped a bare graticule instead
+    (PHASE_LOG, 04–10, 22 Aug 2026). The static plate is a finished render and
+    cannot be un-lit without looking broken, so the two surfaces would otherwise
+    disagree about the same fact — which is the disagreement rule 10 exists to
+    prevent, arriving through a channel no gate watches.
+
+    The resolution is the same ruling applied to a different medium: the claim is
+    withdrawn in text, on the artwork, where the artwork makes it. One marker, on
+    the one real location, and a panel that says plainly what the lit continents
+    are. An honest caption on an illustration is not a workaround; it is what a
+    caption is for.
+  */
+  }
+  <Panel x={62} y={11} w={26} title="About this map" status="fault">
+    <p>
+      The lit continents in this artwork are illustration. This system runs in one region, on one
+      virtual machine. No global footprint, no multi-region deployment and no edge fleet is claimed
+      anywhere on this site.
+    </p>
+    <p class="note">
+      The only measured point on this map is your own round trip, below — and it is measured from
+      wherever you are, not from anywhere shown here.
+    </p>
+  </Panel>
+
+  <Panel x={62} y={44} w={26} title="Live metrics" note="derived, never asserted">
+    <StatRow items={LIVE_STATS} />
+    <p class="note">
+      The reference reads ALL SYSTEMS OPERATIONAL here. That banner is derived on this site, and
+      when the plane is down it is the first thing that says so.
+    </p>
+  </Panel>
+
+  <Panel x={33} y={62} w={26} title="What it hosts" note="five, CI-asserted">
+    <ol class="demos">
+      <li><span>Tenant isolation</span><span>the break-out attempt</span></li>
+      <li><span>Idempotent payments</span><span>a double-fired activation</span></li>
+      <li><span>Fraud evidence</span><span>a duplicate photograph</span></li>
+      <li><span>AI cost control</span><span>a query answered without a model</span></li>
+      <li><span>Rate limiting</span><span>two layers, both named</span></li>
+    </ol>
+  </Panel>
+
+  <Panel x={4.8} y={62} w={24} title="The demo plane" status="isolation">
+    <p>
+      A demonstration, labelled a demonstration. It provisions you a real tenant in a real
+      multi-tenant system, invites you to attack it, and shows you the layer that stopped you.
+    </p>
+    <p class="note">It is not a production system and never claims to be.</p>
+  </Panel>
+
+  <div slot="mobile" class="m">
+    <p class="m__eyebrow">06 / Live</p>
+    <h2 class="m__claim">The control room.</h2>
+    <p class="m__lede">Observe what is happening. Nothing here is simulated for appearance.</p>
+    <p class="m__note">
+      The lit continents in the artwork behind this are illustration. This system runs in one
+      region, on one virtual machine.
+    </p>
+    <p class="m__note">
+      Control plane: <span data-live-value="state">—</span>. Round trip
+      <span data-live-value="rtt">—</span> ms.
+    </p>
+    <a class="cta cta--m" href="/live/">Enter the live plane <span aria-hidden="true">→</span></a>
+  </div>
+</Stage>
+
+{/* ══ 07 THINK ═════════════════════════════════════════════════════ */}
+<Stage id="think" depth={1} plate={0.95} labelledby="st-think">
+  <div class="col col--wide">
+    <p class="eyebrow">07 / Think</p>
+    <h2 class="claim" id="st-think">
+      <span>Systems are only</span>
+      <span>half the story.</span>
+      <span>The other half is <em>judgment</em>.</span>
+    </h2>
+    <p class="lede">
+      Knowing what to build, what not to build, what to measure, what to question, and when a
+      simpler system is the better system.
+    </p>
+  </div>
+
+  {
+    /*
+    THE REFERENCE HAS A FACE HERE. THIS DOES NOT.
+
+    Reference 07 is composed around a photorealistic generated portrait. No owned
+    photograph of the subject exists in this repository, `/about` already carries
+    the OWNER-INPUT marker requesting one, and generating a face would be
+    publishing a fabricated image of a real person — which no honesty rule needs
+    to be quoted to rule out. The plate was rendered as a recently-vacated desk
+    for the same reason, and the frame says so rather than leaving a reader to
+    wonder whose desk it is.
+  */
+  }
+  <Panel x={62} y={16} w={26} title="No portrait" status="fault">
+    <p>
+      The reference for this frame is built around a photorealistic generated person, and the plate
+      was rendered with one in it. It is cropped out. No owned photograph of me exists in this
+      repository, and a generated face on a personal site reads as a photograph of its subject —
+      which would be a fabricated picture of a real person.
+    </p>
+    <p class="note">
+      What is left is a monitor, some architecture sketches and an empty desk. That is the honest
+      version of this reference.
+    </p>
+  </Panel>
+
+  <div class="pillars">
+    <p class="pillars__head">Five things I hold to</p>
+    <ol>
+      {
+        PILLARS.map((pillar, i) => (
+          <li>
+            <span class="pillars__num">{i + 1}</span>
+            <span class="pillars__title">{pillar.title}</span>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+
+  <div slot="mobile" class="m">
+    <p class="m__eyebrow">07 / Think</p>
+    <h2 class="m__claim">Systems are only half the story. The other half is judgment.</h2>
+    <p class="m__lede">
+      Knowing what to build, what not to build, what to measure, and when a simpler system is the
+      better system.
+    </p>
+    <ol class="m__pillars">
+      {
+        PILLARS.map((pillar, i) => (
+          <li>
+            <span>{i + 1}</span>
+            {pillar.title}
+          </li>
+        ))
+      }
+    </ol>
+    <p class="m__note">
+      There is no photograph of me on this site. No owned one exists, and a generated face would be
+      an invented picture of a real person.
+    </p>
+    <a class="cta cta--m" href="/about">Read the long version <span aria-hidden="true">→</span></a>
+  </div>
+</Stage>
+
+{/* ══ 08 BUILD ═════════════════════════════════════════════════════ */}
+<Stage id="build" anchor="contact" depth={1} plate={0.95} labelledby="st-build">
+  <div class="col col--wide">
+    <p class="eyebrow">08 / Build</p>
+    <h2 class="claim" id="st-build">
+      <span>Have a difficult system?</span>
+      <span><em>Let's build</em> something</span>
+      <span>worth operating.</span>
+    </h2>
+    <p class="lede">
+      Good engineering starts with the right problem. Bring the constraint. We'll find the system.
+    </p>
+    <a class="cta" href={`mailto:${SITE.email}`}>
+      Start a conversation <span aria-hidden="true">→</span>
+    </a>
+    <p class="available">
+      <span class="available__dot" aria-hidden="true"></span>
+      Available for engineering · systems · AI
+    </p>
+  </div>
+
+  {
+    /*
+    "STATE: UNDEFINED" is the one reading on this frame that needs no
+    reconciliation — it was already true, and it is a better line than anything
+    that could replace it.
+  */
+  }
+  <Panel x={66} y={20} w={22} title="The next system" status="pending">
+    <p class="state">State: undefined</p>
+    <p class="note">Awaiting the right problem.</p>
+  </Panel>
+
+  {
+    [
+      { y: 14, label: 'Systems', lines: ['Multi-tenant platforms'] },
+      { y: 24, label: 'Architecture', lines: ['Modular monoliths'] },
+      { y: 34, label: 'Request trace', lines: ['Observability first'] },
+      { y: 44, label: 'Experiments', lines: ['Written up, with cost'] },
+      { y: 54, label: 'Control plane', lines: ['Operated, not just shipped'] },
+      { y: 64, label: 'Observability', lines: ['Spans, logs, audit'] },
+    ].map((row) => (
+      <Callout x={36} y={row.y} side="left" label={row.label} lines={row.lines} lead={6} w={13} />
+    ))
+  }
+
+  <div slot="mobile" class="m">
+    <p class="m__eyebrow">08 / Build</p>
+    <h2 class="m__claim">Have a difficult system? Let's build something worth operating.</h2>
+    <p class="m__lede">
+      Good engineering starts with the right problem. Bring the constraint. We'll find the system.
+    </p>
+    <p class="m__note">The next system — state: undefined. Awaiting the right problem.</p>
+    <a class="cta cta--m" href={`mailto:${SITE.email}`}>
+      Start a conversation <span aria-hidden="true">→</span>
+    </a>
+  </div>
+</Stage>
+
+{/* ══ 09 PROOF ═════════════════════════════════════════════════════ */}
+<Stage id="proof" depth={1} plate={0.95} labelledby="st-proof">
+  <div class="col">
+    <p class="eyebrow">09 / Proof</p>
+    <h2 class="claim" id="st-proof">
+      <span>Inspect.</span>
+      <span>Understand.</span>
+      <span><em>Prove</em>.</span>
+    </h2>
+    <p class="lede">
+      Every decision leaves a trace. It is collected, connected, and published with the document it
+      came from.
+    </p>
+    <a class="cta" href="/engineering">Explore the evidence <span aria-hidden="true">→</span></a>
+  </div>
+
+  {
+    /*
+    The reference's top bar reads CASES ARCHIVED 7,842 · ARTIFACTS 128K ·
+    DECISIONS 14.6K · TESTS RUN 22.1K · LINKS ANALYZED 3.6M. The decomposition
+    ruled every one fabricated and gave the real counts, with an instruction
+    this panel follows literally: "The reference's scale must not be matched;
+    the reference's composition must. Design the panels for two-digit counts."
+  */
+  }
+  <Panel x={33} y={7} w={63} title="The archive" note="counted at build time">
+    <StatRow items={ARCHIVE.map((a) => ({ label: a.label, value: String(a.value) }))} />
+    <p class="note">
+      Two-digit numbers, and that is the correct outcome. The drawer labelled DECISIONS opens onto
+      {' '}{counts.decisions} decisions a person actually wrote, each one readable in full with the document
+      it came from.
+    </p>
+  </Panel>
+
+  <Panel x={66} y={38} w={30} title="Evidence" note="every chip is dated">
+    <ul class="chips">
+      {
+        chips.slice(0, 4).map((chip) => (
+          <li>
+            <span class="chips__fact">{chip.data.fact}</span>
+            <span class="chips__qual">{chip.data.qualifier}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </Panel>
+
+  <Panel x={66} y={64} w={30} title="Decision insight" note="one of many">
+    <p class="sys__title">Every decision carries its trade-off</p>
+    <p class="sys__line">
+      A record here is not a summary of what was chosen. It states the decision, why the
+      alternatives were rejected, and what the choice costs — the last of which is the part most
+      architecture records leave out.
+    </p>
+    <p class="note">
+      {counts.decisions} of them, each naming the source document and section it came from.
+    </p>
+  </Panel>
+
+  <Panel x={4.8} y={68} w={26} title="What is not here" status="fault" dense>
+    <p>
+      No confidence score, no evidence-quality percentage, no flow health. The reference prints
+      three of them. No such metric exists, so there is nothing to print.
+    </p>
+  </Panel>
+
+  <div slot="mobile" class="m">
+    <p class="m__eyebrow">09 / Proof</p>
+    <h2 class="m__claim">Inspect. Understand. Prove.</h2>
+    <p class="m__lede">Every decision leaves a trace, published with the document it came from.</p>
+    <dl class="m__stats">
+      {
+        ARCHIVE.map((a) => (
+          <div>
+            <>
+              <dt>{a.label}</dt>
+              <dd>{a.value}</dd>
+            </>
+          </div>
+        ))
+      }
+    </dl>
+    <a class="cta cta--m" href="/engineering">
+      Explore the evidence <span aria-hidden="true">→</span>
+    </a>
+  </div>
+</Stage>
+
+{/* ══ 10 END ═══════════════════════════════════════════════════════ */}
+<Stage id="end" depth={0.9} plate={0.95} grid={false} labelledby="st-end">
+  <div class="col col--wide">
+    <p class="eyebrow">10 / End</p>
+    <h2 class="claim" id="st-end">
       <span>What's next?</span>
       <span><em>Let's find out.</em></span>
     </h2>
-    <p class="station__lede">
+    <p class="lede">
       Good systems solve today's problem. Great engineering keeps asking what comes after.
     </p>
+    <a class="cta" href="/cv">Read the CV <span aria-hidden="true">→</span></a>
 
-    <div class="end__state">
-      <span>
-        <em>System</em>
-        [ STANDBY ]
-      </span>
-      <span>
-        <em>Next problem</em>
-        {/* Rule 4 as a design element: unknown is stated, never estimated. */}
-        <strong>[ UNKNOWN ]</strong>
-      </span>
-    </div>
-
-    <div class="station__actions">
-      <a class="station-cta" href="/cv">Read the CV <span aria-hidden="true">→</span></a>
-      <a class="station-cta station-cta--quiet" href="/cv.pdf" download>Download PDF</a>
-    </div>
-
-    <p class="end__closing">Show the system. Show the decision. Show the evidence.</p>
+    <dl class="endstate">
+      <div>
+        <dt>System</dt>
+        <dd data-live-value="state">not yet measured</dd>
+      </div>
+      <div>
+        <dt>Next problem</dt>
+        <dd class="endstate__unknown">unknown</dd>
+      </div>
+    </dl>
   </div>
-</Station>
+
+  {
+    MAP.map((m) => (
+      <Callout x={m.x} y={m.y} side="left" label={m.label} lines={[...m.lines]} lead={0} w={12} />
+    ))
+  }
+
+  <div slot="mobile" class="m">
+    <p class="m__eyebrow">10 / End</p>
+    <h2 class="m__claim">What's next? Let's find out.</h2>
+    <p class="m__lede">
+      Good systems solve today's problem. Great engineering keeps asking what comes after.
+    </p>
+    <p class="m__note">
+      Next problem: unknown. That is the state, not a gap waiting to be filled in.
+    </p>
+    <a class="cta cta--m" href="/cv">Read the CV <span aria-hidden="true">→</span></a>
+  </div>
+</Stage>
 
 <style>
-  /* 02 — the estate register */
-  .register {
-    display: grid;
-    gap: 0.75rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  /* ── Shared stage typography ───────────────────────────────────── */
+  .col {
+    position: absolute;
+    left: 4.8%;
+    top: 13%;
+    width: 26%;
   }
 
-  .register__index {
+  .col--wide {
+    width: 31%;
+  }
+
+  .eyebrow {
+    margin: 0 0 calc(22 * var(--u));
+    font-family: var(--font-mono);
+    font-size: calc(17 * var(--u));
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
     color: var(--text-faint);
-    font-variant-numeric: tabular-nums;
   }
 
-  .register__line {
-    margin: 0 0 0.6rem;
-    font-size: 0.8125rem;
-    line-height: 1.55;
-    color: var(--text-muted);
+  .claim {
+    margin: 0;
+    font-size: calc(70 * var(--u));
+    font-weight: 500;
+    line-height: 1.02;
+    letter-spacing: -0.026em;
+    color: var(--text);
+    text-shadow: 0 calc(2 * var(--u)) calc(16 * var(--u)) rgb(0 0 0 / 0.85);
+  }
+
+  .claim span {
+    display: block;
   }
 
   /*
-   * The disclosed limitation. Ruled off in fault red, because it is the one
-   * thing a portfolio normally hides and making it quieter than the rest would
-   * be hiding it politely.
+   * The references run a cyan-to-orange gradient through their emphasis word.
+   * Cyan is locked to mean a tenancy boundary and nothing else (§12.1), so a
+   * decorative gradient through it would be the loosening CLAUDE.md forbids.
+   * Emphasis is flat signal green — one register entry, used for the one thing
+   * it means.
    */
-  .register__limitation {
-    margin: 0 0 0.6rem;
-    padding-top: 0.55rem;
-    border-top: 1px solid color-mix(in srgb, var(--fault) 26%, transparent);
-    font-size: 0.6875rem;
-    line-height: 1.55;
-    color: var(--text-faint);
+  .claim em {
+    font-style: normal;
+    color: var(--signal);
   }
 
-  .register__limitation-label {
-    display: block;
-    margin-bottom: 0.2rem;
+  .lede {
+    margin: calc(26 * var(--u)) 0 0;
+    font-size: calc(19 * var(--u));
+    line-height: 1.6;
+    color: var(--text-muted);
+    text-shadow: 0 calc(1 * var(--u)) calc(10 * var(--u)) rgb(0 0 0 / 0.9);
+  }
+
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(12 * var(--u));
+    margin-top: calc(30 * var(--u));
+    padding: calc(15 * var(--u)) calc(24 * var(--u));
+    border: 1px solid var(--text-muted);
+    border-radius: calc(3 * var(--u));
+    background: var(--plate-scrim);
     font-family: var(--font-mono);
-    font-size: 0.5625rem;
-    letter-spacing: 0.14em;
+    font-size: calc(15 * var(--u));
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--fault);
+    text-decoration: none;
+    color: var(--text);
   }
 
-  /* 03 — the dissection index */
-  .dissect {
-    display: grid;
-    gap: 0.15rem;
-    margin: 0;
+  .cta:hover {
+    border-color: var(--signal);
+    color: var(--signal);
+  }
+
+  .index {
+    /* Ruled to the type's measure, not the column's. */
+    max-width: calc(430 * var(--u));
+    margin: calc(36 * var(--u)) 0 0;
     padding: 0;
     list-style: none;
-    max-width: 26rem;
   }
 
-  .dissect__row {
-    display: grid;
-    grid-template-columns: 2.2rem 1fr;
-    align-items: baseline;
-    gap: 0.75rem;
-    padding: 0.6rem 0.75rem;
-    border-left: 2px solid var(--border-strong);
-    background: color-mix(in srgb, var(--bg) 62%, transparent);
+  .index li {
+    display: flex;
+    gap: calc(16 * var(--u));
+    padding: calc(10 * var(--u)) 0;
+    border-bottom: 1px solid var(--plate-edge);
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: calc(15 * var(--u));
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--text-muted);
   }
 
-  .dissect__num {
-    color: var(--record);
+  .index--tight li {
+    padding: calc(7 * var(--u)) 0;
+  }
+
+  .index__num {
+    color: var(--text-faint);
     font-variant-numeric: tabular-nums;
   }
 
-  /* 04 — evidence */
-  .evidence {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-    gap: 0.75rem;
+  .sys__title {
+    margin: 0 0 calc(10 * var(--u));
+    font-size: calc(22 * var(--u));
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--text);
+  }
+
+  .sys__title--signal {
+    color: var(--signal);
+  }
+  .sys__title--pending {
+    color: var(--pending);
+  }
+  .sys__title--fault,
+  .sys__title--plain {
+    color: var(--text);
+  }
+
+  .sys__line {
+    margin: 0;
+    font-size: calc(15 * var(--u));
+    line-height: 1.55;
+    color: var(--text-muted);
+  }
+
+  .note {
+    margin: calc(16 * var(--u)) 0 0;
+    font-size: calc(13 * var(--u));
+    line-height: 1.55;
+    color: var(--text-faint);
+  }
+
+  .facts div {
+    display: flex;
+    justify-content: space-between;
+    gap: calc(12 * var(--u));
+    padding: calc(8 * var(--u)) 0;
+    border-bottom: 1px solid var(--plate-edge);
+  }
+
+  .facts dt {
+    font-family: var(--font-mono);
+    font-size: calc(13 * var(--u));
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .facts dd {
+    margin: 0;
+    font-size: calc(14 * var(--u));
+    color: var(--text);
+    text-align: right;
+  }
+
+  .demos {
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  .evidence__detail {
+  .demos li {
+    display: flex;
+    justify-content: space-between;
+    gap: calc(14 * var(--u));
+    padding: calc(8 * var(--u)) 0;
+    border-bottom: 1px solid var(--plate-edge);
+    font-size: calc(14 * var(--u));
+    color: var(--text);
+  }
+
+  .demos li span:last-child {
+    color: var(--text-faint);
+    text-align: right;
+  }
+
+  .chips {
     margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .chips li {
+    padding: calc(9 * var(--u)) 0;
+    border-bottom: 1px solid var(--plate-edge);
+  }
+
+  .chips__fact {
+    display: block;
+    font-size: calc(15 * var(--u));
+    line-height: 1.45;
+    color: var(--text);
+  }
+
+  .chips__qual {
+    display: block;
+    margin-top: calc(4 * var(--u));
+    font-family: var(--font-mono);
+    font-size: calc(12 * var(--u));
+    letter-spacing: 0.08em;
+    color: var(--record);
+  }
+
+  /* ── 07's pillar row ───────────────────────────────────────────── */
+  .pillars {
+    position: absolute;
+    left: 4.8%;
+    top: 68%;
+    width: 90%;
+  }
+
+  .pillars__head {
+    margin: 0 0 calc(18 * var(--u));
+    font-family: var(--font-mono);
+    font-size: calc(14 * var(--u));
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .pillars ol {
+    display: flex;
+    gap: calc(28 * var(--u));
+    margin: 0;
+    padding: calc(16 * var(--u)) 0 0;
+    border-top: 1px solid var(--plate-edge);
+    list-style: none;
+  }
+
+  .pillars li {
+    flex: 1 1 0;
+    display: flex;
+    gap: calc(12 * var(--u));
+  }
+
+  .pillars__num {
+    font-size: calc(34 * var(--u));
+    font-weight: 300;
+    line-height: 0.9;
+    color: var(--text-faint);
+  }
+
+  .pillars__title {
+    font-family: var(--font-mono);
+    font-size: calc(14 * var(--u));
+    line-height: 1.4;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  /* ── 08's availability line ────────────────────────────────────── */
+  .available {
+    display: flex;
+    align-items: center;
+    gap: calc(11 * var(--u));
+    margin: calc(28 * var(--u)) 0 0;
+    font-family: var(--font-mono);
+    font-size: calc(15 * var(--u));
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--signal);
+  }
+
+  .available__dot {
+    width: calc(8 * var(--u));
+    height: calc(8 * var(--u));
+    border-radius: 50%;
+    background: var(--signal);
+  }
+
+  .state {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: calc(19 * var(--u));
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--pending);
+  }
+
+  /* ── 10's closing state ────────────────────────────────────────── */
+  .endstate {
+    display: flex;
+    gap: calc(40 * var(--u));
+    margin: calc(40 * var(--u)) 0 0;
+    padding-top: calc(18 * var(--u));
+    border-top: 1px solid var(--plate-edge);
+  }
+
+  .endstate dt {
+    font-family: var(--font-mono);
+    font-size: calc(13 * var(--u));
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .endstate dd {
+    margin: calc(8 * var(--u)) 0 0;
+    font-family: var(--font-mono);
+    font-size: calc(19 * var(--u));
+    letter-spacing: 0.06em;
+    color: var(--text);
+  }
+
+  /*
+   * "Unknown" is a reading, not a gap. It takes the pending colour because that
+   * is what it is: a state that is genuinely not yet determined, which is the
+   * truest line on the page and should not be styled like an omission.
+   */
+  .endstate__unknown {
+    color: var(--pending);
+  }
+
+  /* ── The mobile compositions ───────────────────────────────────── */
+  .m__eyebrow {
+    margin: 0 0 0.9rem;
+    font-family: var(--font-mono);
     font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .m__claim {
+    margin: 0;
+    font-size: clamp(1.8rem, 7.5vw, 2.5rem);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.022em;
+    color: var(--text);
+  }
+
+  .m__lede {
+    margin: 1.1rem 0 0;
+    font-size: 0.98rem;
     line-height: 1.6;
     color: var(--text-muted);
   }
 
-  .evidence__detail--spaced {
-    margin-top: 0.6rem;
-  }
-
-  .evidence__qualifier {
-    margin: 0.5rem 0 0;
-    font-family: var(--font-mono);
-    font-size: 0.5938rem;
-    letter-spacing: 0.06em;
+  .m__note {
+    margin: 1rem 0 0;
+    font-size: 0.83rem;
+    line-height: 1.55;
     color: var(--text-faint);
   }
 
-  /* 05 — lessons */
-  .lessons {
-    display: grid;
-    gap: 0.75rem;
-    margin: 0;
+  .m__cards {
+    margin: 1.5rem 0 0;
     padding: 0;
     list-style: none;
+    display: grid;
+    gap: 0.75rem;
   }
 
-  .lessons__title {
-    margin: 0.5rem 0 0;
-    font-size: 0.9375rem;
-    font-weight: var(--weight-medium);
-    line-height: 1.4;
+  .m__cards li {
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--plate-edge);
+    border-radius: 6px;
+    background: var(--plate-scrim);
+  }
+
+  .m__cardTitle {
+    margin: 0;
+    font-size: 1.02rem;
+    font-weight: 500;
     color: var(--text);
   }
 
-  .live-note {
-    max-width: 28rem;
-  }
-
-  /* 07 — pillars */
-  .think__claim {
-    font-size: var(--text-mega);
-  }
-
-  .pillars {
-    display: grid;
-    gap: 0.9rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .pillars__item {
-    display: grid;
-    grid-template-columns: 1.6rem 1fr;
-    gap: 0.75rem;
-    align-items: baseline;
-  }
-
-  .pillars__num {
+  .m__cardStatus {
+    margin: 0.3rem 0 0;
     font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
-    font-size: 0.75rem;
-    color: var(--record);
-  }
-
-  .pillars__title {
-    margin: 0 0 0.15rem;
-    font-size: 0.875rem;
-    font-weight: var(--weight-medium);
-    color: var(--text);
-  }
-
-  .pillars__line {
-    margin: 0;
-    font-size: 0.75rem;
-    line-height: 1.5;
-    color: var(--text-muted);
-  }
-
-  .proof__metrics {
-    align-self: start;
-  }
-
-  /* 10 — the ending. The quietest station: one column, centred, no rail. */
-  .end {
-    max-width: 44rem;
-  }
-
-  .end__state {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-8);
-    margin: 0 0 var(--space-6);
-    font-family: var(--font-mono);
-    font-size: 0.8125rem;
-    color: var(--text-muted);
-  }
-
-  .end__state em {
-    display: block;
-    font-style: normal;
-    font-size: 0.5625rem;
-    letter-spacing: 0.16em;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--text-faint);
-    margin-bottom: 0.3rem;
   }
 
-  .end__state strong {
-    font-weight: 400;
-    color: var(--record);
+  .m__cardStatus[data-tone='signal'] {
+    color: var(--signal);
+  }
+  .m__cardStatus[data-tone='pending'] {
+    color: var(--pending);
   }
 
-  .end__closing {
-    margin: var(--space-8) 0 0;
-    padding-top: var(--space-4);
-    border-top: 1px solid var(--border);
+  .m__cardLine {
+    margin: 0.55rem 0 0;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: var(--text-muted);
+  }
+
+  .m__layers,
+  .m__pillars {
+    margin: 1.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .m__layers li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--plate-edge);
     font-family: var(--font-mono);
     font-size: 0.75rem;
     letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .m__layers li span:last-child {
     color: var(--text-faint);
+    text-align: right;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .m__pillars li {
+    display: flex;
+    gap: 0.7rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--plate-edge);
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+
+  .m__pillars li span {
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .m__stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.9rem 1.2rem;
+    margin: 1.5rem 0 0;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--plate-edge);
+    border-radius: 6px;
+    background: var(--plate-scrim);
+  }
+
+  .m__stats dt {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .m__stats dd {
+    margin: 0.25rem 0 0;
+    font-size: 1.3rem;
+    font-weight: 500;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The mobile compositions have no `--u`; the CTA needs real lengths. */
+  .cta--m {
+    margin-top: 1.6rem;
+    padding: 0.75rem 1.1rem;
+    border-radius: 3px;
+    font-size: 0.76rem;
+    gap: 0.6rem;
   }
 </style>

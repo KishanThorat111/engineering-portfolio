@@ -230,7 +230,21 @@ export default defineConfig({
     outDir: resolve(repoRoot, 'dist/live'),
     emptyOutDir: true,
     target: 'es2022',
-    sourcemap: true,
+    /*
+     * 'hidden', not true.
+     *
+     * `sourcemap: true` appends a `//# sourceMappingURL=` comment to every
+     * bundle, so the maps were requested and served in production: 5.4MB of
+     * them, and `/live/assets/index-*.js.map` returned 200 to anyone who asked.
+     * This repository is public, so nothing secret leaked — but 5.4MB of deploy
+     * weight was being carried for a debugging aid no visitor uses, and the
+     * decision had never been recorded either way.
+     *
+     * 'hidden' still EMITS the maps, so they remain in `dist/live/assets/` for
+     * local debugging and for an error reporter that is given them out of band.
+     * It only removes the comment that tells every browser to go and fetch one.
+     */
+    sourcemap: 'hidden',
     rollupOptions: {
       output: {
         /*

@@ -1,0 +1,159 @@
+---
+/**
+ * A PANEL — the instrument box, and the only place text gets a background.
+ *
+ * The references hang six or seven of these over every frame: a rounded dark
+ * rectangle, a hairline edge, a small uppercase title, sometimes a state dot,
+ * and a body of readings.
+ *
+ * THIS IS WHERE LEGIBILITY IS BOUGHT
+ * Plates now run at full strength, so a paragraph laid straight onto one would
+ * be a contrast lottery decided by whatever the artwork happens to be doing at
+ * that point. Rather than dim the whole plate — which is what made the previous
+ * design read as wallpaper — every block of sustained reading sits on its own
+ * scrim. The plate stays bright everywhere the eye is not reading.
+ *
+ * The scrim is `--plate-scrim`, a real token with a real alpha over the graphite
+ * ground, and the contrast gate asserts the site's text colours against the
+ * colour it actually composites to. A backdrop-filter blur sits behind it for
+ * depth, and the panel is legible without that filter because Firefox did not
+ * always have it and a legibility floor may not depend on a progressive
+ * enhancement.
+ *
+ * A STATE DOT IS A READING, NOT AN ORNAMENT
+ * `status` paints the dot from the semantic register and nothing else does. Per
+ * the R-series glow rule: nothing emits light unless it is carrying a real
+ * measurement, and an unlit panel means idle rather than unstyled. A panel with
+ * no state passes no `status` and gets no dot.
+ */
+interface Props {
+  /** Position of the panel's top-left corner, in percent of the stage. */
+  x: number;
+  y: number;
+  /** Width in percent of the stage. Height is content-driven. */
+  w: number;
+  /** Small uppercase heading. Omit for an unheaded block. */
+  title?: string;
+  /** Optional right-hand note in the header row. */
+  note?: string;
+  /** Register entry for the state dot. Omit for no dot. */
+  status?: 'signal' | 'isolation' | 'record' | 'pending' | 'fault';
+  /** Tightens padding for dense readouts. */
+  dense?: boolean;
+  class?: string;
+}
+
+const { x, y, w, title, note, status, dense = false, class: className } = Astro.props;
+---
+
+<div
+  class:list={['pnl', dense && 'pnl--dense', className]}
+  style={`--x:${x}%; --y:${y}%; --w:${w}%`}
+>
+  {
+    (title || note) && (
+      <div class="pnl__head">
+        {title && (
+          <p class="pnl__title">
+            {title}
+            {status && <span class={`pnl__dot pnl__dot--${status}`} aria-hidden="true" />}
+          </p>
+        )}
+        {note && <p class="pnl__note">{note}</p>}
+      </div>
+    )
+  }
+  <div class="pnl__body">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .pnl {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: var(--w);
+    padding: calc(20 * var(--u)) calc(22 * var(--u)) calc(22 * var(--u));
+    border: 1px solid var(--plate-edge);
+    border-radius: calc(10 * var(--u));
+    background: var(--plate-scrim);
+    backdrop-filter: blur(calc(14 * var(--u)));
+  }
+
+  .pnl--dense {
+    padding: calc(14 * var(--u)) calc(16 * var(--u)) calc(15 * var(--u));
+  }
+
+  .pnl__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: calc(12 * var(--u));
+    margin-bottom: calc(14 * var(--u));
+  }
+
+  .pnl__title {
+    display: flex;
+    align-items: center;
+    gap: calc(9 * var(--u));
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: calc(16 * var(--u));
+    font-weight: 600;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .pnl__note {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: calc(14 * var(--u));
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .pnl__dot {
+    width: calc(7 * var(--u));
+    height: calc(7 * var(--u));
+    border-radius: 50%;
+  }
+
+  .pnl__dot--signal {
+    background: var(--signal);
+    box-shadow: 0 0 calc(9 * var(--u)) var(--signal);
+  }
+  .pnl__dot--isolation {
+    background: var(--isolation);
+    box-shadow: 0 0 calc(9 * var(--u)) var(--isolation);
+  }
+  .pnl__dot--record {
+    background: var(--record);
+    box-shadow: 0 0 calc(9 * var(--u)) var(--record);
+  }
+  .pnl__dot--pending {
+    background: var(--pending);
+    box-shadow: 0 0 calc(9 * var(--u)) var(--pending);
+  }
+  .pnl__dot--fault {
+    background: var(--fault);
+    box-shadow: 0 0 calc(9 * var(--u)) var(--fault);
+  }
+
+  .pnl__body {
+    font-family: var(--font-sans);
+    font-size: calc(15 * var(--u));
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  .pnl__body :global(p) {
+    margin: 0 0 calc(8 * var(--u));
+  }
+
+  .pnl__body :global(p:last-child) {
+    margin-bottom: 0;
+  }
+</style>

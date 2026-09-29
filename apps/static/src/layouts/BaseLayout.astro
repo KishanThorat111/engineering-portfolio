@@ -188,7 +188,14 @@ const ogImage = new URL(`/og/${ogSlugFor(Astro.url.pathname)}.png`, origin).href
        * fully laid out before this runs.
        */
       import { initVisualWorld } from '../scripts/visual-world';
+      import { initLiveness } from '../scripts/liveness';
       initVisualWorld();
+      /*
+       * ONE measurement for the whole page. Every station instrument reads its
+       * result rather than asking again — four readouts of one fact must not be
+       * able to disagree with each other.
+       */
+      initLiveness();
     </script>
   </body>
 </html>

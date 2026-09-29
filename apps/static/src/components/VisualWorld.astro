@@ -251,22 +251,41 @@ const nextHasPlate = next ? plateExists(next.id) : false;
    * cinematic 3:2 plate cropped to a phone's centre loses the object the frame
    * is about; biasing the position keeps it in view.
    */
-  @media (max-width: 900px) {
+  @media (max-width: 1024px) {
     .vw__plate {
       object-position: 62% 38%;
-      opacity: 0.42;
+      /*
+       * 0.62, up from 0.42.
+       *
+       * The narrow composition is where the world was least visible, which is
+       * backwards: it is the width most visitors arrive at, and the plate was
+       * faded to the point where the station read as a dark page with some text
+       * on it. Legibility is bought back below rather than by hiding the
+       * artwork.
+       */
+      opacity: 0.62;
     }
 
     .vw__grid {
       background-size: 64px 64px;
     }
 
+    /*
+     * A stronger vertical scrim to carry that extra brightness. The stacked
+     * composition puts headings and body copy straight onto the plate — unlike
+     * the stage, where every block of sustained reading has its own panel — so
+     * the whole column needs a floor under it. Darkest at the top and bottom
+     * where the type sits, most transparent through the middle band where the
+     * plate's subject is.
+     */
     .vw__scrim {
       background: linear-gradient(
         to bottom,
         var(--bg) 0%,
-        color-mix(in srgb, var(--bg) 55%, transparent) 30%,
-        var(--bg) 92%
+        color-mix(in srgb, var(--bg) 82%, transparent) 18%,
+        color-mix(in srgb, var(--bg) 62%, transparent) 46%,
+        color-mix(in srgb, var(--bg) 86%, transparent) 78%,
+        var(--bg) 100%
       );
     }
   }

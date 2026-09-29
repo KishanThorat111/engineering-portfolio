@@ -36,6 +36,32 @@
   --instrument-bg: color-mix(in srgb, var(--bg-raised) 62%, transparent);
   --instrument-blur: 14px;
 
+  /*
+   * PLATE SCRIM — the only surface text is allowed to sit on over artwork.
+   *
+   * The plates now run at full strength, which is what makes the world read as
+   * a place rather than as wallpaper. The cost is that a paragraph laid
+   * straight onto one would have its contrast decided by whatever the artwork
+   * happens to be doing under that paragraph, which is not a contrast strategy.
+   *
+   * So legibility is bought LOCALLY: every block of sustained reading carries
+   * its own scrim, and the plate stays bright everywhere the eye is not
+   * reading. 92% of the graphite ground is dark enough that the contrast gate
+   * can assert text against a known colour, and translucent enough that the
+   * plate is still visibly present behind the instrument.
+   *
+   * It is deliberately NOT `color-mix(... transparent)` against an unknown
+   * backdrop: the gate composites this against `--bg` and asserts the result,
+   * so the floor it proves is the floor a reader gets on the darkest plate. On
+   * a bright region of a plate the real contrast is only ever better than the
+   * asserted figure, never worse.
+   */
+  --plate-scrim: rgb(10 14 21 / 0.92);
+  /** The composited colour the contrast gate asserts text against. */
+  --plate-scrim-solid: #0b0f16;
+  /** Hairline edges on plate instruments. */
+  --plate-edge: color-mix(in srgb, var(--structure) 26%, transparent);
+
   /* Station rhythm. */
   --station-pad-x: clamp(1.25rem, 5vw, 5rem);
   --station-pad-y: clamp(4rem, 12vh, 9rem);

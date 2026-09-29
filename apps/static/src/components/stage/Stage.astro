@@ -1,0 +1,221 @@
+---
+/**
+ * THE STAGE — one fixed-ratio frame per station, and the reason the overlay
+ * never drifts off the plate.
+ *
+ * WHAT PROBLEM THIS SOLVES
+ * The previous treatment cropped each plate to `cover` behind a fluid column of
+ * HTML. At 1440 the "API Gateway" label sat beside the tower; at 1100 the tower
+ * had been cropped from the left and the label pointed at empty sky. A callout
+ * that names a thing in a picture has to keep naming it at every width, and
+ * there is exactly one way to guarantee that: the picture and the words must be
+ * the same object, scaled together.
+ *
+ * So a station is a box locked to the plate's own 3:2 ratio, and everything
+ * inside it is positioned in PERCENTAGES of that box and sized in units derived
+ * from that box's width. Shrink the stage and the tower, the label, the leader
+ * line and the type all shrink by the same factor, in lockstep, forever.
+ *
+ * `--u` IS ONE REFERENCE PIXEL
+ * The design references are 2528×1685. `--u` is one of those pixels expressed in
+ * container-query units, so a measurement taken off the reference goes straight
+ * into the CSS:
+ *
+ *     a 48px heading in the reference   →   font-size: calc(48 * var(--u))
+ *     a label 31% across the frame      →   left: 31%
+ *
+ * That turns "match the reference" from an eyeballing exercise into arithmetic.
+ * `--u` is set on the layer rather than on `.stage` itself because an element
+ * cannot query its own container.
+ *
+ * WHY NOT `transform: scale()` ON A FIXED-PIXEL LAYOUT
+ * It would scale the type too, which sounds like the same thing and is not:
+ * scaled text rasterises from a transformed layer and goes soft, it ignores the
+ * reader's minimum font size, and it cannot reflow for the mobile composition.
+ * Container units keep every glyph laid out and hinted at its real size.
+ *
+ * BELOW `--stage-min` THIS COMPOSITION IS ABANDONED, NOT SHRUNK
+ * A 2528-wide cinematic frame reduced to a 390-wide phone is illegible however
+ * carefully it scales — 10px type and a tower four thumbs wide. Under the
+ * breakpoint the stage stops being a stage: the plate crops to its subject with
+ * a per-station focal point and the overlay becomes an ordinary stacked
+ * document. Two compositions, each correct for its width, is the honest answer;
+ * one composition pretending to work at both is not.
+ *
+ * THE PLATE IS DECORATION AND THE OVERLAY IS THE PAGE
+ * Everything readable is real HTML in the light DOM above the image. Remove the
+ * plate and the station still says everything it says. That is the load-bearing
+ * rule of this repository applied to layout: if the words needed the picture,
+ * the picture would be content, and it would need alt text and a different set
+ * of promises.
+ */
+import VisualWorld from '../VisualWorld.astro';
+import { type StationId } from '../../config/visual-world';
+
+interface Props {
+  id: StationId;
+  /** First stage on the page fetches its plate eagerly. */
+  priority?: 'eager' | 'lazy';
+  /**
+   * How much of the plate's own brightness survives. 1 is untouched.
+   *
+   * The references are lit artwork and the previous treatment held every plate
+   * at 0.55 with a scrim across the whole frame, which is why the world read as
+   * wallpaper. Plates now run at or near full strength and legibility is bought
+   * locally, under each text block, by the blocks themselves.
+   */
+  plate?: number;
+  /** Adds the fine technical grid over the plate. */
+  grid?: boolean;
+  /** Parallax depth; 0 disables drift for this station. */
+  depth?: number;
+  /** Accessible name for the section. */
+  labelledby: string;
+  /** Anchor for deep links. Defaults to the station id. */
+  anchor?: string;
+  class?: string;
+}
+
+const {
+  id,
+  priority = 'lazy',
+  plate = 1,
+  grid = true,
+  depth = 1,
+  labelledby,
+  anchor,
+  class: className,
+} = Astro.props;
+---
+
+<section
+  class:list={['stage', className, priority !== 'eager' && 'stage--deferred']}
+  id={anchor ?? id}
+  aria-labelledby={labelledby}
+  data-station={id}
+  style={`--plate-strength:${plate}`}
+>
+  <VisualWorld id={id} priority={priority} depth={depth} grid={grid} />
+
+  {
+    /*
+      THE OVERLAY LAYER.
+
+      Absolutely positioned over the whole frame, and the element that owns `--u`
+      so every descendant inherits one reference pixel. `pointer-events: none`
+      here with `auto` restored on interactive children, so the large empty
+      regions of a station never swallow a click meant for the page.
+    */
+  }
+  <div class="stage__layer">
+    <slot />
+  </div>
+
+  {
+    /*
+      THE MOBILE COMPOSITION.
+
+      A separate slot rather than a restyling of the one above. Under the
+      breakpoint the two swap, and only one is in the accessibility tree at a
+      time — `display: none` removes the other from it entirely, so a screen
+      reader never meets both copies of the same sentence.
+    */
+  }
+  <div class="stage__mobile">
+    <slot name="mobile" />
+  </div>
+</section>
+
+<style>
+  .stage {
+    position: relative;
+    isolation: isolate;
+    /*
+      The plate's own ratio, so the frame never letterboxes and never crops the
+      composition the callouts were positioned against.
+    */
+    aspect-ratio: 2528 / 1685;
+    width: 100%;
+    overflow: hidden;
+    container-type: inline-size;
+    background: var(--bg);
+  }
+
+  /*
+   * OFFSCREEN STATIONS ARE NOT LAID OUT UNTIL THEY ARE NEEDED.
+   *
+   * Nine of the ten stations are below the fold and each carries a full overlay
+   * — panels, callouts, stat strips, a trace rail. Styling and laying all of
+   * that out before first paint is work the reader cannot see, and it lands
+   * squarely in the window LCP is measured in: the homepage went from 0.97 to
+   * 0.87 when stations 02–10 arrived.
+   *
+   * `content-visibility: auto` lets the browser skip layout and paint for a
+   * section that is off screen and do it when the section approaches. It is
+   * applied only to deferred stations; the eager one is never skipped, because
+   * it contains the LCP element.
+   *
+   * NO `contain-intrinsic-size` IS NEEDED, and that is why this is safe rather
+   * than a CLS risk. A skipped element normally collapses to zero height and the
+   * scrollbar jumps when it is realised — but these sections already declare
+   * their own height without reference to their contents: `aspect-ratio` on the
+   * stage, and `min-height: 100svh` in the narrow composition. The box is the
+   * same size skipped or not. Verified by measurement, not by argument: CLS is
+   * 0.000 across zero layout-shift entries after this change.
+   */
+  .stage--deferred {
+    content-visibility: auto;
+  }
+
+  .stage__layer {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    /* One reference pixel. Everything inside measures in multiples of this. */
+    --u: calc(100cqw / 2528);
+    pointer-events: none;
+  }
+
+  .stage__layer :global(a),
+  .stage__layer :global(button),
+  .stage__layer :global(.stage-interactive) {
+    pointer-events: auto;
+  }
+
+  .stage__mobile {
+    display: none;
+  }
+
+  /*
+    THE SWAP.
+
+    1024px is where the reference composition stops being readable rather than
+    where a device boundary sits: below it the frame is under 1024/2528 = 40% of
+    the size the type was designed at, which puts the reference's 28px body copy
+    under 11px. Chosen by that arithmetic, not by a breakpoint convention.
+  */
+  @media (max-width: 1024px) {
+    .stage {
+      /*
+        Ratio is released. The station becomes as tall as its content needs,
+        with a minimum so the cropped plate still reads as a place.
+      */
+      aspect-ratio: auto;
+      min-height: 100svh;
+      display: grid;
+      align-items: end;
+    }
+
+    .stage__layer {
+      display: none;
+    }
+
+    .stage__mobile {
+      display: block;
+      position: relative;
+      z-index: 2;
+      padding: clamp(4rem, 12vw, 7rem) var(--gutter, 1.25rem) clamp(3rem, 9vw, 5rem);
+      width: 100%;
+    }
+  }
+</style>

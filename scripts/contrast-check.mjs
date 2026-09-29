@@ -13,7 +13,24 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const css = readFileSync(resolve('apps/static/src/styles/tokens.css'), 'utf8');
+/*
+ * BOTH TOKEN FILES, because the palette is in two of them.
+ *
+ * `tokens.css` holds the ground, the text ramp and the semantic register.
+ * `stations.css` holds the material tokens the station layer added —
+ * `--structure`, `--ember`, and the plate scrim that every instrument on a
+ * station composites against. Reading only the first meant the gate silently
+ * had nothing to say about the surface most of the site's text now sits on:
+ * it would have exited 0 while never checking a single plate pairing.
+ *
+ * A gate that checks nothing is worse than one that fails (engineering
+ * principle 6), so it reads both and the missing-token error below still fires
+ * if a pairing names something neither file declares.
+ */
+const css = [
+  readFileSync(resolve('apps/static/src/styles/tokens.css'), 'utf8'),
+  readFileSync(resolve('apps/static/src/styles/stations.css'), 'utf8'),
+].join(String.fromCharCode(10));
 
 /**
  * Pull colour declarations out of the token file, following aliases.
@@ -102,6 +119,34 @@ const REQUIRED = [
   /* Reversed pairs — dark content on a coloured ground. */
   ['bg', 'signal', 4.5, 'dark label on a primary button'],
   ['bg', 'isolation', 4.5, 'selected text'],
+
+  /*
+   * TEXT ON A PLATE.
+   *
+   * The station redesign lets the ten plates run at full strength and buys
+   * legibility locally instead: every block of sustained reading sits on
+   * `--plate-scrim`, 92% of the graphite ground. These pairings are asserted
+   * against `--plate-scrim-solid`, the colour that scrim composites to over
+   * `--bg` — the DARKEST case, and therefore the floor. Over a bright region of
+   * a plate the real contrast can only be better than what is proven here.
+   *
+   * Without these the gate would have passed a redesign that moved most of the
+   * site's text onto a surface it had never measured.
+   */
+  ['text', 'plate-scrim-solid', 4.5, 'panel and callout headings over a plate'],
+  ['text-muted', 'plate-scrim-solid', 4.5, 'panel body copy over a plate'],
+  ['text-faint', 'plate-scrim-solid', 4.5, 'stat labels, captions and qualifiers over a plate'],
+  ['signal', 'plate-scrim-solid', 4.5, 'a LIVE reading on a station instrument'],
+  ['pending', 'plate-scrim-solid', 4.5, 'a PRE-LAUNCH reading on a station instrument'],
+  ['isolation', 'plate-scrim-solid', 4.5, 'a tenancy-boundary label on a station instrument'],
+  ['record', 'plate-scrim-solid', 4.5, 'a record count on a station instrument'],
+  ['fault', 'plate-scrim-solid', 4.5, 'a degraded or denied reading on a station instrument'],
+  [
+    'structure',
+    'plate-scrim-solid',
+    3,
+    'the hairline edge that identifies a panel as an instrument',
+  ],
 
   /* Non-text, SC 1.4.11: 3:1 for anything identifying a control or a state. */
   ['focus', 'bg', 3, 'the focus ring'],

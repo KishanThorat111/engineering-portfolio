@@ -1,0 +1,172 @@
+---
+/**
+ * A CALLOUT — the thing that makes this a technical drawing rather than a
+ * picture with writing next to it.
+ *
+ * A marker dot on a point of the plate, a leader line from that dot, and a
+ * label with up to two supporting lines. The references use this object more
+ * than any other, on nine of the ten frames.
+ *
+ * POSITIONED IN PERCENT, ON PURPOSE
+ * `x` and `y` place the DOT, as a percentage of the stage. Because the stage is
+ * locked to the plate's ratio, a percentage is a fixed point on the artwork — so
+ * a dot placed on the API gateway tier stays on the API gateway tier at 1440px,
+ * at 1200px and at 1025px. Pixels would not survive the first resize.
+ *
+ * THE LEADER IS A BORDER, NOT AN SVG
+ * One absolutely-positioned element with a 1px edge. An SVG per callout would
+ * be sixty extra elements across the page and a second coordinate system to
+ * keep in sync with the first. The leader is decoration in the strictest sense —
+ * it carries no information the dot and the label do not already carry — so it
+ * is `aria-hidden` and costs the accessibility tree nothing.
+ *
+ * WHAT `side` ACTUALLY CONTROLS
+ * Which way the text sits from the dot, and therefore which way the leader
+ * runs: `left` means the callout lives in the left margin and reaches right
+ * toward the subject; `right` is the mirror. It is not an alignment preference,
+ * it is which side of the plate's subject this label belongs to.
+ *
+ * EVERY CALLOUT IS REAL TEXT
+ * Label and detail lines are ordinary elements in the light DOM, selectable,
+ * searchable, translatable, and read in source order. None of this is baked
+ * into the image — the reference's own labels are AI-generated and several of
+ * them are misspelled, which is a standing reminder of why they are never a
+ * source of truth.
+ */
+interface Props {
+  /** Dot position across the stage, in percent. */
+  x: number;
+  /** Dot position down the stage, in percent. */
+  y: number;
+  /** Which margin this callout belongs to, and therefore which way it reaches. */
+  side?: 'left' | 'right';
+  /** The thing being named. Rendered uppercase, in mono. */
+  label: string;
+  /** Up to two supporting lines. Real facts only — never invented detail. */
+  lines?: string[];
+  /**
+   * Leader length as a percentage of stage width. 0 draws no leader, which is
+   * correct when the dot is already touching the thing it names.
+   */
+  lead?: number;
+  /**
+   * The register entry this callout's dot carries. Colour means state, never
+   * decoration (§3.4), so a callout that is not reporting a state stays neutral.
+   */
+  tone?: 'structure' | 'signal' | 'isolation' | 'record' | 'pending' | 'fault';
+  /** Width of the text block, in percent of the stage. */
+  w?: number;
+}
+
+const {
+  x,
+  y,
+  side = 'left',
+  label,
+  lines = [],
+  lead = 0,
+  tone = 'structure',
+  w = 15,
+} = Astro.props;
+---
+
+<div
+  class:list={['cal', `cal--${side}`]}
+  style={`--x:${x}%; --y:${y}%; --lead:${lead}%; --w:${w}%; --tone:var(--${tone})`}
+>
+  <span class="cal__dot" aria-hidden="true"></span>
+  {lead > 0 && <span class="cal__lead" aria-hidden="true" />}
+  <div class="cal__text">
+    <p class="cal__label">{label}</p>
+    {lines.map((line) => <p class="cal__line">{line}</p>)}
+  </div>
+</div>
+
+<style>
+  .cal {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: var(--w);
+  }
+
+  .cal--right {
+    /* The anchor is the dot, so a right-hand callout grows leftward from it. */
+    transform: translateX(-100%);
+  }
+
+  .cal__dot {
+    position: absolute;
+    top: calc(7 * var(--u));
+    width: calc(7 * var(--u));
+    height: calc(7 * var(--u));
+    border-radius: 50%;
+    background: var(--tone);
+    /*
+      A faint halo so a 7px dot survives on a bright region of a plate. Sized in
+      --u like everything else, so it scales with the frame rather than becoming
+      a blob at small sizes.
+    */
+    box-shadow: 0 0 calc(10 * var(--u)) color-mix(in srgb, var(--tone) 70%, transparent);
+  }
+
+  .cal--left .cal__dot {
+    left: 0;
+  }
+
+  .cal--right .cal__dot {
+    right: 0;
+  }
+
+  .cal__lead {
+    position: absolute;
+    top: calc(10 * var(--u));
+    width: var(--lead);
+    border-top: 1px solid color-mix(in srgb, var(--tone) 42%, transparent);
+  }
+
+  .cal--left .cal__lead {
+    left: calc(100% + 8 * var(--u));
+  }
+
+  .cal--right .cal__lead {
+    right: calc(100% + 8 * var(--u));
+  }
+
+  .cal__text {
+    /* Clears the dot. */
+    padding-inline-start: calc(18 * var(--u));
+  }
+
+  .cal--right .cal__text {
+    padding-inline-start: 0;
+    padding-inline-end: calc(18 * var(--u));
+    text-align: right;
+  }
+
+  .cal__label {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: calc(17 * var(--u));
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text);
+    /*
+      The only text shadow on the site, and it is doing legibility work rather
+      than style work: a callout label sits directly on artwork whose luminance
+      it cannot control, and the alternative is a scrim box around every one of
+      sixty labels, which would bury the plate the callouts exist to explain.
+    */
+    text-shadow: 0 calc(1 * var(--u)) calc(6 * var(--u)) rgb(0 0 0 / 0.95);
+  }
+
+  .cal__line {
+    margin: calc(5 * var(--u)) 0 0;
+    font-family: var(--font-sans);
+    font-size: calc(15 * var(--u));
+    line-height: 1.45;
+    color: var(--text-muted);
+    text-shadow: 0 calc(1 * var(--u)) calc(6 * var(--u)) rgb(0 0 0 / 0.95);
+  }
+</style>

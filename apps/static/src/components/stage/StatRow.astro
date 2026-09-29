@@ -1,0 +1,137 @@
+---
+/**
+ * THE STAT STRIP — the reference's row of large figures under a rule.
+ *
+ * Composition copied exactly: a hairline above, then columns of a small
+ * uppercase label over a large value, separated by vertical rules.
+ *
+ * WHAT GOES IN IT IS NOT WHAT THE REFERENCE PUT IN IT
+ * Reference 01's strip reads REQUESTS/MIN 2,487 · AVG LATENCY 32ms · UPTIME
+ * 99.99% · ERROR RATE 0.02%. Every one of those is invented, and the decomposition
+ * §3 table rules on each: production throughput is not published, uptime figures
+ * are named by honesty rule 7 as not existing in evidence, and an error rate
+ * presented as a production claim is the same. The slot survives; the content
+ * changes.
+ *
+ * So a column here carries one of three things and nothing else:
+ *   1. a figure measured in the visitor's own browser, this second;
+ *   2. a figure counted from this repository at build time;
+ *   3. an architectural fact that is true whether or not anything is running.
+ *
+ * `pending` is the fourth state and the important one. A column whose value has
+ * not arrived yet renders its label and an em dash, not a zero and not a
+ * plausible number — rule 4, an unpublished figure is unpublished, not zero.
+ * The dash is replaced only when a real measurement lands, and if none ever
+ * does the dash is the honest final state.
+ */
+export interface Stat {
+  label: string;
+  /** The figure. `null` renders the pending dash. */
+  value: string | null;
+  /** Units or a date qualifier, shown small beside the value. */
+  unit?: string;
+  /**
+   * Marks this column as filled at runtime by the liveness script. The value
+   * rendered server-side is the pending dash; the script replaces it only on a
+   * successful measurement.
+   */
+  live?: 'rtt' | 'state' | 'demos';
+}
+
+interface Props {
+  items: Stat[];
+  /** Position in percent of the stage. Omit to flow in normal document order. */
+  x?: number;
+  y?: number;
+  w?: number;
+  class?: string;
+}
+
+const { items, x, y, w, class: className } = Astro.props;
+const positioned = x !== undefined && y !== undefined;
+const style = positioned ? `--x:${x}%; --y:${y}%; --w:${w ?? 40}%` : undefined;
+---
+
+<dl class:list={['stats', positioned && 'stats--fixed', className]} style={style}>
+  {
+    items.map((item) => (
+      <div class="stats__col" data-live={item.live}>
+        <dt class="stats__label">{item.label}</dt>
+        <dd class="stats__value" data-live-value={item.live}>
+          {item.value ?? <span class="stats__pending">—</span>}
+          {item.unit && <span class="stats__unit">{item.unit}</span>}
+        </dd>
+      </div>
+    ))
+  }
+</dl>
+
+<style>
+  .stats {
+    display: flex;
+    margin: 0;
+    border-top: 1px solid var(--plate-edge);
+    padding-top: calc(16 * var(--u));
+  }
+
+  .stats--fixed {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: var(--w);
+  }
+
+  .stats__col {
+    flex: 1 1 0;
+    padding-inline: calc(20 * var(--u));
+    border-inline-start: 1px solid var(--plate-edge);
+  }
+
+  .stats__col:first-child {
+    padding-inline-start: 0;
+    border-inline-start: 0;
+  }
+
+  .stats__label {
+    margin: 0 0 calc(10 * var(--u));
+    font-family: var(--font-mono);
+    font-size: calc(14 * var(--u));
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+
+  .stats__value {
+    display: flex;
+    align-items: baseline;
+    gap: calc(6 * var(--u));
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: calc(32 * var(--u));
+    font-weight: 500;
+    line-height: 1.05;
+    /*
+     * A figure slot is one line. A value that wraps stops being a figure and
+     * starts being a sentence, and it drags every column beside it out of
+     * alignment — which is what a strip of columns exists to prevent.
+     */
+    white-space: nowrap;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /*
+    The pending dash is deliberately the muted colour, not the value colour: it
+    is the absence of a reading and should not be mistaken at a glance for one.
+  */
+  .stats__pending {
+    color: var(--text-faint);
+  }
+
+  .stats__unit {
+    font-family: var(--font-mono);
+    font-size: calc(16 * var(--u));
+    color: var(--text-muted);
+  }
+</style>

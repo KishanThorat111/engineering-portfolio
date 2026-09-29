@@ -1,0 +1,54 @@
+---
+/**
+ * A CHIP — the small pill label scattered across references 02 and 03.
+ *
+ * The references use dozens of them to name nodes in the field: ROOMS, MEDIA,
+ * POSTGRESQL, AUTH, EVENTS. They are the lightest label in the kit, with no
+ * supporting lines and no leader.
+ *
+ * Positioned in percent like everything on the stage, and centred on its point
+ * rather than anchored at a corner — a chip names a node it is sitting on, so
+ * its middle is the meaningful coordinate.
+ *
+ * Every chip here names something this repository actually runs. The reference's
+ * own chip text includes `GS-SPS`, `GA10 PERESTENCE` and `BDNEECRIVI3TONE`,
+ * which are AI noise, and copying them would be publishing gibberish as
+ * architecture.
+ */
+interface Props {
+  x: number;
+  y: number;
+  label: string;
+  /** Dims a chip that names a supporting node rather than a principal one. */
+  quiet?: boolean;
+}
+
+const { x, y, label, quiet = false } = Astro.props;
+---
+
+<span class:list={['chip', quiet && 'chip--quiet']} style={`--x:${x}%; --y:${y}%`}>{label}</span>
+
+<style>
+  .chip {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    transform: translate(-50%, -50%);
+    padding: calc(6 * var(--u)) calc(12 * var(--u));
+    border: 1px solid var(--plate-edge);
+    border-radius: calc(5 * var(--u));
+    background: var(--plate-scrim);
+    backdrop-filter: blur(calc(10 * var(--u)));
+    font-family: var(--font-mono);
+    font-size: calc(14 * var(--u));
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--text);
+  }
+
+  .chip--quiet {
+    color: var(--text-muted);
+  }
+</style>

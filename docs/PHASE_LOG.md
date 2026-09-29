@@ -2941,3 +2941,212 @@ Nothing is pushed yet. The control plane is still offline (Cloudflare 1033) and 
 VM/`cloudflared` problem outside this repository — nothing here hides it. Stage B, the
 reconstruction of the ten stations against `design-references/`, has not started.
 
+
+---
+
+## S2 — Stage B/C: the ten stations rebuilt against the references · 30 September 2026
+
+**Scheme: a repair stage, not a dossier phase.** Owner-directed and continuous with S1. The
+plates stop being wallpaper and become the frame; the text layer of each reference is rebuilt
+as real HTML on top of it. Nothing in the Truth Constitution was touched, one gate was added,
+and one gate was rewritten after it was proven worthless.
+
+### The architecture, and the one idea it rests on
+
+A station is a **fixed-ratio stage** locked to the plate's own 3:2, with `container-type:
+inline-size`. Inside it, `--u` is **one reference pixel** — `calc(100cqw / 2528)` — so a
+measurement taken off a 2528×1685 reference goes into the CSS as arithmetic rather than as
+taste: a 48px heading becomes `calc(48 * var(--u))`, a callout 31% across the frame becomes
+`left: 31%`.
+
+The consequence is the point. The previous treatment cropped each plate to `cover` behind a
+fluid column: at 1440 the "API Gateway" label sat beside the tower, and at 1100 the tower had
+been cropped away and the label pointed at empty sky. Because the stage holds the plate's
+ratio, a percentage is now a fixed point on the artwork, and a callout keeps naming the thing
+it names at every width the stage survives at.
+
+Below **1024px the composition is abandoned, not shrunk** — 1024/2528 is 40%, which puts the
+reference's 28px body copy under 11px. Each station carries a second, stacked composition in
+its own slot, and only one is in the accessibility tree at a time.
+
+Shared kit: `Stage`, `Callout`, `Panel`, `Chip`, `StatRow`, `TraceRail`. Ten stations, one set
+of primitives — the duplication that turns ten camera stations into ten websites was recorded
+as the standing risk during the R-series, and it was avoided by building the kit first.
+
+### The plates now run at full strength, and legibility moved
+
+Plates were held at 0.55 opacity behind a full-frame left-to-right scrim, which is exactly why
+the world read as wallpaper. They now run at 0.92–0.95, and legibility is bought **locally**:
+`--plate-scrim` at 92% of the graphite ground, under each block of sustained reading only. The
+plate stays bright everywhere the eye is not reading.
+
+`contrast-check` was extended rather than trusted. It read only `tokens.css` and would have
+passed a redesign that moved most of the site's text onto a surface it had never measured; it
+now reads `stations.css` too and asserts nine new pairings against `--plate-scrim-solid`, the
+colour the scrim composites to over `--bg` — the darkest case, so the floor. **25 to 34 enforced
+pairings.** Proven by injection: a bad scrim value produced 10 FAILs and exit 1; reverting
+returned 34/34.
+
+### A generated human being was about to ship, twice
+
+**This is the most serious thing found in this stage, and it was found by rendering.**
+
+Reference 07 is composed around a photorealistic person. The 04–10 entry records that this was
+already ruled on in the other medium: a placeholder figure was tried at the subject's position
+in `ThinkScene` and removed, and the frame composed as "a recently-vacated desk instead". The
+**plates were generated from the references afterwards and quietly reintroduced what that
+ruling removed.** `07-think.png` contains a fully-rendered face in focus. `08-build.png`
+contains a second figure at the window.
+
+On a personal portfolio a photorealistic person in the artwork reads as a photograph of the
+subject. There is no owned photograph — `/about` still carries the OWNER-INPUT marker asking
+for one — so these would have published a fabricated image of a real person. No honesty rule
+needs quoting to rule that out.
+
+Worse, the first version of station 07's copy said "the desk is empty on purpose" while the
+plate behind it showed a man at that desk. A published claim the artifact contradicts, on the
+same screen.
+
+Both plates now carry a **composed crop** in the pipeline, applied before the width ladder so
+no uncropped rung of either figure exists anywhere in the output: 07 becomes the monitor, the
+architecture sketches and the empty desk; 08 becomes the city, the cube and the desk. Both
+checked by rendering, both exactly 3:2. The station says plainly what was done and why.
+
+The 04 plate carries a small abstract avatar inside a laptop UI. It reads as generic interface
+chrome rather than as a portrait and is left — recorded here rather than left unmentioned.
+
+### Reference 06's globe, resolved consistently across both surfaces
+
+The 3D scene refused to render a lit earth because "the reference's globe is covered in glowing
+city lights across continents this project has no presence in". The static plate is a finished
+render and cannot be un-lit without looking broken, so the two surfaces would have disagreed
+about the same fact through a channel no gate watches.
+
+The same ruling is applied in the medium available: the claim is **withdrawn in text, on the
+artwork, where the artwork makes it**. A panel on the globe states that the lit continents are
+illustration, that this system runs in one region on one virtual machine, and that the only
+measured point on the map is the reader's own round trip. The narrow composition carries the
+same sentence.
+
+### What the invented figures became
+
+Every number baked into the references was ruled on by the decomposition's §3 table. The
+compositions survive exactly; the contents are repository facts.
+
+- `REQUESTS/MIN 2,487`, `UPTIME 99.99%`, `ERROR RATE 0.02%` become the **round trip measured in
+  the reader's own browser**, **the real control-plane state including "no answer"**, a
+  CI-asserted demonstration count, and an architectural isolation-layer count.
+- `128 SERVICES`, `23 REGIONS`, `2.4M EVENTS`, `12 SERVICES ONLINE` are **cut**, with station 02
+  stating that no service, region or tenant count is published, and why.
+- `7,842 cases`, `128K artifacts`, `14.6K decisions` become the real counts, in a panel designed
+  for two digits exactly as §3 instructed: **3 systems, 12 decisions, 5 evidence chips, 2
+  lessons, 14 integration tests.**
+- `98.7% evidence quality`, `99.98% confidence`, `flow health` are **cut**, and station 09 says
+  so on the frame: "No such metric exists, so there is nothing to print."
+- `KUBERNETES`, `AMS AP-SOUTH-1`, `v3.7.4` are replaced by what this system actually runs on,
+  and the panel states that the region is not published.
+- The reference's centre label "ENGINEERING CORE — shared foundations powering all systems" is a
+  claim about shared infrastructure and is **false**: these three systems run separately, for
+  separate organisations. Replaced with what is actually shared — one operator and one set of
+  patterns.
+- Per-hop trace timings become **one measured total**, because no per-hop timing is measured
+  anywhere a reader could check. Station 04 says that on the frame.
+
+One measurement feeds every instrument. `scripts/liveness.ts` fetches `/health` once and writes
+the result to `<html data-liveness>`; the rail pill, station 01's strip, its trace and station
+06's readouts all read that one attribute. Four readouts of one fact cannot disagree.
+
+### Four budget defects, each found by measurement and each with a named cause
+
+1. **LCP 3.4s against a 1.8s budget**, carried in from the previous stage. The plate was a CSS
+   background promoted by a deferred module that first probed AVIF support with a data: URI.
+   It is now a `<picture>` with a 768/1280/1920/master ladder and `fetchpriority="high"` in raw
+   HTML. The whole JavaScript loading path was deleted.
+2. **Performance 0.97 to 0.87** when stations 02–10 arrived. Nine offscreen stations were being
+   laid out before first paint. `content-visibility: auto` on deferred stages only; safe
+   without `contain-intrinsic-size` because those boxes already declare their height via
+   `aspect-ratio` and `min-height`, which was verified rather than argued.
+3. **CLS 0.026 to 0.178**, more than three times the budget, from the new status pill reflowing
+   the header when the measurement landed. Reserving its width in `ch` **did not fix it** and
+   the shift survived untouched: `ch` is the advance width of the current face, so a `ch`
+   reservation is re-measured when the font swaps. `em` fixed the pill.
+4. The remaining **0.176 was the JetBrains Mono swap itself**, re-measuring every eyebrow, stat
+   label, chip and nav item at once. That face is deliberately not preloaded, because preloading
+   it cost LCP, so it always swaps late. It is now `font-display: optional` — it cannot swap
+   mid-page, so the shift cannot happen. The cost is stated in the stylesheet: a first-time
+   visitor on a slow connection reads labels in their platform's own monospace.
+
+Final, three runs each against the built output: **performance 0.96, CLS 0.000 across zero
+layout-shift entries, accessibility 1, SEO 1** — measured against a plain uncompressed local
+server, which scores below lhci's own.
+
+`best-practices` is **0.96, down from 1**, and the cause is stated rather than smoothed over:
+the liveness probe fetches `/health`, which 404s on a static test server and 530s on the real
+origin today, and a failed request is logged by the browser at the network level where no
+`catch` can reach it. A page that measures a real system logs an error when that system is
+down. It clears the 0.95 threshold and it is the honest behaviour, but it is thin margin and is
+recorded as such.
+
+### The station gate, and the first version of it that was worthless
+
+Two things no gate watched: the station-to-plate mapping, and the locked hero content that P9
+explicitly recorded as unguarded.
+
+**The first version of the mapping check was proven useless by injection.** It compared the
+plate a station renders against the plate it declares — two readings of one fact — so pointing
+station 05 at plate 04 changed both sides together and the gate exited 0. It now asserts an
+independent invariant: a station of index `05` must carry a plate whose stem begins `05-`,
+which is a fact about the design system that a config edit cannot satisfy on both sides.
+Re-injected: exit 1, naming the station.
+
+**The locked-content check failed the same way.** Asking whether each chip appeared anywhere in
+the homepage passed when a chip was dropped from the desktop hero, because the narrow
+composition still carried it — which is exactly the P9 failure it was written for. It is now
+scoped to both chip lists separately, and fails loudly if either list disappears. Re-injected:
+exit 1, naming the chip and the composition.
+
+The copy gate caught the author again, as it did in the 04–10 run: the word **placeholder**, in
+station 10's own copy, in a sentence saying the unknown next problem is not one. The gate was
+right and was not touched. Reworded.
+
+### Verified
+
+`npm run verify` **exit 0** — typecheck 0 errors, copy-check 26 markup and 7 machine artifacts,
+link-check **313** references, html-validate, contrast **34/34**, confidential-parity 6,
+machine-parity 21, fastlane 15, station-check 10 mappings plus the locked claim and 4 locked
+chips. `format:check` clean. `npm run api:verify` **121/121**.
+
+All ten stations rendered in a real browser at **1440, 834 and 390** and compared against their
+reference frames; **zero horizontal overflow at all three**, thirty screenshots under
+`build/verify/`. CLS measured directly from `layout-shift` entries at 412x823, DPR 1.75,
+1.6Mbps, 4x CPU: **0.0000 across zero entries**.
+
+`sourcemap: 'hidden'` on the live surface — 5.4MB of maps were being served in production with
+no recorded decision. They are still emitted for local debugging; only the comment telling
+browsers to fetch them is gone.
+
+### A local flake, recorded rather than hidden
+
+Six purge tests failed mid-stage and then passed 121/121 on a recreated database, three times.
+The cause was **test-data pollution in an hour-old local dev database**: fifteen
+expired-but-unpurged tenants left by earlier failed runs, competing for the sweep's batch and
+its advisory lock. CI provisions a fresh Postgres per run and is unaffected — it passed 121/121
+on Linux. Recorded because "it passed when I ran it again" is not a diagnosis, and the next
+person to see this deserves the cause.
+
+### Not done, and not counted as done
+
+- **The control plane is still offline** (Cloudflare 1033). Every liveness readout on the site
+  therefore shows its degraded state, correctly and by design. Nothing was faked to hide it, and
+  no station shows a number from a previous visit.
+- **`/about`, `/engineering`, `/systems`, `/cv` and `/experience` are untouched.** This stage
+  rebuilt the homepage's ten stations. Those pages keep the P9 treatment and are still linked,
+  correct and gated; they are not reference reconstructions.
+- **72 "as of Jul 2026" qualifiers are unchanged.** They describe the three client systems and
+  none of the underlying numbers were re-checked in this stage, so refreshing the dates would
+  have been asserting a currency nobody verified. They are listed for the owner instead.
+- **No camera-flight transition between stations.** The existing parallax is kept and respects
+  `prefers-reduced-motion`; a scroll-driven camera would cost JavaScript that the static
+  surface's 15KB budget is deliberately not spending.
+- **The mid-range device frame measurement**, carried since P4, remains outstanding.
+- Reference 11 (SYSTEM MAP) remains out of scope.

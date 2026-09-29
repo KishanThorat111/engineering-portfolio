@@ -1,0 +1,208 @@
+---
+/**
+ * THE TRACE RAIL — the horizontal request path on references 01, 02, 03 and 04.
+ *
+ * A connected row of nodes, each a dot with a name and a sub-label, reading
+ * left to right from the browser to the response.
+ *
+ * WHAT IS REAL HERE, AND WHAT CANNOT BE
+ * The references show `GET /api/bookings 200 32ms Mumbai` with seven per-hop
+ * timings. This site cannot publish per-hop production timings — they are not
+ * measured anywhere a visitor could verify, and rule 4 says an unknown fact is
+ * unstated rather than estimated.
+ *
+ * What it CAN publish is the one request the visitor's own browser just made:
+ * `GET /health` against this origin, its status, and its total round trip,
+ * measured by `performance.now()` either side of the fetch. That is one real
+ * number rather than seven invented ones, and it is a number the reader can
+ * reproduce in their own devtools in about four seconds.
+ *
+ * So the rail's hops are labelled with what each hop IS — the architecture,
+ * which is a published fact — and carry no per-hop timing at all. The total is
+ * the measured one, shown once, at the end, where the reference puts it.
+ *
+ * WHEN THE CONTROL PLANE IS DOWN
+ * Every node renders `idle`, the total reads `no answer`, and the caption says
+ * so. It does not show a stale time, a cached time, or a zero. Rule 12: degraded
+ * says so, on the same instrument.
+ */
+export interface Hop {
+  /** The hop's name, e.g. `EDGE`. */
+  name: string;
+  /** What that hop is, in this system. Architecture, not telemetry. */
+  detail: string;
+  tone?: 'structure' | 'signal' | 'isolation' | 'record';
+}
+
+interface Props {
+  hops: Hop[];
+  /** The request line, e.g. `GET /health`. */
+  request: string;
+  class?: string;
+}
+
+const { hops, request, class: className } = Astro.props;
+---
+
+<div class:list={['trace', className]} data-trace>
+  <div class="trace__head">
+    <p class="trace__request">{request}</p>
+    <p class="trace__total">
+      <span class="trace__total-label">TOTAL</span>
+      <span data-trace-total>—</span>
+    </p>
+  </div>
+
+  <ol class="trace__rail">
+    {
+      hops.map((hop) => (
+        <li class="trace__hop">
+          <span class={`trace__dot trace__dot--${hop.tone ?? 'structure'}`} aria-hidden="true" />
+          <span class="trace__name">{hop.name}</span>
+          <span class="trace__detail">{hop.detail}</span>
+        </li>
+      ))
+    }
+  </ol>
+
+  <p class="trace__caption" data-trace-caption>
+    Not yet measured. This line fills in when your browser completes a request to the control plane.
+  </p>
+</div>
+
+<style>
+  .trace {
+    display: block;
+  }
+
+  .trace__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: calc(16 * var(--u));
+    margin-bottom: calc(16 * var(--u));
+  }
+
+  .trace__request {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: calc(19 * var(--u));
+    letter-spacing: 0.04em;
+    color: var(--text);
+  }
+
+  .trace__total {
+    display: flex;
+    align-items: baseline;
+    gap: calc(9 * var(--u));
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: calc(19 * var(--u));
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .trace__total-label {
+    font-size: calc(13 * var(--u));
+    letter-spacing: 0.14em;
+    color: var(--text-faint);
+  }
+
+  .trace__rail {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .trace__hop {
+    position: relative;
+    flex: 1 1 0;
+    padding-top: calc(20 * var(--u));
+    text-align: center;
+  }
+
+  /*
+    The connector. Drawn between hops rather than through them, so the line
+    reads as the path and the dot reads as the stop — which is how a trace is
+    drawn on paper and why the reference is legible at a glance.
+  */
+  .trace__hop::before {
+    content: '';
+    position: absolute;
+    top: calc(5 * var(--u));
+    left: -50%;
+    width: 100%;
+    border-top: 1px solid var(--plate-edge);
+  }
+
+  .trace__hop:first-child::before {
+    display: none;
+  }
+
+  .trace__dot {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(11 * var(--u));
+    height: calc(11 * var(--u));
+    border-radius: 50%;
+    /*
+      Idle is dark and unlit, and that is the glow rule: nothing emits light
+      unless it is carrying a real measurement. These light up together, once,
+      when a round trip actually completes.
+    */
+    background: var(--bg-raised);
+    border: 1px solid var(--plate-edge);
+  }
+
+  [data-trace][data-state='live'] .trace__dot--structure {
+    background: var(--structure);
+    border-color: var(--structure);
+  }
+  [data-trace][data-state='live'] .trace__dot--signal {
+    background: var(--signal);
+    border-color: var(--signal);
+    box-shadow: 0 0 calc(10 * var(--u)) var(--signal);
+  }
+  [data-trace][data-state='live'] .trace__dot--isolation {
+    background: var(--isolation);
+    border-color: var(--isolation);
+    box-shadow: 0 0 calc(10 * var(--u)) var(--isolation);
+  }
+  [data-trace][data-state='live'] .trace__dot--record {
+    background: var(--record);
+    border-color: var(--record);
+    box-shadow: 0 0 calc(10 * var(--u)) var(--record);
+  }
+
+  [data-trace][data-state='down'] .trace__dot {
+    border-color: color-mix(in srgb, var(--fault) 45%, var(--plate-edge));
+  }
+
+  .trace__name {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: calc(14 * var(--u));
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--text);
+  }
+
+  .trace__detail {
+    display: block;
+    margin-top: calc(4 * var(--u));
+    font-family: var(--font-sans);
+    font-size: calc(13 * var(--u));
+    color: var(--text-faint);
+  }
+
+  .trace__caption {
+    margin: calc(20 * var(--u)) 0 0;
+    font-family: var(--font-sans);
+    font-size: calc(13 * var(--u));
+    line-height: 1.55;
+    color: var(--text-faint);
+  }
+</style>
