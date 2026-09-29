@@ -13,25 +13,47 @@
  * scattered through templates is exactly what this exists to prevent.
  *
  * ASSET STATUS, STATED PLAINLY
- * As of 25 Aug 2026 `apps/static/public/visual-world/` is EMPTY — the ten
- * plates have not been added to the repository. The background system is built,
- * wired, and degrades to the graphite ground with its atmospheric gradients
- * intact, which is also the correct behaviour on a slow connection or a failed
- * request. Dropping the ten files in at the paths below switches every station
- * on with no further code change.
+ * As of 30 Sep 2026 all ten plates are encoded and present in
+ * `apps/static/public/visual-world/` as content-hashed AVIF + WebP, 4.65MB for
+ * the set, named by `visual-world-manifest.json`. The 57MB of PNG masters they
+ * were encoded from live in `visual-world-masters/` at the repository root,
+ * outside the served directory, and are never deployed.
+ *
+ * The background system still degrades to the graphite ground with its
+ * atmospheric gradients intact when a plate is slow or fails, which is the
+ * correct behaviour on a bad connection and not only a missing-asset state.
  */
 
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import manifest from './visual-world-manifest.json';
 
 /**
- * Where the plates are served from.
+ * Where the production plates are served from. ONE value, and the only string
+ * in the codebase that knows where the artwork lives.
  *
- * Defaults to the local public directory. Set `PUBLIC_VISUAL_WORLD_BASE` to an
- * R2/CDN origin (no trailing slash) to serve them from there instead.
+ * Unset, it falls back to the local masters so `npm run dev` works with no
+ * environment at all. In production it is the R2 custom domain, e.g.
+ *
+ *   PUBLIC_VISUAL_WORLD_BASE=https://assets.kishanthorat.com/visual-world
+ *
+ * Never an S3 endpoint and never a credentialled URL: these are public,
+ * cacheable, immutable image reads.
  */
 export const PLATE_BASE: string =
   import.meta.env['PUBLIC_VISUAL_WORLD_BASE']?.replace(/\/$/, '') ?? '/visual-world';
+
+type ManifestEntry = { avif?: string; webp?: string };
+const MANIFEST = manifest as Record<string, ManifestEntry>;
+
+/**
+ * The manifest is keyed by MASTER FILE STEM (`01-enter`), not by station id
+ * (`enter`) — the pipeline derives its keys from the filenames it encoded and
+ * has no idea what a station is. Looking up by station id silently missed
+ * every entry and failed the build with "no production artwork" while the
+ * manifest sat there fully populated.
+ */
+function manifestKey(id: StationId): string {
+  return station(id).plate.replace(/\.png$/, '');
+}
 
 export type StationId =
   | 'enter'
@@ -51,7 +73,10 @@ export type Station = {
   index: string;
   /** Nav label. */
   label: string;
-  /** Plate filename, without the base. */
+  /**
+   * The MASTER filename in visual-world-masters/. Source provenance only —
+   * production URLs come from the content-hashed manifest, never from this.
+   */
   plate: string;
   /**
    * Where this station lives on the public site.
@@ -150,62 +175,65 @@ export function station(id: StationId): Station {
   return found;
 }
 
-/** Absolute URL for a station's plate, honouring the configured base. */
+/**
+ * Production URLs for a station's plate, in both formats.
+ *
+ * AVIF is primary and WebP is the fallback for Safari before 16.4 — chosen by
+ * measurement, not preference: AVIF q65 beat every WebP candidate on mean
+ * error, dark-region banding and edge preservation at roughly half the size.
+ * See scripts/optimize-visual-world.mjs for the benchmark.
+ *
+ * Filenames are content-hashed, so every URL here is safe to serve immutable.
+ *
+ * With no manifest entry — during local development against the raw masters —
+ * both fall back to the PNG, so the site works before the pipeline has run.
+ */
+export function plateSources(id: StationId): { avif: string; webp: string } {
+  const entry = MANIFEST[manifestKey(id)];
+  if (!entry?.avif || !entry?.webp) {
+    /*
+     * Unreachable through the component, which guards on plateExists() first.
+     * Throwing rather than returning a PNG path keeps the failure loud: the
+     * masters are no longer served, so a silent fallback would emit a URL that
+     * 404s in production.
+     */
+    throw new Error(
+      `No production artwork for station ${id}. Run: node scripts/optimize-visual-world.mjs`,
+    );
+  }
+  return { avif: `${PLATE_BASE}/${entry.avif}`, webp: `${PLATE_BASE}/${entry.webp}` };
+}
+
+/** The single URL to use when only one is wanted (preload hints). */
 export function plateUrl(id: StationId): string {
-  return `${PLATE_BASE}/${station(id).plate}`;
+  return plateSources(id).avif;
 }
 
 /**
- * Whether a plate actually exists, resolved AT BUILD TIME.
+ * Whether a station has production artwork.
  *
- * The link gate caught the first version of this emitting
- * /visual-world/01-enter.png for a file that is not in the repository — a real
- * broken reference, correctly failed. Weakening the gate was never an option;
- * the fix is that a station does not reference artwork it does not have.
+ * This used to stat the PNG master in `public/`. The masters have moved to
+ * `visual-world-masters/` — outside the served directory, because Astro copies
+ * `public/` verbatim and 57MB of source PNG was shipping in the deployed
+ * payload. Existence is now a question about the MANIFEST, which is committed,
+ * so it answers identically on a build machine that has never run sharp.
  *
- * The check only applies to LOCALLY served plates. When PLATE_BASE points at
- * R2 or a CDN there is no local file to stat and the configuration is trusted,
- * because a build machine cannot meaningfully probe a bucket and a false
- * negative there would silently blank every background in production.
- */
-const LOCAL_BASE = '/visual-world';
-
-/*
- * A STATIC ESM IMPORT, not a require() shim.
+ * It is deliberately NOT a filesystem check any more. The link gate caught the
+ * first version of this emitting `/visual-world/01-enter.png` for a file that
+ * was not in the repository — a real broken reference, correctly failed — and
+ * the two `existsSync` attempts that followed both reported every plate missing
+ * while all ten sat on disk, because they resolved against the wrong root. A
+ * predicate that answers from a committed file cannot get the root wrong, and
+ * it answers the same when PLATE_BASE points at R2, where there is no local
+ * file to stat at all.
  *
- * The first version reached for `require('node:fs')` inside a try/catch. Astro
- * builds as ESM, `require` is not defined there, the catch swallowed the
- * ReferenceError, and every plate silently reported missing — the backgrounds
- * were absent from a build that had all ten files sitting on disk. A swallowed
- * error that degrades to "no artwork" is the worst shape this could take,
- * because the page still looks deliberate and nothing says anything is wrong.
- *
- * This module is imported only from .astro frontmatter, which runs on the
- * build server, so a node built-in is legitimate here and never reaches a
- * client bundle.
+ * A station with no manifest entry emits no plate at all, and the link gate
+ * treats a missing reference as the defect it is.
  */
 export function plateExists(id: StationId): boolean {
-  if (PLATE_BASE !== LOCAL_BASE) return true;
-
-  /*
-   * Resolved from the WORKING DIRECTORY, not from import.meta.url.
-   *
-   * Second failure of this same check, and worth recording: `new URL('../../',
-   * import.meta.url)` resolves against the BUNDLED module's location during an
-   * Astro build, not the source file's, so it walked out of a directory that
-   * does not exist at build time and reported every plate missing while all
-   * ten sat on disk. Both candidates below are tried because the build runs
-   * from the workspace package in CI and can be invoked from the repo root
-   * locally.
-   */
-  const file = station(id).plate;
-  return CANDIDATE_ROOTS.some((root) => existsSync(join(root, file)));
+  const entry = MANIFEST[manifestKey(id)];
+  return Boolean(entry?.avif && entry?.webp);
 }
-
-const CANDIDATE_ROOTS = [
-  join(process.cwd(), 'public', 'visual-world'),
-  join(process.cwd(), 'apps', 'static', 'public', 'visual-world'),
-];
 
 /**
  * The station a visitor is most likely to reach next.

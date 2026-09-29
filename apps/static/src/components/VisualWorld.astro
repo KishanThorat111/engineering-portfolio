@@ -26,6 +26,7 @@
  * expected to look intentional without them.
  */
 import {
+  plateSources,
   plateUrl,
   plateExists,
   station,
@@ -49,7 +50,7 @@ interface Props {
 
 const { id, priority = 'lazy', depth = 1, grid = true } = Astro.props;
 const current = station(id);
-const url = plateUrl(id);
+const src = plateSources(id);
 const next = nextStation(id);
 
 /*
@@ -76,7 +77,17 @@ const nextHasPlate = next ? plateExists(next.id) : false;
     few hundred milliseconds of graphite ground is the correct trade.
   */
   }
-  {hasPlate && <div class="vw__plate" data-plate data-src={url} data-priority={priority} />}
+  {
+    hasPlate && (
+      <div
+        class="vw__plate"
+        data-plate
+        data-avif={src.avif}
+        data-webp={src.webp}
+        data-priority={priority}
+      />
+    )
+  }
 
   {
     /* Atmosphere: the haze that gives the plate depth and holds the palette

@@ -44,16 +44,44 @@ function collect(): Layer[] {
 }
 
 /**
+ * Does this browser decode AVIF?
+ *
+ * Resolved ONCE for the page. AVIF is the primary format because it measured
+ * better than every WebP candidate at half the size, but Safari before 16.4
+ * cannot decode it — and a `background-image` that fails is silent, so a
+ * feature test is the only way to know. A one-pixel AVIF is decoded to answer
+ * the question; the promise is created immediately so it has usually settled
+ * by the time the first plate is wanted.
+ */
+const AVIF_PIXEL =
+  'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAEAAAABAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIABoAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgABogQEDQgMgkQAAAAB8dSLfI=';
+
+let avifSupport: Promise<boolean> | null = null;
+
+function supportsAvif(): Promise<boolean> {
+  if (!avifSupport) {
+    avifSupport = new Promise<boolean>((resolve) => {
+      const probe = new Image();
+      probe.onload = () => resolve(probe.width > 0);
+      probe.onerror = () => resolve(false);
+      probe.src = AVIF_PIXEL;
+    });
+  }
+  return avifSupport;
+}
+
+/**
  * Promote a lazy plate to a real background.
  *
  * Loaded through an Image first so the swap happens on a decoded bitmap:
  * assigning the url straight to background-image paints an empty box until the
  * bytes arrive, which on a slow connection is a visible flash of ground.
  */
-function loadPlate(layer: Layer): void {
+async function loadPlate(layer: Layer): Promise<void> {
   const el = layer.plate;
-  const src = el?.dataset['src'];
-  if (!el || !src || el.dataset['loaded'] === 'true') return;
+  if (!el || el.dataset['loaded'] === 'true') return;
+  const src = (await supportsAvif()) ? el.dataset['avif'] : el.dataset['webp'];
+  if (!src) return;
   el.dataset['loaded'] = 'true';
 
   const img = new Image();
@@ -87,7 +115,7 @@ export function initVisualWorld(): void {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
           const layer = layers.find((l) => l.root === entry.target);
-          if (layer) loadPlate(layer);
+          if (layer) void loadPlate(layer);
           io.unobserve(entry.target);
         }
       },
@@ -103,7 +131,7 @@ export function initVisualWorld(): void {
        * screen, and it must not wait for an intersection that already
        * happened before the observer existed.
        */
-      if (layer.root.dataset['priority'] === 'eager') loadPlate(layer);
+      if (layer.root.dataset['priority'] === 'eager') void loadPlate(layer);
       else io.observe(layer.root);
     }
   } else {

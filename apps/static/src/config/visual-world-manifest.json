@@ -1,0 +1,42 @@
+{
+  "01-enter": {
+    "avif": "01-enter.089fbb14.avif",
+    "webp": "01-enter.af3746ae.webp"
+  },
+  "02-systems": {
+    "avif": "02-systems.4a2dfff2.avif",
+    "webp": "02-systems.e87ae80b.webp"
+  },
+  "03-dissection": {
+    "avif": "03-dissection.51559f66.avif",
+    "webp": "03-dissection.eaf727ee.webp"
+  },
+  "04-data": {
+    "avif": "04-data.eb9594e4.avif",
+    "webp": "04-data.b6c12952.webp"
+  },
+  "05-lab": {
+    "avif": "05-lab.5714f951.avif",
+    "webp": "05-lab.cf508e44.webp"
+  },
+  "06-live": {
+    "avif": "06-live.612a6e28.avif",
+    "webp": "06-live.d89a631f.webp"
+  },
+  "07-think": {
+    "avif": "07-think.1fab1251.avif",
+    "webp": "07-think.26e72d07.webp"
+  },
+  "08-build": {
+    "avif": "08-build.fd0d1ca5.avif",
+    "webp": "08-build.9591c79f.webp"
+  },
+  "09-proof": {
+    "avif": "09-proof.9881a346.avif",
+    "webp": "09-proof.2f2c7e46.webp"
+  },
+  "10-end": {
+    "avif": "10-end.8659668b.avif",
+    "webp": "10-end.3f982dc3.webp"
+  }
+}

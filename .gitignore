@@ -29,3 +29,10 @@ services/api/test-output.log
 # Lighthouse CI working directories — reports are a run artifact, not source.
 .lighthouseci/
 .lighthouseci-report/
+
+# Asset pipeline work directory. Holds ONLY the benchmark encodings now — the
+# production plates are written straight into apps/static/public/visual-world/,
+# which is tracked, because a manual copy between two directories that must hold
+# identical bytes is a step that silently does not happen. The benchmark alone is
+# ~30MB of test output and is a measurement, not a deliverable.
+build/

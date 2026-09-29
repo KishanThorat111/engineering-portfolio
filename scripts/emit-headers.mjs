@@ -67,13 +67,46 @@ const scriptHashes = inlineScriptHashes();
  * `worker-src blob:` is required because three spawns workers from blobs for
  * texture decoding. Nothing wider than that.
  */
+/*
+ * THE PLATE ORIGIN, READ FROM THE SAME VARIABLE THE SITE BUILDS AGAINST.
+ *
+ * `img-src` was hard-coded to `'self' data:` while the visual world reads its
+ * base from `PUBLIC_VISUAL_WORLD_BASE`, whose entire purpose is to move the ten
+ * plates to an R2 custom domain. Setting that variable would have moved every
+ * plate to an origin this policy forbids, and a `background-image` refused by
+ * CSP fails SILENTLY — no broken image, no layout change, nothing in the page.
+ * Every station would have degraded to the graphite ground, which looks
+ * deliberate, on a build that passed every gate. That is the worst shape a
+ * failure can take here and it is the second time this exact shape has bitten
+ * the visual world.
+ *
+ * Unset — the shipping configuration, plates served from this origin — this
+ * adds nothing and the policy is byte-identical to before. It never widens the
+ * policy on its own; it widens only as far as the origin the build was told to
+ * fetch artwork from, and only to that origin's scheme and host.
+ */
+const plateBase = process.env['PUBLIC_VISUAL_WORLD_BASE']?.trim();
+let plateOrigin = '';
+if (plateBase && /^https?:\/\//.test(plateBase)) {
+  plateOrigin = ` ${new URL(plateBase).origin}`;
+} else if (plateBase) {
+  // A relative base is same-origin and needs nothing. Anything else is a
+  // configuration error, and a header emitter is not the place to guess.
+  if (!plateBase.startsWith('/')) {
+    console.error(
+      `emit-headers: PUBLIC_VISUAL_WORLD_BASE is neither absolute http(s) nor root-relative: ${plateBase}`,
+    );
+    process.exit(1);
+  }
+}
+
 const COMMON = [
   "default-src 'self'",
   "base-uri 'none'",
   "form-action 'none'",
   "frame-ancestors 'none'",
   "object-src 'none'",
-  "img-src 'self' data:",
+  `img-src 'self' data:${plateOrigin}`,
   "font-src 'self'",
   // Astro emits component styles as <style> blocks; hashing every one of them
   // would make this file churn on any styling change for a class of attack the

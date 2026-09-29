@@ -46,7 +46,10 @@
     "verify:adversarial": "node scripts/adversarial.mjs",
     "verify:load": "node scripts/loadtest.mjs",
     "stack:up": "docker compose -f infra/compose.yml -f infra/compose.local.yml up -d --build",
-    "stack:down": "docker compose -f infra/compose.yml -f infra/compose.local.yml down"
+    "stack:down": "docker compose -f infra/compose.yml -f infra/compose.local.yml down",
+    "assets:benchmark": "node scripts/optimize-visual-world.mjs --benchmark",
+    "assets:optimize": "node scripts/optimize-visual-world.mjs",
+    "assets:upload": "node scripts/upload-visual-world.mjs"
   },
   "devDependencies": {
     "html-validate": "^10.0.0",
