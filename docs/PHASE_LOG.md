@@ -2745,3 +2745,199 @@ the dev bench, `App.tsx` is untouched, and the shipped `/live` surface is still 
 it. That wiring, and the camera flights between stations, are the remaining work. No mid-range
 frame-time measurement has been taken; the P4 measurement is still outstanding. Reference 11
 (SYSTEM MAP) remains deliberately out of scope.
+
+---
+
+## Audit — the asset pipeline's defects, and the state of the deployed origin · 30 September 2026
+
+**Scheme: dossier §13 roadmap.** Not a phase. An owner-requested read of the whole repository
+against the deployed origin, and the repairs that read justified. No locked item was touched.
+
+### The finding that matters most: nothing since 23 August is deployed
+
+`origin/main` is at **065f51e**, HEAD is at **f27b961**. The commit that puts the ten-station
+world on the static surface has never been pushed, and the asset pipeline that makes it
+shippable is not even committed. A fetch of the origin confirms it rather than infers it:
+`https://kishanthorat.com/` returns 200 with **zero** occurrences of `visual-world` and zero
+`.vw` elements. The visual world is absent from the live site because it was never sent.
+
+This is the CI-proves-the-artifact / only-a-fetch-proves-it-is-reachable rule arriving from the
+other side. The artifact was correct for five weeks. Nobody had checked that it was reachable.
+
+### The control plane is down, and the surface is honest about it
+
+`https://kishanthorat.com/health`, `/health/ready` and `/v1/tenants` all return **530 with
+Cloudflare error 1033** — the tunnel has no connection. The VM or `cloudflared` is not running.
+Every demonstration the dossier is about is therefore unavailable to a visitor today.
+
+Rule 12 holds under the failure, which is the one good thing here: the built `copy.json`
+carries "The control plane did not answer. Nothing was provisioned." and "Its telemetry is
+unreachable right now, so this page is replaying a real recording and saying so." The surface
+degrades and says so. It does not manufacture a tenant. Nothing was changed here.
+
+### Four real defects in the uncommitted asset pipeline, each proven by execution
+
+1. **The pipeline could not run at all.** `optimize-visual-world.mjs` still read
+   `apps/static/public/visual-world` as its masters directory after the masters had moved to
+   `visual-world-masters/`. It was reading the directory it now writes. Run: `no PNG masters
+   found — nothing to optimise`, exit 1. Fixed to read `visual-world-masters/`; re-running now
+   encodes all ten and reproduces the manifest **byte-identically** (`md5 a09b4479…` before and
+   after), which is the only evidence worth having that an encoder is deterministic.
+
+2. **A manual copy sat in the middle of an automated pipeline.** The script wrote to
+   `build/visual-world`, the site read `apps/static/public/visual-world/`, and a human was
+   expected to connect them. That is how the plates ended up produced but untracked. There is
+   one output directory now — the served one — and the R2 uploader reads the same directory, so
+   a plate served locally and a plate in the bucket are the same bytes by construction.
+
+3. **Content-hashed output had no pruning.** Re-encoding writes a new filename and left the old
+   one in a directory Astro copies verbatim, so superseded artwork would deploy forever. Proven:
+   injected `01-enter.deadbeef.avif`, re-ran, `Pruned: 1 orphaned file(s)`, 21 files → 20.
+
+4. **`build/` was added to `.gitignore` with a comment describing a copy step that no longer
+   exists.** Corrected to describe what the directory actually holds — benchmark measurements,
+   not deliverables.
+
+### A silent failure the CSP was holding ready for the next person
+
+`emit-headers.mjs` hard-coded `img-src 'self' data:`. The visual world reads its origin from
+`PUBLIC_VISUAL_WORLD_BASE`, whose entire purpose is to move the ten plates to an R2 custom
+domain. Setting it would have moved every plate to an origin the policy forbids — and a
+`background-image` refused by CSP **fails silently**: no broken image, no console error visible
+in the page, no layout change. Every station degrades to the graphite ground, which looks
+deliberate, on a build that passes all seven gates. That is the third time the visual world has
+had a failure of exactly this shape.
+
+`img-src` is now derived from the same variable the build reads. Proven both ways:
+unset — the shipping configuration — the policy is **byte-identical** (`img-src 'self' data:`);
+set to `https://assets.kishanthorat.com/visual-world` it becomes
+`img-src 'self' data: https://assets.kishanthorat.com`, origin only, no path, no wildcard. A
+value that is neither absolute http(s) nor root-relative exits 1 rather than guessing.
+
+### Smaller corrections
+
+- `plateExists()`'s surviving `LOCAL_BASE` constant was dead after the manifest rewrite, and the
+  comment above it still described the deleted `existsSync` behaviour. Removed, and the reason
+  the predicate is deliberately *not* a filesystem check is now recorded where it is made.
+- The header comment claiming `apps/static/public/visual-world/` is EMPTY was five weeks stale.
+- `USING_CDN` was exported and never imported.
+- `package.json`'s description had its em dash rewritten as a `\u2014` escape by a tool.
+- `index.astro` imported `Button` and `EvidenceChip` and used neither, left by the P9 rebuild.
+
+### The dependency audit is red, and it is the gate that will stop the push
+
+`npm audit --omit=dev --audit-level=high` **exits 1**: 1 critical, 4 high, 3 moderate in the
+production tree — `astro <=7.2.7` (critical), `fast-uri`, `js-yaml`, `sharp`, `svgo` (high),
+`fastify`, `ip-address`, `devalue` (moderate). `fastify`, `fast-uri` and `ip-address` are in the
+**control plane** — the surface this project invites people to attack — and two of them are SSRF
+and X-Forwarded-* spoofing. CI's first step fails before anything else runs.
+
+This was **not** fixed here. The standing contract requires that a dependency change delete
+`node_modules` and the lockfile, install fresh, and verify `npm ci` reproduces **on Linux**, and
+that lesson was learned twice in this repository. Patching it incrementally to go green is the
+exact move the log already records as a mistake. It is an owner decision, logged, not taken.
+
+### Verified
+
+`npm run verify` **exit 0** — typecheck 0 errors, build clean, copy-check 26 markup + 7 machine
+artifacts, link-check **310** internal references across 26 files, html-validate clean,
+contrast **25/25**, confidential-parity 6, machine-parity 21, fastlane 15. `format:check` clean.
+Asset pipeline re-run end to end, deterministic, with pruning proven by injection. Plates
+confirmed loading **in a real browser against the built output**, not in source: all ten
+stations reach `data-ready="true"`, the eager station paints from `data-avif`, and the lazy nine
+load on intersection.
+
+### Not done, and not counted as done
+
+Nothing is committed and nothing is pushed — the origin is still five weeks behind and that is
+the owner's call to make. The dependency audit is red. The control plane is offline. Reference
+06's plate ships a fully lit photographic earth on the static surface, which is the same claim
+about a global footprint that `ThinkScene`/`Globe` explicitly refused to render on honesty
+grounds — the two surfaces disagree about the same fact and only one of them was argued. The
+mid-range device frame measurement carried from P4 remains outstanding. Source maps (5.4MB) are
+served from `/live/assets/` with no recorded decision either way.
+
+
+---
+
+## S1 — Stage A: unblocking the ship · 30 September 2026
+
+**Scheme: a repair stage, not a dossier phase.** Owner-directed, following the audit entry
+above: take the decisions that entry logged rather than escalated, and get the world live.
+
+This entry **supersedes** the audit entry's "Not done" paragraph on the dependency audit. That
+paragraph recorded the audit as an owner decision, not taken. The owner has since directed it
+to be taken properly. The audit entry is not edited — this is the correction.
+
+### The dependency audit, fixed the way principle 1 requires
+
+`npm audit --omit=dev --audit-level=high` exited 1: **1 critical, 4 high, 3 moderate** in the
+production tree. CI would have failed at its first step before any gate ran.
+
+**No version range in any `package.json` changed.** Every caret already permitted the fixed
+version — the lockfile was simply pinned to stale resolutions, which is worth recording because
+it means the declared dependencies were never wrong, only the resolution was. `node_modules`
+and `package-lock.json` were deleted, installed fresh, and `npm ci` verified to reproduce the
+tree **byte-identically** (`diff` clean). Nothing was patched incrementally and `npm audit fix`
+was never run. Result: **0 vulnerabilities**.
+
+| package | was | now | why it mattered |
+|---|---|---|---|
+| astro | 7.1.6 | 7.3.5 | critical |
+| fast-uri | 3.1.4 | 3.1.8 | high — SSRF, host confusion. **Control plane.** |
+| js-yaml | 4.3.1 | 4.3.2 | high |
+| sharp | 0.35.3 | 0.35.4 | high |
+| svgo | 4.0.2 | 4.1.0 | high |
+| fastify | 5.11.3 | 5.12.5 | `X-Forwarded-*` spoofing. **Control plane.** |
+| ip-address | 10.5.0 | 10.7.2 | SSRF. **Control plane.** |
+| devalue | 5.9.0 | 5.9.4 | — |
+| ioredis | 5.11.1 | 6.0.0 | major, within the declared `^6.0.0` |
+
+Docker was not available for a local Linux container, so the Linux reproduction is CI's own
+`npm ci` step, which MAINTENANCE §8 accepts and which this push exercises.
+
+### A real concurrency defect the rebuild surfaced, which was never about dependencies
+
+Six integration tests failed in the purge path after the rebuild. The error named its artifact
+exactly, so it was read rather than guessed at:
+
+```
+XX000  tuple concurrently updated
+where: SQL statement "ALTER ROLE demo_definer NOLOGIN BYPASSRLS"
+       at bootstrapRoles (db/migrate.ts)
+```
+
+`migrate()` was idempotent **by content** and had never been safe **by concurrency**. Node's
+test runner schedules files in parallel; each calls `ensureSchema()`; two sessions then update
+the same `pg_authid` row, which Postgres refuses. The suite had been getting away with it on
+timing.
+
+**This is not a test-only defect.** Two API replicas starting together do precisely the same
+thing, and the production entrypoint runs `migrate` on boot. The suite found a real one.
+
+`migrate()` now holds a session-scoped `pg_advisory_lock` for its whole run — the primitive
+`worker/lock.ts` already uses and ADR-0004 already chose, so the pattern a reader finds here is
+the pattern that already ran. Deliberately **blocking**, and deliberately the opposite of the
+sweep's `pg_try_advisory_lock`: a sweep already running need not run twice, but a caller that
+*skipped* migration would carry on against a schema it has not verified, which is the one thing
+a migration runner exists to prevent. Released in the same `finally` that ends the connection,
+and Postgres drops session advisory locks when a connection closes, so a crashed migrator
+leaves nothing to reap.
+
+Proven by reproduction, not by re-running until green — `run-tests.mjs` exists specifically to
+stop that. The exact pair of files that raced (`tenant-lifecycle-purge`,
+`demo-rate-limit-and-receipt`) failed reproducibly before, and passed **23/23 three consecutive
+times** after. Full suite **121/121, twice**.
+
+### Verified
+
+`npm run verify` exit 0 · `npm run api:verify` exit 0, 121/121 · `format:check` clean ·
+`npm audit --omit=dev --audit-level=high` exit 0, 0 vulnerabilities · `npm ci` reproduces the
+lockfile byte-identically and the audit stays clean after it.
+
+### Not done at this point
+
+Nothing is pushed yet. The control plane is still offline (Cloudflare 1033) and that is a
+VM/`cloudflared` problem outside this repository — nothing here hides it. Stage B, the
+reconstruction of the ten stations against `design-references/`, has not started.
+
