@@ -20,6 +20,24 @@ RUN npm run build --workspace @portfolio/api
 # Re-resolve with production dependencies only, into a clean tree.
 RUN npm ci --workspace @portfolio/api --include-workspace-root --omit=dev
 
+# GUARANTEE THE WORKSPACE'S OWN node_modules EXISTS, EVEN WHEN IT IS EMPTY.
+#
+# npm hoists everything it can to the root, and only nests a package when a
+# version conflict forces it to. Whether `services/api/node_modules` exists at
+# all is therefore a property of dependency RESOLUTION, not of this project's
+# layout — and the COPY below depended on it. It held for as long as the root
+# and the workspace wanted different ioredis majors; the moment a lockfile
+# rebuild let ioredis 6 satisfy both, the directory stopped existing and the
+# image build failed with
+#
+#   failed to compute cache key: "/build/services/api/node_modules": not found
+#
+# on a commit whose every gate and every one of 121 tests was green. `mkdir -p`
+# costs an empty directory and removes the dependency on an accident. Node
+# resolves up the tree, so an empty one is correct — it is what npm would have
+# left there anyway.
+RUN mkdir -p /build/services/api/node_modules
+
 FROM node:24-bookworm-slim AS runtime
 ENV NODE_ENV=production
 WORKDIR /app

@@ -41,7 +41,8 @@ import manifest from './visual-world-manifest.json';
 export const PLATE_BASE: string =
   import.meta.env['PUBLIC_VISUAL_WORLD_BASE']?.replace(/\/$/, '') ?? '/visual-world';
 
-type ManifestEntry = { avif?: string; webp?: string };
+/** `{ avif: { "1280": "file.avif", ... }, webp: { ... } }`, keyed by master stem. */
+type ManifestEntry = { avif?: Record<string, string>; webp?: Record<string, string> };
 const MANIFEST = manifest as Record<string, ManifestEntry>;
 
 /**
@@ -188,9 +189,11 @@ export function station(id: StationId): Station {
  * With no manifest entry — during local development against the raw masters —
  * both fall back to the PNG, so the site works before the pipeline has run.
  */
-export function plateSources(id: StationId): { avif: string; webp: string } {
+export function plateSources(id: StationId): { avif: string; webp: string; width: number } {
   const entry = MANIFEST[manifestKey(id)];
-  if (!entry?.avif || !entry?.webp) {
+  const avif = srcset(entry?.avif);
+  const webp = srcset(entry?.webp);
+  if (!avif || !webp) {
     /*
      * Unreachable through the component, which guards on plateExists() first.
      * Throwing rather than returning a PNG path keeps the failure loud: the
@@ -201,13 +204,50 @@ export function plateSources(id: StationId): { avif: string; webp: string } {
       `No production artwork for station ${id}. Run: node scripts/optimize-visual-world.mjs`,
     );
   }
-  return { avif: `${PLATE_BASE}/${entry.avif}`, webp: `${PLATE_BASE}/${entry.webp}` };
+  return { avif, webp, width: widestWidth(entry?.avif) };
 }
 
-/** The single URL to use when only one is wanted (preload hints). */
-export function plateUrl(id: StationId): string {
-  return plateSources(id).avif;
+/**
+ * A `srcset` string, ascending by width, for one format's rungs.
+ *
+ * The browser chooses from this before any script runs — which is the whole
+ * reason the rungs exist. The previous version served one width through a
+ * JavaScript loader that first had to probe AVIF support with a data: URI, and
+ * the homepage's LCP was 3.4s against a 1.8s budget as a direct result.
+ */
+function srcset(rungs: Record<string, string> | undefined): string {
+  if (!rungs) return '';
+  const widths = Object.keys(rungs)
+    .map(Number)
+    .filter((w) => Number.isFinite(w))
+    .sort((a, b) => a - b);
+  if (widths.length === 0) return '';
+  return widths.map((w) => `${PLATE_BASE}/${rungs[String(w)]} ${w}w`).join(', ');
 }
+
+/** The widest rung, used as the <img> intrinsic width so the ratio is known. */
+function widestWidth(rungs: Record<string, string> | undefined): number {
+  const widths = Object.keys(rungs ?? {})
+    .map(Number)
+    .filter(Number.isFinite);
+  return widths.length > 0 ? Math.max(...widths) : PLATE_INTRINSIC_WIDTH;
+}
+
+/**
+ * The plates' aspect ratio. Every master is 3:2, which is the ratio the design
+ * references are composed at and the ratio the station stage holds. Declared so
+ * the <img> reserves its box before a byte arrives and CLS stays at 0.
+ */
+export const PLATE_INTRINSIC_WIDTH = 2528;
+export const PLATE_INTRINSIC_HEIGHT = 1685;
+
+/**
+ * The `sizes` hint. Every plate is full-bleed behind its station, so the
+ * displayed width is the viewport width at every breakpoint — which is exactly
+ * what `100vw` says, and saying it lets the browser pick a rung from the raw
+ * HTML instead of waiting for layout.
+ */
+export const PLATE_SIZES = '100vw';
 
 /**
  * Whether a station has production artwork.
@@ -232,7 +272,7 @@ export function plateUrl(id: StationId): string {
  */
 export function plateExists(id: StationId): boolean {
   const entry = MANIFEST[manifestKey(id)];
-  return Boolean(entry?.avif && entry?.webp);
+  return Boolean(srcset(entry?.avif) && srcset(entry?.webp));
 }
 
 /**

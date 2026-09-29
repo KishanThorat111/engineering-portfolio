@@ -6,12 +6,27 @@
  * atmospheric overlays and a technical grid. The plate is decorative artwork;
  * every readable thing on the page is real HTML above it.
  *
- * WHY THE PLATE IS A CSS BACKGROUND AND NOT AN <img>
- * It must cover an arbitrarily tall section, hold its focal point at every
- * aspect ratio, and never contribute to the accessibility tree. `background-
- * image` with `object-position`-style control does all three. An <img> would
- * need alt handling, would participate in layout, and would fight the section
- * height.
+ * WHY THE PLATE IS AN <img> AND NOT A CSS BACKGROUND
+ *
+ * It used to be a background, for three stated reasons: it must cover an
+ * arbitrarily tall section, hold its focal point at every aspect ratio, and stay
+ * out of the accessibility tree. All three are true, and all three are things an
+ * absolutely-positioned <img> with `object-fit: cover`, `object-position` and
+ * `alt=""` does natively.
+ *
+ * What the background could NOT do is be found by the preload scanner. A CSS
+ * background is invisible until the CSSOM exists, and this one was worse than
+ * that: it was promoted by a deferred module that first probed AVIF support with
+ * a data: URI before it would even request the file. On the homepage the plate
+ * is the largest contentful element, and that serial chain measured **LCP 3.4s
+ * against the §11 budget of 1.8s** — while FCP was 0.9s, Speed Index 0.9s, TBT
+ * 0ms and CLS 0. One metric, one cause.
+ *
+ * As markup, the first plate is in the raw HTML with `fetchpriority="high"`, the
+ * rest carry `loading="lazy"`, and the browser negotiates AVIF vs WebP and picks
+ * a width rung by itself. That deletes the feature probe, the IntersectionObserver
+ * and the whole JavaScript loading path — the remaining script does parallax and
+ * nothing else.
  *
  * WHY THERE ARE THREE LAYERS AND NOT ONE
  * Depth. The plate moves slowest, the atmosphere a little faster, the technical
@@ -21,16 +36,16 @@
  *
  * DEGRADES TO NOTHING, DELIBERATELY
  * If the plate is missing or slow, the graphite ground and its gradients remain
- * and the station is still complete. That is not only a loading state — as of
- * 25 Aug 2026 the plates are not yet in the repository, and the site is
- * expected to look intentional without them.
+ * and the station is still complete. Nothing readable was ever in the image.
  */
 import {
   plateSources,
-  plateUrl,
   plateExists,
   station,
   nextStation,
+  PLATE_SIZES,
+  PLATE_INTRINSIC_WIDTH,
+  PLATE_INTRINSIC_HEIGHT,
   type StationId,
 } from '../config/visual-world';
 
@@ -66,26 +81,36 @@ const nextHasPlate = next ? plateExists(next.id) : false;
 <div class="vw" data-station={id} data-depth={depth} data-priority={priority} aria-hidden="true">
   {
     /*
-    The plate. ALWAYS `data-src`, never an inline background-image.
+      The plate, as real markup.
 
-    The eager station used to inline its url so the artwork was present in the
-    first paint. The HTML gate rejects inline styles outright and it is right
-    to: an inline style is unhashable under the CSP this site ships, so the
-    exception would have had to be bought with a policy that permits inline
-    styling everywhere. The plate is decorative, the script that promotes it is
-    a deferred module, and the station is complete without it — so paying for a
-    few hundred milliseconds of graphite ground is the correct trade.
-  */
+      Order matters: AVIF first because the browser takes the first <source> it
+      can decode, and AVIF measured better than every WebP candidate at roughly
+      half the size. `sizes="100vw"` is honest — the plate is full-bleed — and it
+      is what lets a phone fetch the 1280 rung instead of the 2528 one.
+
+      `width`/`height` are the intrinsic pixels of the widest rung, so the box is
+      reserved before a byte arrives and CLS stays at 0. `alt=""` plus the
+      aria-hidden wrapper keeps it out of the accessibility tree entirely, which
+      is correct: it is environmental artwork and the page states in real text
+      everything it illustrates.
+    */
   }
   {
     hasPlate && (
-      <div
-        class="vw__plate"
-        data-plate
-        data-avif={src.avif}
-        data-webp={src.webp}
-        data-priority={priority}
-      />
+      <picture>
+        <source type="image/avif" srcset={src.avif} sizes={PLATE_SIZES} />
+        <source type="image/webp" srcset={src.webp} sizes={PLATE_SIZES} />
+        <img
+          class="vw__plate"
+          src={src.webp.split(' ')[0]}
+          width={PLATE_INTRINSIC_WIDTH}
+          height={PLATE_INTRINSIC_HEIGHT}
+          alt=""
+          decoding="async"
+          loading={priority === 'eager' ? 'eager' : 'lazy'}
+          fetchpriority={priority === 'eager' ? 'high' : 'auto'}
+        />
+      </picture>
     )
   }
 
@@ -109,11 +134,16 @@ const nextHasPlate = next ? plateExists(next.id) : false;
 </div>
 
 {
-  /* Preload exactly one station ahead, and only for the eager (first) plate on
-     a page. This is the whole loading strategy: one now, one warmed. */
-  priority === 'eager' && next && nextHasPlate && (
-    <link rel="prefetch" as="image" href={plateUrl(next.id)} fetchpriority="low" />
-  )
+  /*
+    NO PREFETCH LINK ANY MORE.
+
+    This used to emit `<link rel="prefetch" as="image">` for the next station,
+    which made sense when a script decided what to load and when. With native
+    `loading="lazy"` the browser already starts the next plate before it scrolls
+    into view, using its own connection and viewport heuristics, and a prefetch
+    on top of that competes with the eager plate for bandwidth during exactly the
+    window LCP is measured in.
+  */
 }
 
 <style>
@@ -133,9 +163,12 @@ const nextHasPlate = next ? plateExists(next.id) : false;
     position: absolute;
     /* Oversized so parallax translation never exposes an edge. */
     inset: -8% -4%;
-    background-position: center 40%;
-    background-size: cover;
-    background-repeat: no-repeat;
+    width: auto;
+    height: auto;
+    min-width: 108%;
+    min-height: 116%;
+    object-fit: cover;
+    object-position: center 40%;
     /* Held back so interface type always wins. The plates are cinematic and
        bright in places; the interface is the content. */
     opacity: 0.55;
@@ -220,7 +253,7 @@ const nextHasPlate = next ? plateExists(next.id) : false;
    */
   @media (max-width: 900px) {
     .vw__plate {
-      background-position: 62% 38%;
+      object-position: 62% 38%;
       opacity: 0.42;
     }
 

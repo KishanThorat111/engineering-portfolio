@@ -1,26 +1,34 @@
 /**
- * Parallax and lazy plate loading, for every station on the page.
+ * Parallax, for every station on the page. That is now all this does.
  *
  * ONE SCRIPT, TEN STATIONS. It finds every `.vw` on the page and drives them
  * all; there is no per-station JavaScript and adding station eleven requires
  * none.
  *
- * THE STATIC SURFACE'S JS BUDGET IS 15KB gz AND ALREADY MET (§11).
- * This file is a few hundred bytes compressed and adds no dependency. That is
- * the reason it is hand-written rather than reaching for a scroll library:
- * every animation library that would do this costs more than the entire
- * remaining budget.
+ * WHAT WAS DELETED, AND WHY
+ * This file used to own plate loading too: an AVIF feature probe against a
+ * data: URI, an IntersectionObserver with 60% of lead margin, and an Image()
+ * decode before promoting a CSS background. Every part of that is now the
+ * browser's job, done better and earlier — `<picture>` negotiates the format,
+ * `srcset`/`sizes` picks the width, `loading="lazy"` handles everything below
+ * the fold, and `fetchpriority="high"` on the first plate lets the preload
+ * scanner start the fetch from the raw HTML. That chain of script-gated work
+ * was measured at 3.4s of LCP against a 1.8s budget; markup does it without a
+ * line of JavaScript.
  *
- * WHY TRANSFORMS AND NOT background-position
- * Moving a background-position repaints the layer every frame. A translate on
- * a promoted layer is composited on the GPU and costs nothing per frame. The
+ * THE STATIC SURFACE'S JS BUDGET IS 15KB gz AND ALREADY MET (§11).
+ * What remains is a few hundred bytes compressed and adds no dependency.
+ *
+ * WHY TRANSFORMS AND NOT object-position
+ * Moving an object-position repaints the layer every frame. A translate on a
+ * promoted layer is composited on the GPU and costs nothing per frame. The
  * plate is oversized in CSS precisely so it can be translated without exposing
  * an edge.
  *
  * REDUCED MOTION IS CHECKED BEFORE ANYTHING IS ARMED, and re-checked when it
  * changes. A visitor who turns the preference on mid-session gets stillness
- * immediately, and the observers that load plates keep working — motion is
- * suppressed, content never is.
+ * immediately. Motion is suppressed; nothing is ever withheld, and because the
+ * plates are now plain markup the artwork does not depend on this file at all.
  */
 
 type Layer = {
@@ -43,102 +51,9 @@ function collect(): Layer[] {
   }));
 }
 
-/**
- * Does this browser decode AVIF?
- *
- * Resolved ONCE for the page. AVIF is the primary format because it measured
- * better than every WebP candidate at half the size, but Safari before 16.4
- * cannot decode it — and a `background-image` that fails is silent, so a
- * feature test is the only way to know. A one-pixel AVIF is decoded to answer
- * the question; the promise is created immediately so it has usually settled
- * by the time the first plate is wanted.
- */
-const AVIF_PIXEL =
-  'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAEAAAABAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIABoAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgABogQEDQgMgkQAAAAB8dSLfI=';
-
-let avifSupport: Promise<boolean> | null = null;
-
-function supportsAvif(): Promise<boolean> {
-  if (!avifSupport) {
-    avifSupport = new Promise<boolean>((resolve) => {
-      const probe = new Image();
-      probe.onload = () => resolve(probe.width > 0);
-      probe.onerror = () => resolve(false);
-      probe.src = AVIF_PIXEL;
-    });
-  }
-  return avifSupport;
-}
-
-/**
- * Promote a lazy plate to a real background.
- *
- * Loaded through an Image first so the swap happens on a decoded bitmap:
- * assigning the url straight to background-image paints an empty box until the
- * bytes arrive, which on a slow connection is a visible flash of ground.
- */
-async function loadPlate(layer: Layer): Promise<void> {
-  const el = layer.plate;
-  if (!el || el.dataset['loaded'] === 'true') return;
-  const src = (await supportsAvif()) ? el.dataset['avif'] : el.dataset['webp'];
-  if (!src) return;
-  el.dataset['loaded'] = 'true';
-
-  const img = new Image();
-  img.decoding = 'async';
-  img.src = src;
-  const apply = () => {
-    el.style.backgroundImage = `url("${src}")`;
-    el.dataset['ready'] = 'true';
-  };
-  if (img.decode) {
-    img.decode().then(apply).catch(apply);
-  } else {
-    img.onload = apply;
-    /*
-     * No onerror handler that hides anything. A plate that fails to load
-     * leaves the graphite ground and the atmosphere, which is a complete and
-     * intentional appearance — there is nothing to fall back to because
-     * nothing readable was ever in the image.
-     */
-  }
-}
-
 export function initVisualWorld(): void {
   const layers = collect();
   if (layers.length === 0) return;
-
-  /* --- lazy loading: one station ahead ------------------------------- */
-  if ('IntersectionObserver' in window) {
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          const layer = layers.find((l) => l.root === entry.target);
-          if (layer) void loadPlate(layer);
-          io.unobserve(entry.target);
-        }
-      },
-      // 60% of a viewport of lead time: enough that the plate is decoded before
-      // the station is on screen, not so much that everything loads at once.
-      { rootMargin: '60% 0px' },
-    );
-    for (const layer of layers) {
-      /*
-       * Eager plates load immediately and are never observed. Nothing is
-       * inlined into the HTML any more — the gate forbids inline styles — so
-       * this is the ONLY thing that puts the first station's artwork on
-       * screen, and it must not wait for an intersection that already
-       * happened before the observer existed.
-       */
-      if (layer.root.dataset['priority'] === 'eager') void loadPlate(layer);
-      else io.observe(layer.root);
-    }
-  } else {
-    // No observer: load everything rather than show nothing. Correctness beats
-    // the budget in the fallback path.
-    layers.forEach(loadPlate);
-  }
 
   /* --- parallax ------------------------------------------------------- */
   let motionOn = !matchMedia(REDUCED).matches;

@@ -1,42 +1,132 @@
 {
   "01-enter": {
-    "avif": "01-enter.089fbb14.avif",
-    "webp": "01-enter.af3746ae.webp"
+    "avif": {
+      "768": "01-enter-768.ca8752d6.avif",
+      "1280": "01-enter-1280.e7d3e18f.avif",
+      "1920": "01-enter-1920.d5a0bde0.avif",
+      "2528": "01-enter-2528.87a82e14.avif"
+    },
+    "webp": {
+      "768": "01-enter-768.cd2bec38.webp",
+      "1280": "01-enter-1280.93e1d090.webp",
+      "1920": "01-enter-1920.aa396d58.webp"
+    }
   },
   "02-systems": {
-    "avif": "02-systems.4a2dfff2.avif",
-    "webp": "02-systems.e87ae80b.webp"
+    "avif": {
+      "768": "02-systems-768.4f12d6c6.avif",
+      "1280": "02-systems-1280.d3989fa2.avif",
+      "1920": "02-systems-1920.b61b1907.avif",
+      "2528": "02-systems-2528.0eb33c7d.avif"
+    },
+    "webp": {
+      "768": "02-systems-768.40286707.webp",
+      "1280": "02-systems-1280.7531fb57.webp",
+      "1920": "02-systems-1920.d678f094.webp"
+    }
   },
   "03-dissection": {
-    "avif": "03-dissection.51559f66.avif",
-    "webp": "03-dissection.eaf727ee.webp"
+    "avif": {
+      "768": "03-dissection-768.ae10dc1e.avif",
+      "1280": "03-dissection-1280.1b40f940.avif",
+      "1920": "03-dissection-1920.f52d1cd9.avif",
+      "2528": "03-dissection-2528.10a6b0a1.avif"
+    },
+    "webp": {
+      "768": "03-dissection-768.c19bda35.webp",
+      "1280": "03-dissection-1280.f975c949.webp",
+      "1920": "03-dissection-1920.7ca07fa9.webp"
+    }
   },
   "04-data": {
-    "avif": "04-data.eb9594e4.avif",
-    "webp": "04-data.b6c12952.webp"
+    "avif": {
+      "768": "04-data-768.9b7876e1.avif",
+      "1280": "04-data-1280.14cff859.avif",
+      "1920": "04-data-1920.c34c5c4d.avif",
+      "2528": "04-data-2528.4236416d.avif"
+    },
+    "webp": {
+      "768": "04-data-768.9375b69e.webp",
+      "1280": "04-data-1280.83ba4478.webp",
+      "1920": "04-data-1920.c453f8e1.webp"
+    }
   },
   "05-lab": {
-    "avif": "05-lab.5714f951.avif",
-    "webp": "05-lab.cf508e44.webp"
+    "avif": {
+      "768": "05-lab-768.79798392.avif",
+      "1280": "05-lab-1280.69ae307a.avif",
+      "1920": "05-lab-1920.30c788f9.avif",
+      "2528": "05-lab-2528.fad4a023.avif"
+    },
+    "webp": {
+      "768": "05-lab-768.23f25e8f.webp",
+      "1280": "05-lab-1280.56d340c6.webp",
+      "1920": "05-lab-1920.078292d0.webp"
+    }
   },
   "06-live": {
-    "avif": "06-live.612a6e28.avif",
-    "webp": "06-live.d89a631f.webp"
+    "avif": {
+      "768": "06-live-768.ea3d664f.avif",
+      "1280": "06-live-1280.2fee606a.avif",
+      "1920": "06-live-1920.ce48aa42.avif",
+      "2528": "06-live-2528.fb9f5d30.avif"
+    },
+    "webp": {
+      "768": "06-live-768.d36a9d84.webp",
+      "1280": "06-live-1280.1c354b09.webp",
+      "1920": "06-live-1920.747b3c39.webp"
+    }
   },
   "07-think": {
-    "avif": "07-think.1fab1251.avif",
-    "webp": "07-think.26e72d07.webp"
+    "avif": {
+      "768": "07-think-768.905ccfdb.avif",
+      "1280": "07-think-1280.6af137ce.avif",
+      "1920": "07-think-1920.55c6004c.avif",
+      "2528": "07-think-2528.6d8506d5.avif"
+    },
+    "webp": {
+      "768": "07-think-768.b3285dc5.webp",
+      "1280": "07-think-1280.c5fd1c7d.webp",
+      "1920": "07-think-1920.15c6b9e5.webp"
+    }
   },
   "08-build": {
-    "avif": "08-build.fd0d1ca5.avif",
-    "webp": "08-build.9591c79f.webp"
+    "avif": {
+      "768": "08-build-768.4dbb4212.avif",
+      "1280": "08-build-1280.516a5aa6.avif",
+      "1920": "08-build-1920.7702136b.avif",
+      "2528": "08-build-2528.18edf998.avif"
+    },
+    "webp": {
+      "768": "08-build-768.b66e6559.webp",
+      "1280": "08-build-1280.8c9ef60a.webp",
+      "1920": "08-build-1920.d31e0953.webp"
+    }
   },
   "09-proof": {
-    "avif": "09-proof.9881a346.avif",
-    "webp": "09-proof.2f2c7e46.webp"
+    "avif": {
+      "768": "09-proof-768.f8b46d2d.avif",
+      "1280": "09-proof-1280.6fc20262.avif",
+      "1920": "09-proof-1920.c8d70fed.avif",
+      "2528": "09-proof-2528.889ce1ea.avif"
+    },
+    "webp": {
+      "768": "09-proof-768.bf4b5248.webp",
+      "1280": "09-proof-1280.0a035d01.webp",
+      "1920": "09-proof-1920.4072a86f.webp"
+    }
   },
   "10-end": {
-    "avif": "10-end.8659668b.avif",
-    "webp": "10-end.3f982dc3.webp"
+    "avif": {
+      "768": "10-end-768.f060531e.avif",
+      "1280": "10-end-1280.320a1ee0.avif",
+      "1920": "10-end-1920.18d12123.avif",
+      "2528": "10-end-2528.a5578f20.avif"
+    },
+    "webp": {
+      "768": "10-end-768.3f31f59e.webp",
+      "1280": "10-end-1280.fbb171d9.webp",
+      "1920": "10-end-1920.0ea866f5.webp"
+    }
   }
 }

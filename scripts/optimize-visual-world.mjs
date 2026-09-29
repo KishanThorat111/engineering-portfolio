@@ -249,6 +249,51 @@ async function main() {
   const PRIMARY = { format: 'avif', options: { quality: 65, effort: 5 } };
   const FALLBACK = { format: 'webp', options: { quality: 85, effort: 6 } };
 
+  /*
+   * THREE WIDTHS, BECAUSE ONE WIDTH COST 1.6 SECONDS OF LCP.
+   *
+   * The plates shipped at their master width only. On the homepage the first
+   * plate is the largest contentful element, so Lighthouse measured LCP at
+   * **3.4s** against the §11 budget of 1.8s — a real budget breach, not a
+   * threshold quibble, and every other metric on that run was perfect (FCP
+   * 0.9s, SI 0.9s, TBT 0, CLS 0). A 2560-wide plate decoded on a 390-wide
+   * phone is most of a second of pure waste before a single pixel of it is
+   * visible.
+   *
+   * 768 is the rung a phone actually takes: a 412px viewport at DPR 1.75 needs
+   * 721 device pixels, and without this rung the smallest thing on offer was
+   * 1280 — nearly double the bytes, on the one device where the budget is
+   * measured. 1280 covers laptops at 1x and phones at 3x; 1920 covers desktop
+   * and retina laptops; the master's own width is the top rung so a large or
+   * retina desktop still gets every pixel that was rendered. The browser picks by
+   * `srcset`/`sizes` before any script runs, which is the entire point: the
+   * preload scanner can start the right fetch from the raw HTML.
+   *
+   * The ladder is built PER PLATE and clamped to the master, so a plate is
+   * never upscaled and a narrower master simply gets fewer rungs.
+   */
+  const BASE_WIDTHS = [768, 1280, 1920];
+  const ladder = (masterWidth) =>
+    [...new Set([...BASE_WIDTHS.filter((w) => w < masterWidth), masterWidth])].sort(
+      (a, b) => a - b,
+    );
+
+  /*
+   * THE FALLBACK LADDER STOPS AT 1920, AND THAT IS NOT A CORNER CUT.
+   *
+   * WebP exists here for exactly one audience: Safari before 16.4, which cannot
+   * decode AVIF. That is a closing tail, and the full ladder for it cost 2.5MB
+   * of repository and deployed weight to give a legacy browser a retina rung it
+   * will render on a display most of that cohort does not have. AVIF — what
+   * essentially every current browser actually fetches — keeps every rung up to
+   * the master's own width.
+   *
+   * The fallback is complete, not degraded: the same plate, the same crop, at a
+   * width that is still larger than the viewport of the devices still running
+   * that Safari.
+   */
+  const FALLBACK_MAX_WIDTH = 1920;
+
   await mkdir(OUT, { recursive: true });
   const manifest = {};
   let outTotal = 0;
@@ -262,27 +307,42 @@ Encoding ${files.length} plates: avif q65 primary, webp q85 fallback
     const stem = basename(file, '.png');
     manifest[stem] = {};
 
+    // The master's own width, so a plate is never upscaled past its source.
+    const masterWidth = (await sharp(path).metadata()).width ?? Math.max(...WIDTHS);
+
     for (const variant of [PRIMARY, FALLBACK]) {
-      const buf = await sharp(path)[variant.format](variant.options).toBuffer();
+      manifest[stem][variant.format] = {};
 
-      /*
-       * CONTENT-HASHED FILENAMES, not a versioned directory.
-       *
-       * These plates are finalised artwork that changes rarely and
-       * individually. A hash in the name means every URL can be served
-       * immutable for a year with no purge step, and a re-encoded plate gets a
-       * new URL automatically — so a changed image can never be served stale,
-       * which is the failure a long max-age on a stable filename guarantees.
-       * A versioned directory would force all ten to move whenever one
-       * changed, and would need a manual bump nobody remembers.
-       */
-      const hash = createHash('sha256').update(buf).digest('hex').slice(0, 8);
-      const name = `${stem}.${hash}.${variant.format}`;
-      await writeFile(join(OUT, name), buf);
-      manifest[stem][variant.format] = name;
-      outTotal += buf.length;
+      const rungs =
+        variant === FALLBACK
+          ? ladder(Math.min(masterWidth, FALLBACK_MAX_WIDTH))
+          : ladder(masterWidth);
 
-      console.log(`  ${name.padEnd(30)} ${(kb(buf.length) + 'KB').padStart(8)}`);
+      for (const width of rungs) {
+        const buf = await sharp(path)
+          .resize({ width, withoutEnlargement: true })
+          [variant.format](variant.options)
+          .toBuffer();
+
+        /*
+         * CONTENT-HASHED FILENAMES, not a versioned directory.
+         *
+         * These plates are finalised artwork that changes rarely and
+         * individually. A hash in the name means every URL can be served
+         * immutable for a year with no purge step, and a re-encoded plate gets a
+         * new URL automatically — so a changed image can never be served stale,
+         * which is the failure a long max-age on a stable filename guarantees.
+         * A versioned directory would force all ten to move whenever one
+         * changed, and would need a manual bump nobody remembers.
+         */
+        const hash = createHash('sha256').update(buf).digest('hex').slice(0, 8);
+        const name = `${stem}-${width}.${hash}.${variant.format}`;
+        await writeFile(join(OUT, name), buf);
+        manifest[stem][variant.format][String(width)] = name;
+        outTotal += buf.length;
+
+        console.log(`  ${name.padEnd(36)} ${(kb(buf.length) + 'KB').padStart(8)}`);
+      }
     }
   }
 
@@ -295,7 +355,11 @@ Encoding ${files.length} plates: avif q65 primary, webp q85 fallback
    * files this run did not just write are removed, and only encoded variants —
    * nothing else in the directory is touched.
    */
-  const keep = new Set(Object.values(manifest).flatMap((v) => Object.values(v)));
+  const keep = new Set(
+    Object.values(manifest).flatMap((formats) =>
+      Object.values(formats).flatMap((w) => Object.values(w)),
+    ),
+  );
   let pruned = 0;
   for (const f of await readdir(OUT)) {
     if (!/\.(avif|webp)$/.test(f) || keep.has(f)) continue;
