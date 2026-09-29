@@ -18,6 +18,12 @@ const APP_ROLE = 'demo_app';
 const DEFINER_ROLE = 'demo_definer';
 
 /**
+ * The name this runner serialises itself on. Same namespace convention as
+ * `worker/lock.ts`, so the two locks in this codebase read as one idea.
+ */
+const MIGRATE_LOCK = 'lifecycle:schema-migrate';
+
+/**
  * Roles are cluster objects, not schema objects, so they cannot live in a
  * migration file that also needs to be re-runnable — and the application
  * password must not be written into a .sql file that gets committed. Both
@@ -70,6 +76,36 @@ export async function migrate(): Promise<string[]> {
 
   const applied: string[] = [];
   try {
+    /*
+     * SERIALISED, AND BLOCKING RATHER THAN TRYING.
+     *
+     * Two processes running this concurrently is not hypothetical. Two API
+     * replicas starting together do it, and the integration suite does it every
+     * run — Node's test runner schedules files in parallel and each one calls
+     * `ensureSchema()`. Postgres then raises
+     *
+     *   XX000  tuple concurrently updated
+     *   where: SQL statement "ALTER ROLE demo_definer NOLOGIN BYPASSRLS"
+     *
+     * because `ALTER ROLE` updates a `pg_authid` row and two sessions cannot
+     * update the same catalogue tuple at once. The role bootstrap is idempotent
+     * by content but it was never safe by concurrency, and `CREATE TABLE IF NOT
+     * EXISTS` plus the per-file transaction below have the same exposure: the
+     * `schema_migration` primary key makes a double-apply fail loudly rather
+     * than corrupt, which is correct, but failing loudly is still failing.
+     *
+     * `pg_advisory_lock`, NOT `pg_try_advisory_lock`. The worker's sweep uses
+     * the trying form because a sweep that is already running does not need to
+     * run again in the same second. This is the opposite: a caller that skipped
+     * migration would carry on against a schema it has not verified, which is
+     * precisely the thing a migration runner exists to prevent. It waits.
+     *
+     * Session-scoped on this client, released in the same `finally` that ends
+     * the connection — and Postgres drops session advisory locks when the
+     * connection closes, so a crashed migrator leaves nothing to reap.
+     */
+    await client.query('SELECT pg_advisory_lock(hashtextextended($1, 0))', [MIGRATE_LOCK]);
+
     await bootstrapRoles(client);
 
     await client.query(`
