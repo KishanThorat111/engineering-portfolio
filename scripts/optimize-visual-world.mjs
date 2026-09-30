@@ -327,6 +327,61 @@ async function main() {
     '08-build': { left: 0, top: 400, width: 1750, height: 1167 },
   };
 
+  /*
+   * GRADUATED DEPTH-OF-FIELD, AND WHY ONE PLATE NEEDS IT.
+   *
+   * The masters were assumed to be text-free. They are not. `03-dissection`
+   * has lettering baked into the artwork across its lower tiers, and most of it
+   * is AI nonsense: "GVRUE", "EVERT ETASWR", "OOSA PIPXLINE", "OPLGOW SERVICES",
+   * "TWIDIGL", "DORTOINHERDT". It was legible on the live site.
+   *
+   * The Truth Constitution is about published claims, and garbled lettering is
+   * not a claim — but it is unquestionably unprofessional, and CLAUDE.md's rule
+   * that words baked into artwork are never a source of truth means the only
+   * safe state is that none of them are readable.
+   *
+   * Cropping cannot reach it: the text sits on the tiers, and the tiers are the
+   * subject. A rectangular mask would leave visible smudges. A graduated blur
+   * from the middle of the frame downward renders every one of those strings
+   * illegible AND reads as a tilt-shift — which is a real photographic treatment
+   * of an isometric scene, not a patch. The tiers the callouts point at stay
+   * sharp, because they are above the gradient.
+   *
+   * Applied before the width ladder, so no rung of any format carries a
+   * readable version. Verified by rendering, not by arithmetic.
+   */
+  const DEPTH_BLUR = {
+    '03-dissection': { sigma: 18, sharpUntil: 0.4, blurredFrom: 0.54 },
+  };
+
+  /** Build the graduated-blur overlay for one plate, or null if it needs none. */
+  async function depthOverlay(stem, path) {
+    const cfg = DEPTH_BLUR[stem];
+    if (!cfg) return null;
+    const meta = await sharp(path).metadata();
+    const w = meta.width ?? 0;
+    const h = meta.height ?? 0;
+    if (!w || !h) return null;
+
+    const gradient = Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">` +
+        `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">` +
+        `<stop offset="${cfg.sharpUntil}" stop-color="#000000"/>` +
+        `<stop offset="${cfg.blurredFrom}" stop-color="#ffffff"/>` +
+        `<stop offset="1" stop-color="#ffffff"/>` +
+        `</linearGradient></defs><rect width="${w}" height="${h}" fill="url(#g)"/></svg>`,
+    );
+
+    const alpha = await sharp(gradient).resize(w, h).greyscale().raw().toBuffer();
+    const blurred = await sharp(path).blur(cfg.sigma).ensureAlpha().raw().toBuffer();
+    /* The gradient becomes the blurred copy's alpha, so it fades in rather than
+       appearing at a hard edge. */
+    for (let i = 0; i < w * h; i += 1) blurred[i * 4 + 3] = alpha[i];
+    return sharp(blurred, { raw: { width: w, height: h, channels: 4 } })
+      .png()
+      .toBuffer();
+  }
+
   await mkdir(OUT, { recursive: true });
   const manifest = {};
   let outTotal = 0;
@@ -341,6 +396,19 @@ Encoding ${files.length} plates: avif q65 primary, webp q85 fallback
     manifest[stem] = {};
 
     const crop = CROPS[stem];
+
+    /*
+     * The treated source, composed once per plate rather than once per rung —
+     * a 2528px gaussian blur is the most expensive thing in this script and the
+     * result is identical for every width below it.
+     */
+    const overlay = await depthOverlay(stem, path);
+    const overlaySource = overlay
+      ? await sharp(path)
+          .composite([{ input: overlay }])
+          .png()
+          .toBuffer()
+      : null;
     // The width available AFTER any crop, so a plate is never upscaled past
     // the pixels that actually survive into the frame.
     const masterWidth = crop ? crop.width : ((await sharp(path).metadata()).width ?? 1280);
@@ -354,7 +422,7 @@ Encoding ${files.length} plates: avif q65 primary, webp q85 fallback
           : ladder(masterWidth);
 
       for (const width of rungs) {
-        const pipeline = sharp(path);
+        const pipeline = sharp(overlaySource ?? path);
         if (crop) pipeline.extract(crop);
         const buf = await pipeline
           .resize({ width, withoutEnlargement: true })

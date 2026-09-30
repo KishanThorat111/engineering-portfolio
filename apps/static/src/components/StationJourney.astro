@@ -749,6 +749,54 @@ const MAP = [
     that could replace it.
   */
   }
+  {
+    /*
+      THE PANEL THAT COVERS THE PLATE'S EMPTY BOX.
+
+      Reference 08 draws a bordered green box near the lower right reading "THE
+      NEXT SYSTEM / AWAITING THE RIGHT PROBLEM". It is baked into the artwork,
+      its lettering is AI nonsense, and at our crop it rendered as an empty
+      bordered rectangle with nothing in it — the defect the owner reported.
+
+      It cannot be cropped out without losing the desk and the cube the frame is
+      composed around. So a real panel sits exactly over it, carrying the thing
+      this station is actually for: how to reach a person. Contact is the point
+      of 08, and until now the only route was a single button.
+    */
+  }
+  <Panel x={61} y={62} w={26} title="How to reach me" note="no form, no tracker">
+    <Inspector
+      rows={[
+        { label: 'Email', value: SITE.email, mono: true },
+        { label: 'Response', value: 'Usually same day' },
+        { label: 'Based in', value: 'Belagavi, India' },
+        { label: 'Availability', value: 'Open to relocation — UK', tone: 'signal' },
+      ]}
+      action={{ label: 'Start a conversation', href: `mailto:${SITE.email}` }}
+    />
+  </Panel>
+
+  {
+    /*
+      The left column ended at the availability line and the frame ran on for
+      another half-screen. The five principles are the honest thing to put in
+      front of someone deciding whether to make contact — they are what they
+      would be hiring — and they are already the repository's own words.
+    */
+  }
+  <Panel x={4.8} y={46} w={26} title="What you would be getting" dense>
+    <ol class="build__pillars">
+      {
+        PILLARS.map((pillar, i) => (
+          <li>
+            <span class="build__pillarNum">{String(i + 1).padStart(2, '0')}</span>
+            <span>{pillar.title}</span>
+          </li>
+        ))
+      }
+    </ol>
+  </Panel>
+
   <Panel x={66} y={20} w={22} title="The next system" status="pending">
     <p class="state">State: undefined</p>
     <p class="note">Awaiting the right problem.</p>
@@ -1254,6 +1302,38 @@ const MAP = [
     font-size: calc(12 * var(--u));
     letter-spacing: 0.08em;
     color: var(--record);
+  }
+
+  /* ── 08's pillar list ──────────────────────────────────────────── */
+  .build__pillars {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .build__pillars li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: calc(12 * var(--u));
+    align-items: baseline;
+    padding: calc(8 * var(--u)) 0;
+    border-bottom: 1px solid var(--plate-edge);
+    font-size: calc(13 * var(--u));
+    line-height: 1.35;
+    color: var(--text);
+  }
+
+  .build__pillars li:last-child {
+    border-bottom: 0;
+  }
+
+  .build__pillarNum {
+    font-family: var(--font-mono);
+    font-size: calc(11 * var(--u));
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
   }
 
   /* ── 09's layout ───────────────────────────────────────────────── */
