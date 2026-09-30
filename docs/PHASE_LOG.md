@@ -3527,3 +3527,142 @@ notes. Two lessons, both cheap:
    unstaged work needed redoing. The backup tags created at the start of this stage were never
    needed — but they were the reason the risk was acceptable at all, which is the argument for
    making them before touching anything rather than after.
+
+---
+
+## S5 — A production-grade sweep: five real defects, found by measurement · 30 September 2026
+
+**Scheme: a quality stage.** Owner-directed and deliberately broad — "recheck all, there are many
+bugs". Every route was driven in a real browser at 1440, 834 and 390 and checked for overflow,
+clipped text, heading structure, metadata, link integrity, tap-target size, focus behaviour,
+console errors and failed requests. Five real defects came out of it. Everything else that was
+checked and found correct is listed too, so the next sweep does not repeat the work.
+
+### 1. The home heading's text was welded together
+
+Each display line of the hero is a block `<span>` and adjacent tags carry no whitespace, so the
+`<h1>`'s own text content read:
+
+```
+I design,build,and operateproduction systems.
+```
+
+Anything that takes an element's text rather than its rendered layout got that — search
+crawlers, text extraction, browser reading mode, and screen readers whose accessible-name
+computation does not insert a space at a block boundary. A `visually-hidden` paragraph repeating
+the sentence had been papering over it, which meant the page stated its most important claim
+twice and a screen reader announced it twice: the heading, then the same words again as body
+text.
+
+An explicit space between the lines fixes the cause. The spans are blocks so nothing moves, and
+the duplicate paragraph is gone with it. The heading now matches the locked claim character for
+character, which `station-check` already asserts.
+
+### 2. The 404 self-canonicalised — open in dossier §15 since Phase 8
+
+`wrangler.jsonc` sets `not_found_handling: "404-page"`, so **one file is served at an unbounded
+number of addresses**. It was emitting `rel=canonical href="https://kishanthorat.com/404/"`,
+telling a crawler the error page is a real destination with a preferred URL, and it carried no
+`robots` directive at all.
+
+The page now carries `noindex` and no canonical. What kept this alive is that `machine-parity`
+required a canonical on **every** page, so the defect was load-bearing for a gate.
+
+The gate was made more precise rather than looser. Every page that is not the 404 is checked
+exactly as before; the 404 gains **two assertions it never had** — that it must not declare a
+canonical, and that it must carry a robots noindex. `/dev/components/` and the `/live/*` station
+pages are noindex too but keep their canonicals, because each is a single genuine destination a
+deep link resolves to. The rule is stated where the data model puts it.
+
+`/404.html` scores 0.63 on Lighthouse's `is-crawlable` **because** it is noindex, which is the
+correct state for an error page. It is deliberately not in the Lighthouse CI URL list, so this
+is information rather than a failure.
+
+### 3. Seven undersized tap targets (WCAG 2.2 AA, SC 2.5.8)
+
+Standalone controls sitting on a ~19px line box, against a 24×24 CSS-pixel minimum:
+
+| control | was | where |
+|---|---|---|
+| site header nav links | 57×17 | every page, every width |
+| header "CV" link | 20×31 | every page |
+| station rail links | 16×27 | home, ≤720px where only the number shows |
+| station rail "CV" | 16×19 | home |
+| footer contact links | 227×19 | every page |
+| CV page contact links | 227×19 | `/cv` — the links a recruiter taps |
+| `.entry-go`, `.cross-link`, 404 recovery link | 18–22px tall | systems, engineering, 404 |
+
+Every one is grown with padding and the padding undone with an equal negative margin, so the hit
+area clears 24px and **nothing moves** — header 57px and footer 127px measured identically before
+and after on every page.
+
+Two links remain under 24px and are **exempt**: "source on GitHub" and "The CV"/"a PDF" sit
+inside sentences, which SC 2.5.8 explicitly excepts. Stated rather than silently "fixed".
+
+### 4. A regression I introduced, and caught in the same sweep
+
+Giving each station link a 24px minimum made the rail's content wider than its box — correct for
+a horizontal scroller — but the browser still grew the **document's** `scrollWidth` by 17px at
+390, so the whole page could be dragged sideways. `overflow-x: auto` clipped the paint and not
+the propagation.
+
+Found by elimination in a real browser: `min-width: 0`, `max-width: 100%`, `overflow: hidden` on
+the parent and disabling scroll-snap all left it at 407px. `contain: paint` returned it to 390.
+The rail still scrolls, all ten stations stay reachable, and the minimum target is now exactly
+24px at 390 — verified, not assumed.
+
+### 5. Both skip links looked correct and did nothing
+
+`<main id="main">` on the static pages and `<main id="document">` on the live surface were both
+missing `tabindex="-1"`. A browser scrolls to a bare anchor target but leaves keyboard focus
+where it was, so pressing Enter on "Skip to main content" moved focus to **BODY** and the next
+Tab returned the reader to the top of the page — back into the navigation they had just asked to
+bypass.
+
+Measured before: `after Enter, focus moved to: BODY`. After: `main`, and `document tabindex=-1`
+on `/live/`. On the live surface this is the one control that has to work, because its whole
+accessibility story is that the document is the authoritative version and you can jump straight
+past the scene to reach it.
+
+`[tabindex='-1']:focus { outline: none }` is added to both stylesheets, scoped to negative
+tabindex only, so the jump target shows no ring while every real control keeps its own.
+
+### Checked and already correct
+
+Recorded so the next sweep can skip them: 16 JSON-LD blocks parse and carry `@context`/`@type`;
+every `og:image` resolves to a generated file; the sitemap lists 9 URLs and excludes every
+noindex route; all internal links resolve and all three external links return 200; every
+`/live/` station and demonstration deep link returns 200; `/cv.pdf`, `/api/profile.json`,
+`/llms.txt`, `/robots.txt`, `/sitemap-index.xml` and `/favicon.svg` all return 200 with the
+right content type; `prefers-reduced-motion: reduce` stops the plate transform while
+`no-preference` leaves it active; focus rings are present on the first eight tab stops of every
+page tested; and the mobile nav toggle flips `aria-expanded` and reveals all seven links.
+
+### Verified
+
+`npm run verify` **exit 0** (9 gates) · `npm run api:verify` **121/121** · `format:check` clean ·
+`npm audit --omit=dev --audit-level=high` **exit 0** · `verify:render` **35/35** ·
+`html-validate` clean across all 26 built pages.
+
+**axe via Lighthouse on all ten static routes: accessibility 1.0 on every one.** SEO 1.0
+everywhere but the 404, for the reason above. Home: performance 0.96, LCP 2631ms, CLS 0.000,
+accessibility 1, SEO 1. `/about`: accessibility 1, SEO 1, best-practices 1.
+
+Home's `best-practices` is 0.96 rather than 1 for the reason already recorded in S2: the liveness
+probe logs a network error while the control plane is down, which is the honest behaviour.
+
+### A measurement that failed once, and why it was not a code defect
+
+`render-verify`'s adaptive-quality governor check failed at **p95 19.50ms against a 19ms
+budget** while twelve Docker containers were running. With the machine unloaded the same check
+measures **17.10ms** and passes 35/35. The changes in this stage were a `tabIndex` attribute and
+a focus-outline rule; neither can move GPU frame timing. Recorded rather than silently re-run,
+because "it passed the second time" is not a diagnosis.
+
+### Still open
+
+Unchanged by this stage: the control plane is offline (Cloudflare 1033 — the VM or `cloudflared`
+needs restarting), there is no headshot, the demo-tenant screenshots and hospital telemetry
+permissions are outstanding, the mid-range device frame measurement carried since P4 has not been
+taken, and 72 "as of Jul 2026" qualifiers remain unrefreshed because none of the underlying
+numbers were re-checked.
