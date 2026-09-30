@@ -277,7 +277,21 @@ export function App() {
         reading a panel to find out.
       */}
       <StatusBar />
-      <main className="document" id="document">
+      {/*
+        `tabIndex={-1}` is what makes the skip link above actually skip.
+
+        Without it the browser scrolls to this element and leaves keyboard focus
+        where it was, so the next Tab goes back to the top and the reader is
+        returned to the scene they just asked to bypass. On a surface whose
+        entire accessibility story is "the document is the authoritative version
+        and you can jump straight to it", a skip link that does not move focus is
+        the one control that has to work. Verified by driving the keyboard:
+        pressing Enter on it moved focus to BODY.
+
+        A negative tabindex is programmatically focusable and adds no tab stop,
+        so nothing changes for anyone who does not use the skip link.
+      */}
+      <main className="document" id="document" tabIndex={-1}>
         <Arrival />
         {tenant ? <Stations apiKey={tenant.apiKey} /> : null}
         <LiveDocument />

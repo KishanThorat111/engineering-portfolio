@@ -1048,3 +1048,15 @@ h2 {
 .station-result-boundary {
   border-left-color: var(--isolation);
 }
+
+/*
+ * A programmatic focus target shows no ring.
+ *
+ * `<main id="document" tabindex="-1">` exists so the skip link can move focus
+ * into the document. It is not a control and is never reached by tabbing, so a
+ * ring around the whole document would report something the reader already
+ * knows. Every real control keeps its ring; this is scoped to negative tabindex.
+ */
+[tabindex='-1']:focus {
+  outline: none;
+}

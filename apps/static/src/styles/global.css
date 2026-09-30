@@ -283,3 +283,16 @@ a:hover {
   color: var(--text);
   font-weight: 500;
 }
+
+/*
+ * A programmatic focus target shows no ring.
+ *
+ * `<main tabindex="-1">` exists so the skip link can move focus into it. It is
+ * not a control and never receives focus by tabbing — only by being jumped to
+ * deliberately — so a focus ring around the whole page body would be noise
+ * reporting something the reader already knows. Every real control keeps its
+ * ring; this rule is scoped to negative tabindex only.
+ */
+[tabindex='-1']:focus {
+  outline: none;
+}
