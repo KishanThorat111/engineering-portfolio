@@ -1,0 +1,88 @@
+---
+/**
+ * A LEGEND — the rows that say what a ring's or a chart's colours mean.
+ *
+ * Extracted rather than written twice. Station 09 had it first and station 02
+ * needed the same thing, and a legend copied into a second station is a legend
+ * that will drift from the first one the next time either is touched. It is
+ * kit, so it lives in the kit.
+ *
+ * THE SWATCH COLOUR ARRIVES AS A CUSTOM PROPERTY, NOT AS `background`.
+ * This site ships a CSP with no `unsafe-inline`, so a style attribute carrying
+ * a declaration is unhashable and the html gate rejects it. A custom property
+ * sets a variable rather than a declaration, passes the same gate, and is the
+ * pattern every positioned component in this kit already uses.
+ */
+export interface LegendRow {
+  label: string;
+  value?: string | number;
+  tone?: 'signal' | 'pending' | 'isolation' | 'record' | 'fault' | 'structure' | 'ember';
+}
+
+interface Props {
+  rows: LegendRow[];
+  class?: string;
+}
+
+const { rows, class: className } = Astro.props;
+---
+
+<ul class:list={['lg', className]}>
+  {
+    rows.map((row) => (
+      <li class="lg__row">
+        <span
+          class="lg__swatch"
+          style={`--swatch:var(--${row.tone ?? 'structure'})`}
+          aria-hidden="true"
+        />
+        <span class="lg__label">{row.label}</span>
+        {row.value !== undefined && <span class="lg__value">{row.value}</span>}
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .lg {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: calc(6 * var(--u, 1px));
+  }
+
+  .lg__row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: calc(8 * var(--u, 1px));
+  }
+
+  .lg__swatch {
+    background: var(--swatch);
+    width: calc(8 * var(--u, 1px));
+    height: calc(8 * var(--u, 1px));
+    min-width: 6px;
+    min-height: 6px;
+    border-radius: 2px;
+  }
+
+  .lg__label {
+    font-size: calc(12 * var(--u, 1px));
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .lg__value {
+    font-family: var(--font-mono);
+    font-size: calc(12 * var(--u, 1px));
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

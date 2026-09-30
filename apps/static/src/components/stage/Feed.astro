@@ -38,6 +38,31 @@ interface Props {
   emptyNote?: string;
   /** Caps the rendered rows so a long collection cannot blow the panel. */
   limit?: number;
+  /**
+   * Lets the text run to as many lines as it needs, and stacks the row instead
+   * of keeping three columns on one line.
+   *
+   * A feed is scanned, so one line per event is right for events. It is wrong
+   * for a row whose text is a published STATEMENT: station 02 prints each
+   * system's disclosed limitation here, and a limitation cut off at the panel
+   * edge with an ellipsis is a limitation softened — the precise failure the
+   * register exists to avoid. Where the row carries a claim rather than an
+   * event, the claim wins and the panel grows.
+   */
+  wrap?: boolean;
+  /**
+   * Lays the rows out in this many columns on a wide stage.
+   *
+   * Four wrapped statements stacked down a band 64% of the frame wide ran off
+   * the bottom of the stage. Cutting one to fit would have been the easy answer
+   * and the wrong one — the count is the point, and a record dropped for layout
+   * is a record hidden. Two columns halve the height and use the width the band
+   * already has.
+   *
+   * Columns collapse to one below the stage breakpoint, where the narrow
+   * composition takes over and there is no width to divide.
+   */
+  cols?: 1 | 2;
   class?: string;
 }
 
@@ -45,31 +70,50 @@ const {
   entries,
   emptyNote = 'Nothing to report. This feed fills from the repository’s own record.',
   limit = 6,
+  wrap = false,
+  cols = 1,
   class: className,
 } = Astro.props;
 
 const rows = entries.slice(0, limit);
 ---
 
-<ol class:list={['feed', className]}>
+<ol class:list={['feed', wrap && 'feed--wrap', cols === 2 && 'feed--cols', className]}>
   {
     rows.length === 0 ? (
       <li class="feed__empty">{emptyNote}</li>
     ) : (
       rows.map((e) => (
         <li class="feed__row">
-          <span class="feed__stamp">{e.stamp}</span>
-          {e.href ? (
-            <a class="feed__text" href={e.href}>
-              {e.text}
+          {/*
+            WHICH PART OF THE ROW IS THE LINK DEPENDS ON WHAT THE ROW IS.
+
+            An event is one line, so the line itself is the link. A statement
+            runs to three or four lines, and underlining all of them turns a
+            published claim into a slab of rule — the underline stops reading as
+            "this is a link" and starts reading as emphasis on the claim. So in
+            the wrapped variant the SOURCE carries the link, which is also the
+            truer target: the reader is being sent to the system, not to the
+            sentence.
+          */}
+          {wrap && e.href ? (
+            <a class="feed__stamp feed__stamp--link" href={e.href}>
+              {e.stamp}
             </a>
           ) : (
-            <span class="feed__text">{e.text}</span>
+            <span class="feed__stamp">{e.stamp}</span>
           )}
           {e.meta && (
             <span class:list={['feed__meta', `feed__meta--${e.tone ?? 'structure'}`]}>
               {e.meta}
             </span>
+          )}
+          {!wrap && e.href ? (
+            <a class="feed__text" href={e.href}>
+              {e.text}
+            </a>
+          ) : (
+            <span class="feed__text">{e.text}</span>
           )}
         </li>
       ))
@@ -115,6 +159,61 @@ const rows = entries.slice(0, limit);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /*
+   * The statement variant. The row becomes two bands — the source line above,
+   * the claim below at full length — because a claim set in a 1fr middle column
+   * beside a stamp and a status has nowhere near the measure it needs, and
+   * squeezing it there is what produced the ellipsis in the first place.
+   */
+  .feed--cols {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: calc(28 * var(--u, 1px));
+  }
+
+  /* In two columns the rule between rows would draw a grid; the columns
+     already separate the records, so only the vertical rule is kept. */
+  .feed--cols .feed__row {
+    border-bottom: 0;
+    border-top: 1px solid var(--plate-edge, #2b3345);
+  }
+
+  .feed--wrap .feed__row {
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    row-gap: calc(5 * var(--u, 1px));
+    padding: calc(10 * var(--u, 1px)) 0;
+  }
+
+  .feed--wrap .feed__text {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    color: var(--text-muted);
+  }
+
+  /*
+   * SC 2.5.8's inline-in-sentence exception does not apply — this is a
+   * standalone control on its own line — so the link clears 24px without
+   * changing where the row sits.
+   */
+  .feed__stamp--link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--text-faint);
+  }
+
+  .feed__stamp--link:hover {
+    color: var(--signal);
+    text-decoration-color: var(--signal);
   }
 
   a.feed__text {

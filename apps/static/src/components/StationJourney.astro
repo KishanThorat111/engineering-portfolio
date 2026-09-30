@@ -43,6 +43,8 @@ import StageTimeline, { type Stage as TLStage } from './stage/StageTimeline.astr
 import FlowDiagram from './stage/FlowDiagram.astro';
 import DecisionTree from './stage/DecisionTree.astro';
 import Inspector from './stage/Inspector.astro';
+import DissectionIndex from './stage/DissectionIndex.astro';
+import Legend from './stage/Legend.astro';
 import StatRow, { type Stat } from './stage/StatRow.astro';
 import TraceRail, { type Hop } from './stage/TraceRail.astro';
 import { SITE } from '../config/site';
@@ -111,6 +113,75 @@ const prelaunch = systems.filter((s) => s.data.status === 'PRE_LAUNCH').length;
 /** The flagship, for station 03's dissection. Falls back to the first entry. */
 const flagship = systems.find((s) => s.id === 'hospital-operations') ?? systems[0];
 
+/*
+ * STATION 02'S ESTATE RING.
+ *
+ * The reference's bottom-right panel carries SYSTEMS OVERVIEW: 3 Primary
+ * Systems / 12 Services Online over a faint world map. §3 ruled on both: the
+ * three is real and publishable, the twelve is not, and no region is published
+ * anywhere on this site, so there is no map to draw.
+ *
+ * The ring is drawn from the one split that IS real and IS checkable — how many
+ * of the platforms are in production and how many are pre-launch — with the
+ * cut figures named in the panel rather than quietly omitted.
+ */
+const ESTATE_MIX: Slice[] = (
+  [
+    { label: 'In production', value: live, tone: 'signal' },
+    { label: 'Pre-launch', value: prelaunch, tone: 'pending' },
+  ] satisfies Slice[]
+).filter((sl) => sl.value > 0);
+
+/*
+ * THE SHARED PATTERN.
+ *
+ * The reference labels this corner ENGINEERING CORE / "Shared foundations
+ * powering all systems", which is a claim about shared infrastructure and is
+ * false: the three platforms run separately, on separate machines, for separate
+ * organisations. What is genuinely shared is the ORDER a new platform is built
+ * in, which is a sequence, which is exactly what a stage rail draws.
+ *
+ * Every stage here is a decision recorded in this repository, so each one is
+ * `done` because it has actually been applied — not because a pipeline reported
+ * success.
+ */
+/*
+ * THE DISCLOSED LIMITATIONS, ON THE FRAME THAT PROMISES THEM.
+ *
+ * Station 02's lede says every system below "discloses the thing it does worst,
+ * before you read anything else about it". That promise was made on this frame
+ * and kept somewhere else — the reader had to open a case study to see a single
+ * one. A claim the page makes about itself and does not show is the weakest
+ * kind of copy there is.
+ *
+ * So the first disclosed limitation of each system is printed here, VERBATIM.
+ * Not summarised and not trimmed to fit: these sentences carry their own date
+ * qualifiers and their own precision, and a shortened limitation is a softened
+ * one. If they do not fit, the panel gets bigger.
+ */
+const DISCLOSED: Entry[] = systems.slice(0, 3).flatMap((system) => {
+  const first = system.data.limitations?.[0];
+  return first
+    ? [
+        {
+          stamp: system.data.title,
+          text: first.limitation,
+          meta: STATUS_LABELS[system.data.status].label,
+          tone: TONE[system.data.status] ?? 'structure',
+          href: `/systems/${system.id}`,
+        } satisfies Entry,
+      ]
+    : [];
+});
+
+const PATTERNS: TLStage[] = [
+  { name: 'Tenancy', detail: 'multi-tenant from the first migration', state: 'done' },
+  { name: 'Shape', detail: 'a modular monolith, not services', state: 'done' },
+  { name: 'Isolation', detail: 'row-level security in the database', state: 'done' },
+  { name: 'Record', detail: 'an audit row for every write', state: 'done' },
+  { name: 'Limit', detail: 'the worst behaviour written down', state: 'done' },
+];
+
 /** The layer stack of the flagship. Real architecture, from its own case study. */
 const LAYERS = [
   { y: 13.5, label: 'Client', lines: ['Web and mobile browsers', 'QR entry, no account needed'] },
@@ -120,6 +191,46 @@ const LAYERS = [
   { y: 57.5, label: 'Data', lines: ['PostgreSQL', 'Tenant-scoped by policy'] },
   { y: 68.5, label: 'Observability', lines: ['OpenTelemetry', 'Spans, logs, audit records'] },
 ] as const;
+
+/*
+ * STATION 03'S DECISIONS.
+ *
+ * The frame's own lede ends "Understand the decisions." and then showed the
+ * reader none. The flagship has four architecture records in this repository,
+ * each one with the field most such records leave out — what the choice cost —
+ * so the frame prints the choice and the cost together and links to the full
+ * record.
+ *
+ * Reference 03 puts a request trace with per-stage timings along this band.
+ * There are no per-stage timings anywhere in this system, and station 04 owns
+ * the one trace this site can honestly draw, so a second trace here would be
+ * both invented and duplicated. This is the component of equal weight that
+ * takes its place, and it is the one the lede already promised.
+ */
+const FLAGSHIP_DECISIONS: Entry[] = decisions
+  .filter((d) => d.data.system === flagship?.id)
+  .slice(0, 4)
+  .map((d) => ({
+    stamp: d.data.title,
+    text: d.data.tradeoff,
+    meta: 'what it cost',
+    tone: 'fault' as const,
+    href: `/engineering#${d.id}`,
+  }));
+
+/*
+ * The sidebar's quick stats — real counts for this one system, not for the
+ * estate. Reference 03's sidebar carries index, metadata, quick stats and a
+ * documentation link; this is the third of those four.
+ */
+const FLAGSHIP_STATS: Stat[] = [
+  {
+    label: 'Decisions',
+    value: String(decisions.filter((d) => d.data.system === flagship?.id).length),
+  },
+  { label: 'Disclosed', value: String(flagship?.data.limitations?.length ?? 0) },
+  { label: 'Layers', value: String(LAYERS.length) },
+];
 
 /** Reference 04's stage labels, carrying architecture rather than timings. */
 const STAGES = [
@@ -264,16 +375,18 @@ const MAP = [
     </p>
     <a class="cta" href="/systems">Open the register <span aria-hidden="true">→</span></a>
 
-    <ol class="index">
-      {
-        DISSECTION.map((row) => (
-          <li>
-            <span class="index__num">{row.index}</span>
-            <span>{row.label}</span>
-          </li>
-        ))
-      }
-    </ol>
+    {
+      /*
+        THE SAME SIX PARTS APPEAR ON STATION 03, AND MUST NOT LOOK THE SAME.
+        Here the reader is being shown the structure itself — what opening any
+        one of these systems gets them — so no part is marked. On 03 the same
+        component marks the part that frame is actually showing.
+      */
+    }
+    <DissectionIndex
+      parts={DISSECTION}
+      caption="Every system below opens onto these six parts, in this order."
+    />
   </div>
 
   {/* The three systems, over the plate, where the reference hangs its cards. */}
@@ -305,12 +418,11 @@ const MAP = [
     the one that ships.
   */
   }
-  <Panel x={40} y={42} w={20} title="What is shared" dense>
-    <p>
-      Not infrastructure. These three run separately, for separate organisations. What is shared is
-      one operator, and the same patterns applied each time: multi-tenant from the first migration,
-      a modular monolith, and the limitation written down.
-    </p>
+  <Panel x={33} y={38} w={34} title="What is shared" note="the order, not the machines">
+    <StageTimeline
+      stages={PATTERNS}
+      caption="Not infrastructure — these three run separately, for separate organisations. What is shared is one operator and this order, applied each time."
+    />
   </Panel>
 
   {/* Real node names, from the systems' own declared stacks. */}
@@ -329,17 +441,30 @@ const MAP = [
   <Chip x={62} y={82} label="Audit records" quiet />
   <Chip x={90} y={38} label="Object storage" quiet />
 
-  <Panel x={72} y={78} w={25} title="Estate" note="as of Sep 2026">
-    <StatRow
-      items={[
-        { label: 'Platforms', value: String(counts.systems) },
-        { label: 'In production', value: String(live) },
-        { label: 'Pre-launch', value: String(prelaunch) },
-      ]}
-    />
+  {
+    /*
+      SYSTEMS OVERVIEW, bottom-right, where the reference puts a world map under
+      "3 Primary Systems / 12 Services Online". The three is real. The twelve is
+      not, and there is no map because no region is published — so the panel
+      says which figures were cut and why, in the space the map would have used.
+    */
+  }
+  <Panel x={70} y={72} w={27} title="Estate" note="as of Sep 2026">
+    <div class="ring">
+      <Donut slices={ESTATE_MIX} caption="platforms" size={112} />
+      <Legend rows={ESTATE_MIX} />
+    </div>
     <p class="note">
       No service, region or tenant count is published. Those figures are not measured anywhere a
       reader could check, so they are not printed anywhere a reader could believe them.
+    </p>
+  </Panel>
+
+  <Panel x={4.8} y={50} w={31} title="What each one discloses" status="fault">
+    <Feed entries={DISCLOSED} wrap />
+    <p class="note">
+      Printed in full, in the words the case study uses. A limitation shortened to fit a panel is a
+      limitation softened, which is the failure this whole register exists to avoid.
     </p>
   </Panel>
 
@@ -362,6 +487,9 @@ const MAP = [
         ))
       }
     </ul>
+    {/* The frame's promise is kept on the narrow composition too. */}
+    <p class="m__sub">What each one discloses</p>
+    <Feed entries={DISCLOSED} wrap />
     <a class="cta cta--m" href="/systems">Open the register <span aria-hidden="true">→</span></a>
   </div>
 </Stage>
@@ -415,17 +543,41 @@ const MAP = [
     </p>
   </Panel>
 
-  <Panel x={4.8} y={62} w={22} title="Dissection" dense>
-    <ol class="index index--tight">
-      {
-        DISSECTION.map((row) => (
-          <li>
-            <span class="index__num">{row.index}</span>
-            <span>{row.label}</span>
-          </li>
-        ))
-      }
-    </ol>
+  {
+    /*
+      THE SIDEBAR reference 03 specifies: numbered index, system metadata,
+      quick stats, and a link to the documentation. The metadata sits in the
+      System panel opposite; the other three are here.
+    */
+  }
+  <Panel x={4.8} y={50} w={24} title="Dissection" dense>
+    <DissectionIndex
+      parts={DISSECTION}
+      active="02"
+      dense
+      caption="This frame is part 02. The other five are on the case study."
+    />
+    <StatRow items={FLAGSHIP_STATS} />
+    <a class="panelLink" href={`/systems/${flagship?.id}`}>
+      Read all six parts <span aria-hidden="true">→</span>
+    </a>
+  </Panel>
+
+  {
+    /*
+      THE BAND ALONG THE BOTTOM. The lede ends "Understand the decisions." and
+      the frame showed none of them; these are the four this system actually
+      has, each printed with what it cost.
+    */
+  }
+  <Panel
+    x={33}
+    y={76}
+    w={64}
+    title="The decisions behind it"
+    note={`${FLAGSHIP_DECISIONS.length} records`}
+  >
+    <Feed entries={FLAGSHIP_DECISIONS} wrap cols={2} />
   </Panel>
 
   <div slot="mobile" class="m">
@@ -882,19 +1034,9 @@ const MAP = [
     */
   }
   <Panel x={4.8} y={44} w={26} title="Evidence overview" note="by record type">
-    <div class="proof__donut">
+    <div class="ring">
       <Donut slices={RECORD_MIX} caption="records" size={132} />
-      <ul class="proof__legend">
-        {
-          RECORD_MIX.map((sl) => (
-            <li>
-              <span class="proof__swatch" style={`--swatch:var(--${sl.tone})`} aria-hidden="true" />
-              <span class="proof__legendLabel">{sl.label}</span>
-              <span class="proof__legendValue">{sl.value}</span>
-            </li>
-          ))
-        }
-      </ul>
+      <Legend rows={RECORD_MIX} />
     </div>
   </Panel>
 
@@ -1171,33 +1313,36 @@ const MAP = [
     color: var(--signal);
   }
 
-  .index {
-    /* Ruled to the type's measure, not the column's. */
-    max-width: calc(430 * var(--u));
-    margin: calc(36 * var(--u)) 0 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .index li {
-    display: flex;
-    gap: calc(16 * var(--u));
-    padding: calc(10 * var(--u)) 0;
-    border-bottom: 1px solid var(--plate-edge);
+  /*
+   * A link inside a panel. Standalone, so SC 2.5.8's inline-in-sentence
+   * exception does not cover it and it clears 24px on its own.
+   */
+  .panelLink {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(7 * var(--u));
+    min-height: 24px;
+    margin-top: calc(12 * var(--u));
     font-family: var(--font-mono);
-    font-size: calc(15 * var(--u));
-    letter-spacing: 0.1em;
+    font-size: calc(11 * var(--u));
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--text-muted);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--text-faint);
   }
 
-  .index--tight li {
-    padding: calc(7 * var(--u)) 0;
+  .panelLink:hover {
+    color: var(--signal);
+    text-decoration-color: var(--signal);
   }
 
-  .index__num {
-    color: var(--text-faint);
-    font-variant-numeric: tabular-nums;
+  /* The left column's index sets its own measure so the six parts stay a
+     column of type rather than stretching to the frame. */
+  .col :global(.dx) {
+    max-width: calc(430 * var(--u));
+    margin-top: calc(32 * var(--u));
   }
 
   .sys__title {
@@ -1349,60 +1494,12 @@ const MAP = [
     gap: calc(14 * var(--u)) calc(18 * var(--u));
   }
 
-  .proof__donut {
+  /* The ring and its legend, shared by stations 02 and 09. The legend itself
+     is a kit component; this is only how the two sit beside each other. */
+  .ring {
     display: flex;
     align-items: center;
     gap: calc(16 * var(--u));
-  }
-
-  .proof__legend {
-    flex: 1 1 auto;
-    min-width: 0;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: calc(6 * var(--u));
-  }
-
-  .proof__legend li {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    gap: calc(8 * var(--u));
-  }
-
-  /*
-   * The colour arrives as a CUSTOM PROPERTY, not as `background` directly.
-   *
-   * The html gate forbids inline styles, because this site ships a CSP with no
-   * `unsafe-inline` and a style attribute is unhashable. A custom property
-   * passes the same gate — it sets a variable rather than a declaration — and it
-   * is the pattern every other positioned component here already uses.
-   */
-  .proof__swatch {
-    background: var(--swatch);
-    width: calc(8 * var(--u));
-    height: calc(8 * var(--u));
-    min-width: 6px;
-    min-height: 6px;
-    border-radius: 2px;
-  }
-
-  .proof__legendLabel {
-    font-size: calc(12 * var(--u));
-    color: var(--text-muted);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .proof__legendValue {
-    font-family: var(--font-mono);
-    font-size: calc(12 * var(--u));
-    color: var(--text);
-    font-variant-numeric: tabular-nums;
   }
 
   /* ── 07's pillar row ───────────────────────────────────────────── */
@@ -1540,6 +1637,17 @@ const MAP = [
     font-size: 0.98rem;
     line-height: 1.6;
     color: var(--text-muted);
+  }
+
+  /* A sub-heading inside a narrow composition — names a block, does not
+     compete with the station's own claim. */
+  .m__sub {
+    margin: 1.75rem 0 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-faint);
   }
 
   .m__note {

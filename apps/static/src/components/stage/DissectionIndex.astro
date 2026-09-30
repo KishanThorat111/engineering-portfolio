@@ -1,0 +1,179 @@
+---
+/**
+ * THE DISSECTION INDEX — the six parts every case study on this site is cut
+ * into, and the one component that knows which part you are currently looking
+ * at.
+ *
+ * WHY THIS EXISTS AS A COMPONENT
+ * The same six rows were written out twice, once on station 02 and once on
+ * station 03, rendered identically both times. Two identical lists on two
+ * consecutive frames read as a copy-paste rather than as a structure: the
+ * reader sees the same thing twice and learns nothing from the second sighting.
+ *
+ * A list that appears on more than one frame has to earn the second
+ * appearance, and the only way it can is by being different on it. So the list
+ * is one component with one piece of state — which part this station is
+ * showing — and the second sighting tells the reader where they are inside a
+ * structure they have already been shown.
+ *
+ * STATE IS "WHERE YOU ARE", NOT A REGISTER
+ * The active row is marked in `--structure`, deliberately. The five register
+ * colours each mean one operational thing (signal is running in production,
+ * isolation is a tenancy boundary, and so on) and "the part of the page you are
+ * currently reading" is not one of them. Borrowing one would put a false
+ * operational reading on a navigation state.
+ */
+export interface Part {
+  index: string;
+  label: string;
+}
+
+interface Props {
+  parts: readonly Part[];
+  /**
+   * The `index` of the part this station is showing, or omitted where the
+   * station is showing the structure itself rather than a part of it.
+   */
+  active?: string;
+  /** One line saying what the list is. Different per station, by design. */
+  caption?: string;
+  /** Tightens the rows where the panel is short. */
+  dense?: boolean;
+  class?: string;
+}
+
+const { parts, active, caption, dense = false, class: className } = Astro.props;
+
+const activeAt = active ? parts.findIndex((p) => p.index === active) : -1;
+
+/*
+ * Three states, and only when there is an active part. With none, every row is
+ * neutral — a station showing the whole structure must not imply the reader has
+ * already passed through half of it.
+ */
+const stateOf = (i: number) => {
+  if (activeAt < 0) return 'plain';
+  if (i < activeAt) return 'seen';
+  if (i === activeAt) return 'here';
+  return 'ahead';
+};
+---
+
+<div class:list={['dx', dense && 'dx--dense', className]}>
+  <ol class="dx__rows">
+    {
+      parts.map((part, i) => (
+        <li
+          class:list={['dx__row', `dx__row--${stateOf(i)}`]}
+          aria-current={i === activeAt ? 'true' : undefined}
+        >
+          <span class="dx__num">{part.index}</span>
+          <span class="dx__label">{part.label}</span>
+          {i === activeAt && <span class="dx__here">you are here</span>}
+        </li>
+      ))
+    }
+  </ol>
+  {caption && <p class="dx__caption">{caption}</p>}
+</div>
+
+<style>
+  .dx {
+    display: flex;
+    flex-direction: column;
+    gap: calc(12 * var(--u, 1px));
+  }
+
+  .dx__rows {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /*
+   * The rail. A single continuous rule down the left of the whole list, with
+   * each row's own marker sitting on it, so six rows read as one ordered track
+   * rather than six unrelated lines.
+   */
+  .dx__row {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: calc(10 * var(--u, 1px));
+    padding: calc(7 * var(--u, 1px)) 0 calc(7 * var(--u, 1px)) calc(14 * var(--u, 1px));
+    border-left: 1px solid var(--plate-edge, #2b3345);
+  }
+
+  .dx--dense .dx__row {
+    padding-top: calc(5 * var(--u, 1px));
+    padding-bottom: calc(5 * var(--u, 1px));
+  }
+
+  .dx__row::before {
+    content: '';
+    position: absolute;
+    left: calc(-3 * var(--u, 1px));
+    top: 50%;
+    width: calc(5 * var(--u, 1px));
+    height: calc(5 * var(--u, 1px));
+    min-width: 3px;
+    min-height: 3px;
+    margin-top: calc(-2.5 * var(--u, 1px));
+    border-radius: 50%;
+    background: var(--plate-edge, #2b3345);
+  }
+
+  .dx__num {
+    font-family: var(--font-mono);
+    font-size: calc(10 * var(--u, 1px));
+    letter-spacing: 0.12em;
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dx__label {
+    font-size: calc(13 * var(--u, 1px));
+    line-height: 1.35;
+    color: var(--text-muted);
+  }
+
+  /* Parts the arc has already shown. Present, and plainly behind you. */
+  .dx__row--seen .dx__label {
+    color: var(--text-faint);
+  }
+
+  /* Parts still ahead read exactly as the neutral state; nothing is dimmed to
+     imply it is unavailable, because all six are one scroll away. */
+
+  .dx__row--here {
+    border-left-color: var(--structure);
+  }
+
+  .dx__row--here::before {
+    background: var(--structure);
+  }
+
+  .dx__row--here .dx__num,
+  .dx__row--here .dx__label {
+    color: var(--text);
+  }
+
+  .dx__here {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: calc(9 * var(--u, 1px));
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--structure);
+    white-space: nowrap;
+  }
+
+  .dx__caption {
+    margin: 0;
+    font-size: calc(11 * var(--u, 1px));
+    line-height: 1.5;
+    color: var(--text-faint);
+  }
+</style>
