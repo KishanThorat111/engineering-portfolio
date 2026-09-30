@@ -3474,3 +3474,56 @@ be discovered, because "35/35 locally" and "covered in CI" are different claims.
   frame measurement** carried since P4 remain outstanding.
 - **72 "as of Jul 2026" qualifiers** remain unrefreshed — none of the underlying numbers were
   re-checked in this stage.
+
+### S4 addendum — three layout defects, the real origin numbers, and a near-miss · 30 September 2026
+
+**Three layout defects appeared only once the CTA and the status pill were both on the page.**
+All three were measured in a browser, not eyeballed, and all three are fixed:
+
+- The rail clipped **"10 / END"** at 1440 — the last station, the one that closes the arc, was
+  the one that fell off. The index needed 967px and was being given 923px because the status
+  pill is `flex: none` and took its width first. The pill's "CONTROL PLANE" label now appears
+  only at 1600 and above, reclaiming the 94px needed. No state is lost: the dot keeps its colour
+  and the value still reads "live" or "no answer" in words.
+- Three controls in a 25%-wide column put every label on two lines. The primary CTA now takes
+  its own row with the two quiet links beneath, which is also the right reading order.
+- The taller column then overlapped the readout by **33px at 1440**. The readout moved to 79%,
+  giving 32px of clearance at 1440, 28px at 1280, 23px at 1100.
+
+**The real cost of each surface, measured on the live origin as a browser receives it:**
+
+| | requests | over the wire | JavaScript | images | LCP |
+|---|---|---|---|---|---|
+| **`/`** | 9 | **12 KB** HTML brotli (85 KB raw) + 411 KB plates | **none** | 411 KB | 508 ms |
+| **`/live/`** | 10 | **368 KB** brotli JavaScript (1.3 MB raw) | 368 KB br | none | 1292 ms |
+
+The separation is the whole point of the structure: the fast lane ships no JavaScript file at
+all and its weight is plate artwork the browser picks by `srcset`; the world ships React, Three
+and the station scenes and no images. A visitor who never clicks the button never pays for the
+3D world.
+
+**A defect on `/live/` that was NOT changed, and why.** At 1440 the "ENTER THE SYSTEM" control
+overlaps the edge-round-trip stat strip beneath it. It is present identically at `065f51e` — the
+pixel diff against that commit is 0.058%, which is the animated-scene noise floor — so it is
+not a regression introduced here. The brief for this stage was to restore the owner's 3D world
+as built and to list every difference from it; silently restyling that surface would have been
+a difference nobody asked for. It is recorded here for the owner to rule on rather than fixed
+on assumption.
+
+**A near-miss worth recording, because it was self-inflicted.** Both reference commits were
+built in temporary git worktrees with `node_modules` linked in by a Windows directory junction
+to avoid a slow copy. `git worktree remove --force` followed those junctions and deleted through
+them: 46 files of `apps/experience` and 241 of `apps/static` vanished from the working tree, and
+`node_modules` was emptied.
+
+Nothing was lost. Everything deleted was tracked, the index still held it, `git checkout -- .`
+restored all 287 files, `npm ci` rebuilt `node_modules` and reproduced the lockfile exactly. But
+the restore reverted every *unstaged* edit in progress — six of them had to be redone from
+notes. Two lessons, both cheap:
+
+1. **Never junction `node_modules` into a worktree that will be force-removed.** Copy it, or
+   build the reference with its own install.
+2. **Commit before running destructive tooling.** The staged work survived intact; only the
+   unstaged work needed redoing. The backup tags created at the start of this stage were never
+   needed — but they were the reason the risk was acceptable at all, which is the argument for
+   making them before touching anything rather than after.
