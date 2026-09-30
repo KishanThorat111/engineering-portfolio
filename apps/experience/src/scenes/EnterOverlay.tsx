@@ -129,68 +129,83 @@ export function EnterOverlay({
         </div>
       </header>
 
-      {/* --- Left column ---------------------------------------------- */}
-      <div className="enter__hero">
-        {/* Rule 11, in the most prominent slot the frame has. */}
-        <p className="enter__eyebrow">
-          <span className="enter__demo">{COPY.disclosure.label}</span>
-          <span className="enter__demo-note">{COPY.disclosure.short}</span>
-        </p>
+      {/*
+        --- Left column -------------------------------------------------
+        The claim and the metrics strip were two separately positioned blocks:
+        one pinned near the top, one pinned to the bottom edge. On a wide but
+        short viewport the claim grew down into the strip and the ENTER control
+        landed on top of the readings, hiding them. Two absolutely positioned
+        siblings cannot be made not to collide by adjusting their offsets —
+        there is always a viewport where the arithmetic fails.
 
-        <h2 className="enter__claim">
-          {COPY.enter.claimLines.map((line) => (
-            <span className="enter__claim-line" key={line}>
-              {line}
+        So they are one column now, in flow, and the overlap is impossible
+        rather than merely unlikely. The column itself carries the position;
+        `space-between` keeps the composition the reference specifies, with the
+        claim high and the readings low, whenever there is room for it.
+      */}
+      <div className="enter__column">
+        <div className="enter__hero">
+          {/* Rule 11, in the most prominent slot the frame has. */}
+          <p className="enter__eyebrow">
+            <span className="enter__demo">{COPY.disclosure.label}</span>
+            <span className="enter__demo-note">{COPY.disclosure.short}</span>
+          </p>
+
+          <h2 className="enter__claim">
+            {COPY.enter.claimLines.map((line) => (
+              <span className="enter__claim-line" key={line}>
+                {line}
+              </span>
+            ))}
+            <span className="enter__claim-line enter__claim-line--emphasis">
+              {COPY.enter.claimTail}
             </span>
-          ))}
-          <span className="enter__claim-line enter__claim-line--emphasis">
-            {COPY.enter.claimTail}
-          </span>
-        </h2>
+          </h2>
 
-        <p className="enter__subline">{COPY.enter.subline}</p>
+          <p className="enter__subline">{COPY.enter.subline}</p>
 
-        <button type="button" className="enter__action" onClick={onEnter}>
-          {COPY.enter.action}
-          <span aria-hidden="true">→</span>
-        </button>
-      </div>
+          <button type="button" className="enter__action" onClick={onEnter}>
+            {COPY.enter.action}
+            <span aria-hidden="true">→</span>
+          </button>
+        </div>
 
-      {/* --- Bottom left: metrics + scroll affordance ------------------ */}
-      <div className="enter__metrics">
-        <dl>
-          <div className="enter__metric">
-            <dt>{M.edge}</dt>
-            <dd data-known={edgeRttMs === null ? 'false' : 'true'}>
-              {edgeRttMs === null ? M.unmeasured : `${Math.round(edgeRttMs)}ms`}
-            </dd>
-          </div>
-          <div className="enter__metric">
-            <dt>{M.events}</dt>
-            <dd data-known="true">{eventCount}</dd>
-          </div>
-          <div className="enter__metric">
-            <dt>{M.tenant}</dt>
-            <dd data-known={tenantRef === null ? 'false' : 'true'}>{tenantRef ?? M.none}</dd>
-          </div>
-          <div className="enter__metric">
-            <dt>{M.expires}</dt>
-            <dd data-known={tenantExpiresAt === null ? 'false' : 'true'}>
-              {remaining(tenantExpiresAt) ?? M.none}
-            </dd>
-          </div>
-        </dl>
+        {/* --- Bottom left: metrics + scroll affordance ------------------ */}
+        <div className="enter__metrics">
+          <dl>
+            <div className="enter__metric">
+              <dt>{M.edge}</dt>
+              <dd data-known={edgeRttMs === null ? 'false' : 'true'}>
+                {edgeRttMs === null ? M.unmeasured : `${Math.round(edgeRttMs)}ms`}
+              </dd>
+            </div>
+            <div className="enter__metric">
+              <dt>{M.events}</dt>
+              <dd data-known="true">{eventCount}</dd>
+            </div>
+            <div className="enter__metric">
+              <dt>{M.tenant}</dt>
+              <dd data-known={tenantRef === null ? 'false' : 'true'}>{tenantRef ?? M.none}</dd>
+            </div>
+            <div className="enter__metric">
+              <dt>{M.expires}</dt>
+              <dd data-known={tenantExpiresAt === null ? 'false' : 'true'}>
+                {remaining(tenantExpiresAt) ?? M.none}
+              </dd>
+            </div>
+          </dl>
 
-        <p className="enter__scroll">
-          <span className="enter__scroll-icon" aria-hidden="true" />
-          {COPY.enter.scroll}
-          {/*
+          <p className="enter__scroll">
+            <span className="enter__scroll-icon" aria-hidden="true" />
+            {COPY.enter.scroll}
+            {/*
             The reference prints an IP address here. This prints the real edge
             PoP when the edge named one, and nothing at all when it did not —
             an unknown location is unstated, never guessed (rule 4).
           */}
-          {edgePop ? <span className="enter__pop">{edgePop}</span> : null}
-        </p>
+            {edgePop ? <span className="enter__pop">{edgePop}</span> : null}
+          </p>
+        </div>
       </div>
 
       {/* --- Bottom centre: the live request trace -------------------- */}

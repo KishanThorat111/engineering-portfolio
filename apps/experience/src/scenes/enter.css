@@ -79,18 +79,48 @@
   min-width: 0;
 }
 
+/*
+ * THE STATION RAIL IS ONE ROW OR IT IS NOTHING.
+ *
+ * It used to wrap. The ten labels measure 727px of text between them and stop
+ * fitting a little under 1300px wide, so at 1280 "10 / END" dropped onto a
+ * second line and landed on the DEMO PLANE badge below the header. A rail that
+ * wraps stops being a rail: the reader loses the sense of a single ordered
+ * track, and the thing it wraps onto is whatever happens to be beneath it.
+ *
+ * So it never wraps. The gap tightens first, which buys back the widths where
+ * the labels genuinely fit, and below that the row scrolls sideways rather
+ * than folding. The mask makes the overflow visible instead of leaving the
+ * last item sheared off with no sign there is more. Keyboard focus scrolls a
+ * scroll container into view on its own, so tabbing still reaches every
+ * station.
+ */
 .enter__nav ol {
   display: flex;
-  flex-wrap: wrap;
-  gap: clamp(0.75rem, 2vw, 2rem);
+  flex-wrap: nowrap;
+  gap: clamp(0.6rem, 1.6vw, 2rem);
   margin: 0;
   padding: 0;
   list-style: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.enter__nav ol::-webkit-scrollbar {
+  display: none;
+}
+
+/* Only where the row can actually overflow, so a full rail is never faded. */
+@media (max-width: 1290px) {
+  .enter__nav {
+    mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent 100%);
+  }
 }
 
 .enter__nav button {
   display: inline-flex;
   align-items: baseline;
+  white-space: nowrap;
   gap: 0.35rem;
   padding: 0.25rem 0;
   background: none;
@@ -135,6 +165,48 @@
 /* ------------------------------------------------------------------ *
  * Hero — the left third
  * ------------------------------------------------------------------ */
+
+/*
+ * THE LEFT COLUMN.
+ *
+ * `.enter__hero` and `.enter__metrics` are still absolutely positioned for
+ * every other station that reuses them. On ENTER they are children of this
+ * column instead, and it owns the position: pinned top and bottom, with the
+ * two blocks laid out between. That is what makes the collision structurally
+ * impossible — the claim can grow as far as the space allows and no further,
+ * because there is no longer a second element pinned underneath it.
+ *
+ * Pointer events are off on the column and on again for its children, so the
+ * gap between them stays transparent to the canvas exactly as it was when the
+ * two blocks were separate. A column that swallowed drags in the empty middle
+ * would be a new defect traded for the old one.
+ */
+.enter__column {
+  position: absolute;
+  left: clamp(1rem, 5vw, 4rem);
+  top: 18vh;
+  bottom: clamp(1.5rem, 5vh, 3rem);
+  width: min(34rem, 46vw);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(1.25rem, 3vh, 2.5rem);
+  pointer-events: none;
+}
+
+.enter__column > * {
+  pointer-events: auto;
+}
+
+.enter__column .enter__hero,
+.enter__column .enter__metrics {
+  position: static;
+  width: auto;
+}
+
+.enter__column .enter__hero {
+  max-width: min(32rem, 42vw);
+}
 
 .enter__hero {
   position: absolute;
@@ -253,10 +325,27 @@
 .enter__metrics dl {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  align-items: start;
   gap: clamp(1rem, 2.5vw, 2rem);
   margin: 0 0 1.25rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border);
+}
+
+/*
+ * Each reading is its own grid item, so a label that wraps used to push only
+ * its own value down and the four figures stopped sharing a baseline — at
+ * 1280px "EVENTS THIS SESSION" took two lines and the strip read as four
+ * unrelated fragments rather than one instrument.
+ *
+ * The row is therefore two bands of fixed height: labels on top, figures
+ * beneath, aligned whether a label takes one line or two. `1lh` is the
+ * element's own line box, so the reservation follows the type rather than a
+ * hardcoded pixel guess.
+ */
+.enter__metric {
+  display: grid;
+  grid-template-rows: auto 1fr;
 }
 
 .enter__metric dt {
@@ -266,10 +355,27 @@
   text-transform: uppercase;
   color: var(--text-faint);
   margin-bottom: 0.4rem;
+  min-height: calc(2lh);
 }
 
+/*
+ * The figure band. A known reading is set large and an unknown one is set
+ * small on purpose, so without a shared band the two sizes sat at different
+ * heights and the strip looked ragged. The band is the height of the large
+ * figure and everything in it sits on its floor, which is what makes four
+ * readings of two different weights read as one row of instruments.
+ */
 .enter__metric dd {
   margin: 0;
+  display: flex;
+  align-items: flex-end;
+  min-height: calc(clamp(1.125rem, 2vw, 1.5rem) * 1.25);
+  /*
+   * Stated, not inherited. The body's 1.6 made the large figure's line box
+   * taller than the band and it dropped 9px below the small ones — the exact
+   * ragged edge the band exists to remove.
+   */
+  line-height: 1.2;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-size: clamp(1.125rem, 2vw, 1.5rem);
@@ -398,7 +504,71 @@
  * full width. The composition changes; the hierarchy does not.
  * ------------------------------------------------------------------ */
 
+/*
+ * SHORT VIEWPORTS.
+ *
+ * A 1280x800 laptop is wide enough for the two-column composition and not tall
+ * enough for a display claim sized only against width: 7vw of 1280 is 90px,
+ * three lines of it is most of the frame, and the readings get pushed off the
+ * bottom. The claim is therefore capped against height as well, and the column
+ * stops pinning itself to the bottom edge and simply flows from the top. The
+ * hierarchy is unchanged; only the luxury of the gap is given up.
+ */
+/*
+ * NARROW DESKTOP: THE HERO GETS A FLOOR TO STAND ON.
+ *
+ * The architecture labels are projected from the geometry, so as the viewport
+ * narrows they travel left with the stack while the hero column stays at its
+ * rem-based width. Below about 1340px they arrive under the claim, and muted
+ * grey annotation sits directly behind white display type.
+ *
+ * Declaring a left gutter is the obvious fix and it is the wrong one — it was
+ * tried, and it flips the whole architecture column onto the geometry, which
+ * is worse (see the gutterLeft={0} note on station 01's LabelOverlay). Moving
+ * the labels is not available, so the hero is given a soft floor instead: a
+ * radial wash of the page background that falls off long before it reaches an
+ * edge, so it reads as depth rather than as a panel. The claim becomes clean;
+ * the labels behind it recede instead of competing.
+ *
+ * Above 1340px the composition has room and nothing is painted at all.
+ */
+@media (min-width: 901px) and (max-width: 1340px) {
+  .enter__column {
+    background: radial-gradient(
+      125% 85% at 22% 46%,
+      rgb(10 14 21 / 0.95) 0%,
+      rgb(10 14 21 / 0.86) 42%,
+      rgb(10 14 21 / 0) 76%
+    );
+  }
+}
+
+@media (min-width: 901px) and (max-height: 940px) {
+  .enter__column {
+    top: clamp(4.5rem, 11vh, 8rem);
+    bottom: auto;
+    justify-content: flex-start;
+  }
+
+  .enter__claim {
+    font-size: min(var(--text-display), 6.6vh);
+  }
+}
+
 @media (max-width: 900px) {
+  /* Narrow: everything stacks in flow, so the column stops being a frame. */
+  .enter__column {
+    position: static;
+    width: auto;
+    display: block;
+    gap: 0;
+  }
+
+  .enter__column .enter__hero,
+  .enter__column .enter__metrics {
+    max-width: none;
+  }
+
   .enter__hero {
     position: static;
     width: auto;

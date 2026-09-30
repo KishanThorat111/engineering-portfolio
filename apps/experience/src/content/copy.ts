@@ -308,7 +308,13 @@ export const COPY = {
       empty:
         'No request yet. This panel fills from a committed audit row, so it stays empty until ' +
         'something has actually happened.',
-      unmeasuredDuration: 'duration not measured',
+      /*
+       * This is the VALUE in a row whose label already reads "Duration", so it
+       * says only what is unknown. It read "duration not measured" and rendered
+       * as DURATION / duration not measured, which repeats the label and reads
+       * like a fault message rather than an honest blank.
+       */
+      unmeasuredDuration: 'not measured',
     },
   },
 
