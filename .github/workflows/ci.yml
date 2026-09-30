@@ -74,6 +74,18 @@ jobs:
       - name: Fast lane and machine layer reconciled
         run: npm run gate:fastlane
 
+      # The gate that would have caught the ten-station world shipping on every
+      # route. Every other gate here asks whether what shipped is TRUE; this one
+      # asks WHERE it shipped. It verifies the home page's station/plate mapping
+      # and its locked hero content, and that no other built page carries the
+      # world in its markup or in any stylesheet it links.
+      #
+      # It was added to package.json's `verify` chain but not here, so it ran
+      # locally and never in CI — which is the same as not having it, for the
+      # regression it exists to prevent.
+      - name: Station mapping, locked hero, and the world stays on /
+        run: npm run gate:stations
+
   # Enforcing as of P8. Scoped to the two pages blueprint §7.5 names — Home and
   # the flagship case study — for the reason recorded in lighthouserc.json: the
   # live surface is measured against the §11 experience budgets by the render
