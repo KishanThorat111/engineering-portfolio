@@ -310,7 +310,15 @@ const FLAGSHIP_STATS: Stat[] = [
 
 /** Reference 04's stage labels, carrying architecture rather than timings. */
 const STAGES = [
-  { x: 20, y: 30, label: 'Browser', lines: ['A request leaves'] },
+  /*
+   * Moved down from y:30. The left column's lede runs to x:30.8% and this
+   * callout's text block started at x:20%, so the two overlapped — the callout
+   * sat on top of "One request crosses" and "before a response reaches". It was
+   * always an overlap; giving callouts a legibility scrim is what made it
+   * visible. The laptop it names runs well down the frame, so the label still
+   * points at its subject.
+   */
+  { x: 20, y: 41, label: 'Browser', lines: ['A request leaves'] },
   { x: 35, y: 22, label: 'Edge', lines: ['TLS, WAF'] },
   { x: 50, y: 30, label: 'Gateway', lines: ['Auth, rate limit'] },
   { x: 64, y: 22, label: 'Service', lines: ['Business logic'] },
@@ -1527,11 +1535,33 @@ const MAP = [
 
 <style>
   /* ── Shared stage typography ───────────────────────────────────── */
+  /*
+   * THE COLUMN'S FLOOR.
+   *
+   * Measured, not assumed: with the glyphs made transparent and the true
+   * background sampled under each block, the lede on station 02 came out at
+   * 4.33:1 and the eyebrow on station 06 at 3.84:1 against the brightest pixel
+   * behind them. AA wants 4.5. The token gate cannot see this, because it
+   * compares token to token and these are token against artwork.
+   *
+   * The same device the live surface's hero uses: a radial wash of the page
+   * background that reaches zero well before any edge, so it reads as depth in
+   * the plate rather than as a panel under the type. It is centred on the text,
+   * not on the box, because the claim is what has to survive.
+   */
   .col {
     position: absolute;
     left: 4.8%;
     top: 13%;
     width: 26%;
+    padding: calc(28 * var(--u)) calc(40 * var(--u));
+    margin: calc(-28 * var(--u)) calc(-40 * var(--u));
+    background: radial-gradient(
+      145% 105% at 30% 38%,
+      rgb(8 11 17 / 0.9) 0%,
+      rgb(8 11 17 / 0.74) 48%,
+      rgb(8 11 17 / 0) 88%
+    );
   }
 
   .col--wide {
@@ -1685,11 +1715,26 @@ const MAP = [
     color: var(--text-muted);
   }
 
+  /*
+   * A NOTE IS A DISCLOSURE, SO IT IS NOT THE FAINTEST THING ON THE PAGE.
+   *
+   * These carry the sentences that say what was cut, what is not measured, and
+   * what the reference claimed that this site will not. Set in --text-faint
+   * they measured 3.11:1 and 3.37:1 inside panels over the brighter parts of
+   * the plates — the panel scrim is 92% opaque, so 8% of a bright plate comes
+   * through, and the gate's --text-faint-on-plate-scrim pairing is computed
+   * against the SOLID equivalent and cannot see it.
+   *
+   * Raising the scrim's alpha would have fixed the number by making every panel
+   * on the site opaque, which is the plate the panels are supposed to sit in
+   * front of. Raising the text is the smaller change and the better one: the
+   * honest caveat should not be the hardest line on the frame to read.
+   */
   .note {
     margin: calc(16 * var(--u)) 0 0;
     font-size: calc(13 * var(--u));
     line-height: 1.55;
-    color: var(--text-faint);
+    color: var(--text-muted);
   }
 
   .facts div {

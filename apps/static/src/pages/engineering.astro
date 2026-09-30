@@ -200,13 +200,32 @@ const lessons = (await getCollection('lessons')).sort((a, b) => a.data.order - b
     max-width: var(--measure);
   }
 
+  /*
+   * USE THE WIDTH THE PAGE ALREADY HAS.
+   *
+   * The container is 1120px and every list inside it ran as a single column at
+   * a reading measure, so on any desktop the right half of the page was empty.
+   * That emptiness is most of what made these routes read as a plainer, older
+   * site next to the home stations: same tokens, same type, but a composition
+   * that stops halfway across the frame.
+   *
+   * Two columns above 1040px, one below. The measure of each column is still a
+   * reading measure — this widens the COMPOSITION, not the line length, which
+   * would have made it harder to read rather than easier.
+   */
   .pillars {
     list-style: none;
     margin: 0;
     padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-8);
+    display: grid;
+    gap: var(--space-8) var(--space-12);
+  }
+
+  @media (min-width: 1040px) {
+    .pillars {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+    }
   }
 
   .pillars h3 {
@@ -244,9 +263,15 @@ const lessons = (await getCollection('lessons')).sort((a, b) => a.data.order - b
   }
 
   .decision-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-6);
+    display: grid;
+    gap: var(--space-6) var(--space-12);
+  }
+
+  @media (min-width: 1040px) {
+    .decision-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+    }
   }
 
   /*

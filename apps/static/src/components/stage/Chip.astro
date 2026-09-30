@@ -37,7 +37,18 @@ const { x, y, label, quiet = false } = Astro.props;
     padding: calc(6 * var(--u)) calc(12 * var(--u));
     border: 1px solid var(--plate-edge);
     border-radius: calc(5 * var(--u));
-    background: var(--plate-scrim);
+    /*
+     * OPAQUE, NOT 92%.
+     *
+     * The shared scrim lets 8% of whatever is behind it through, which is right
+     * for a panel — a panel is a window onto the plate and is meant to sit in
+     * front of it, not replace it. A chip is a single small label that lands
+     * wherever the thing it names happens to be, including on the brightest
+     * object in the frame, and 8% of that measured 4.38:1 against the quiet
+     * variant's text. A chip is too small for the plate showing through it to
+     * be worth anything, and too small to read if it does.
+     */
+    background: var(--plate-scrim-solid);
     backdrop-filter: blur(calc(10 * var(--u)));
     font-family: var(--font-mono);
     font-size: calc(14 * var(--u));
