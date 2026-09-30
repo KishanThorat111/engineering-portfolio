@@ -56,13 +56,14 @@ import type { CollectionEntry } from 'astro:content';
 
 interface Props {
   systems: CollectionEntry<'systems'>[];
+  experience: CollectionEntry<'experience'>[];
   chips: CollectionEntry<'evidenceChips'>[];
   lessons: CollectionEntry<'lessons'>[];
   decisions: CollectionEntry<'decisions'>[];
   counts: { systems: number; decisions: number; tests: number; lessons: number; evidence: number };
 }
 
-const { systems, chips, lessons, decisions, counts } = Astro.props;
+const { systems, chips, lessons, decisions, experience, counts } = Astro.props;
 
 /*
  * Status to register entry.
@@ -189,6 +190,65 @@ const LESSON_CAUSES: Entry[] = lessons.slice(0, 2).map((lesson) => ({
   text: lesson.data.why,
   href: '/engineering#lessons',
 }));
+
+/*
+ * THE CAREER TIMELINE reference 07 specifies, from the experience collection
+ * rather than from a written-out list. Every role, organisation and date here
+ * is a field in a record that /cv and the machine layer read from the same
+ * place, so the three cannot disagree (rule 10).
+ *
+ * `state` is what is TRUE of each row, not a decoration: the role being worked
+ * now is `pending` because it is still running, and a finished one is `done`
+ * because it finished. Nothing is marked `failed`, because nothing was.
+ */
+const CAREER: TLStage[] = [...experience]
+  .sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0))
+  .map((role) => {
+    /*
+     * The current role's `to` is the STRING "Present", not an absent value, so
+     * a truthiness test marked it finished and both rows rendered as done. A
+     * role still being worked is `pending` — the register is meant to say what
+     * is true of the thing it marks, and "done" on a job someone is doing today
+     * is simply wrong.
+     */
+    const ongoing = !role.data.to || /^present$/i.test(role.data.to.trim());
+    return {
+      name: role.data.role,
+      detail: `${role.data.organisation} · ${role.data.from} – ${role.data.to ?? 'present'}`,
+      state: ongoing ? ('pending' as const) : ('done' as const),
+    };
+  });
+
+/*
+ * THE CLOSING FRAME'S ROUTES OUT.
+ *
+ * Station 10 asked "What's next?", offered one link, and left the bottom half
+ * of the frame empty. A closing frame whose job is to send the reader somewhere
+ * should name the places, and each of these is a page that exists on this site
+ * with the thing described actually on it.
+ */
+const ROUTES: Entry[] = [
+  {
+    stamp: 'The register',
+    text: 'Every system, with what it does worst stated before anything it does well.',
+    href: '/systems',
+  },
+  {
+    stamp: 'The engineering record',
+    text: 'The decisions, what each one cost, and the lessons that changed the next system.',
+    href: '/engineering',
+  },
+  {
+    stamp: 'The live plane',
+    text: 'A real tenant in a real multi-tenant system, and an invitation to attack it.',
+    href: '/live/',
+  },
+  {
+    stamp: 'The CV',
+    text: 'Roles, dates and scope, in the form a hiring engineer reads first.',
+    href: '/cv',
+  },
+];
 
 const PATTERNS: TLStage[] = [
   { name: 'Tenancy', detail: 'multi-tenant from the first migration', state: 'done' },
@@ -365,15 +425,24 @@ const FEATURED = {
   branchesValid: Boolean(TENANCY),
 };
 
-/** Station 10's map labels: the ten stations, named on one frame. */
+/*
+ * Station 10's map: the ten stations, named on one frame.
+ *
+ * It said ten in its own comment and listed seven. 01, 07 and 10 were missing,
+ * which made the closing frame a map of most of the journey — and the one the
+ * reader is standing on was the most conspicuous omission of the three.
+ */
 const MAP = [
+  { x: 27, y: 74, label: '01 · Enter', lines: ['Where you came in'] },
   { x: 36, y: 20, label: '02 · Systems', lines: ['Three platforms'] },
   { x: 48, y: 29, label: '03 · Dissection', lines: ['Architecture layers'] },
   { x: 33, y: 43, label: '04 · Data', lines: ['One request path'] },
-  { x: 55, y: 50, label: '06 · Live', lines: ['The control plane'] },
   { x: 70, y: 56, label: '05 · Lab', lines: ['What did not work'] },
+  { x: 55, y: 50, label: '06 · Live', lines: ['The control plane'] },
+  { x: 63, y: 35, label: '07 · Think', lines: ['The judgment'] },
   { x: 76, y: 44, label: '08 · Build', lines: ['The next system'] },
   { x: 38, y: 60, label: '09 · Proof', lines: ['The archive'] },
+  { x: 92, y: 68, label: '10 · End', lines: ['You are here'] },
 ] as const;
 ---
 
@@ -905,17 +974,32 @@ const MAP = [
 
 {/* ══ 07 THINK ═════════════════════════════════════════════════════ */}
 <Stage id="think" depth={1} plate={0.95} labelledby="st-think">
-  <div class="col col--wide">
+  {
+    /*
+      THE SET'S ONE SERIF, HONOURED.
+
+      §8 of the decomposition calls this frame "the typographic outlier and its
+      best moment": a serif display over a sans body over dense mono, because
+      each family carries a different register — serif is judgment, sans is
+      explanation, mono is record. Every other station in the set is sans, and
+      that is exactly why this one lands.
+
+      The second serif line the reference sets beneath the display is the lede,
+      which already said the right thing in the wrong voice.
+    */
+  }
+  <div class="col col--wide think__col">
     <p class="eyebrow">07 / Think</p>
-    <h2 class="claim" id="st-think">
+    <h2 class="claim claim--serif" id="st-think">
       <span>Systems are only</span>
       <span>half the story.</span>
       <span>The other half is <em>judgment</em>.</span>
     </h2>
-    <p class="lede">
+    <p class="lede lede--serif">
       Knowing what to build, what not to build, what to measure, what to question, and when a
       simpler system is the better system.
     </p>
+    <a class="cta" href="/about">Read the long version <span aria-hidden="true">→</span></a>
   </div>
 
   {
@@ -944,19 +1028,109 @@ const MAP = [
     </p>
   </Panel>
 
-  <div class="pillars">
-    <p class="pillars__head">Five things I hold to</p>
-    <ol>
+  {
+    /*
+      THE FIVE PRINCIPLES, WITH THEIR STATEMENTS.
+
+      They shipped as five numbered titles in a single line across the bottom of
+      the frame — a row of headings with nothing under them, which is the shape
+      of a slogan. Each pillar carries a written statement in the same config
+      the /engineering page and the machine layer read, and it was never
+      rendered here. The reference's own interaction note for this frame is
+      "hover a principle → expands to its full statement"; there is no hover on
+      a static page, so the statement is simply shown.
+    */
+  }
+  <Panel x={4.8} y={53} w={27} title="Five things I hold to" note="held, not claimed">
+    <ol class="pillars">
       {
         PILLARS.map((pillar, i) => (
           <li>
-            <span class="pillars__num">{i + 1}</span>
-            <span class="pillars__title">{pillar.title}</span>
+            <span class="pillars__num">{String(i + 1).padStart(2, '0')}</span>
+            <span class="pillars__body">
+              <span class="pillars__title">{pillar.title}</span>
+              <span class="pillars__line">{pillar.line}</span>
+            </span>
           </li>
         ))
       }
     </ol>
-  </div>
+  </Panel>
+
+  {
+    /*
+      WHAT I GOT WRONG — reference 07 §9, and deliberately the SHORT form.
+
+      Station 05 publishes these two lessons in full, in all four of their
+      fields. Reprinting them here would be the duplicate-list failure the
+      dissection index was rebuilt to fix. On this frame they are evidence for a
+      claim about judgment, so what is needed is that they exist and are
+      readable, not their text a second time.
+    */
+  }
+  <Panel x={36} y={53} w={23} title="What I got wrong" status="fault" dense>
+    <ol class="wrongs">
+      {
+        lessons.slice(0, 2).map((lesson) => (
+          <li>
+            <a href="/engineering#lessons">{lesson.data.title}</a>
+          </li>
+        ))
+      }
+    </ol>
+    <p class="note">
+      Both are written up in full on station 05 above, with what each one cost and what changed
+      because of it.
+    </p>
+  </Panel>
+
+  {
+    /*
+      THE CAREER TIMELINE, from the experience collection. The reference draws a
+      long horizontal rail with many stops; this one has the number of stops the
+      record actually has, and the roles are dated because every figure on this
+      site is.
+    */
+  }
+  <Panel x={36} y={70} w={26} title="Where I have worked" note="from the record">
+    <StageTimeline
+      stages={CAREER}
+      caption="Both roles are on the CV in full, with what each one covered."
+    />
+  </Panel>
+
+  {
+    /*
+      THE PORTRAIT SLOT.
+
+      Reference 07 is composed around a photorealistic generated portrait. No
+      owned photograph of the subject exists in this repository, and a generated
+      face on a personal site reads as a photograph of its subject — a
+      fabricated picture of a real person.
+
+      The slot is therefore built, marked, and left empty, and the composition
+      is arranged so that it holds that way: the frame's weight is carried by
+      the serif column on the left and the three panels beneath it, not by this
+      corner. When a real photograph arrives it drops into this box and nothing
+      else has to move.
+    */
+  }
+  {/* OWNER-INPUT: an owned photograph of the subject, for this slot and /about */}
+  <Panel x={62} y={16} w={26} title="No portrait" status="fault">
+    <div class="portrait" role="img" aria-label="Portrait slot, deliberately empty">
+      <span class="portrait__mark" aria-hidden="true">Awaiting an owned photograph</span>
+    </div>
+    <p>
+      The reference for this frame is built around a photorealistic generated person, and the plate
+      was rendered with one in it. It is cropped out. No owned photograph of me exists in this
+      repository, and a generated face on a personal site reads as a photograph of its subject —
+      which would be a fabricated picture of a real person.
+    </p>
+    <p class="note">
+      What is left is a monitor, some architecture sketches and an empty desk. That is the honest
+      version of this reference.
+    </p>
+  </Panel>
 
   <div slot="mobile" class="m">
     <p class="m__eyebrow">07 / Think</p>
@@ -1332,6 +1506,10 @@ const MAP = [
     ))
   }
 
+  <Panel x={4.8} y={52} w={30} title="Where to go from here" note="four routes out">
+    <Feed entries={ROUTES} wrap cols={2} />
+  </Panel>
+
   <div slot="mobile" class="m">
     <p class="m__eyebrow">10 / End</p>
     <h2 class="m__claim">What's next? Let's find out.</h2>
@@ -1341,6 +1519,8 @@ const MAP = [
     <p class="m__note">
       Next problem: unknown. That is the state, not a gap waiting to be filled in.
     </p>
+    <p class="m__sub">Where to go from here</p>
+    <Feed entries={ROUTES} wrap />
     <a class="cta cta--m" href="/cv">Read the CV <span aria-hidden="true">→</span></a>
   </div>
 </Stage>
@@ -1636,52 +1816,155 @@ const MAP = [
     gap: calc(16 * var(--u));
   }
 
-  /* ── 07's pillar row ───────────────────────────────────────────── */
+  /* ── 07's serif register ───────────────────────────────────────── */
+
+  /*
+   * The only serif on the site, on the only frame the decomposition asks for
+   * one. Serif carries judgment, sans carries explanation, mono carries record,
+   * and this frame is the one that is about judgment.
+   *
+   * Tracking goes back to normal and the weight comes down: the sans display
+   * needs -0.03em and 600 to hold together at 96px, and a serif at the same
+   * settings looks compressed and shouted rather than considered.
+   */
+  .claim--serif {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: -0.012em;
+    line-height: 1.04;
+  }
+
+  .claim--serif :global(em) {
+    font-style: normal;
+  }
+
+  .lede--serif {
+    font-family: var(--font-serif);
+    font-size: calc(30 * var(--u));
+    line-height: 1.42;
+    letter-spacing: 0;
+    color: var(--text-muted);
+    max-width: calc(560 * var(--u));
+  }
+
+  /* ── 07's five principles ──────────────────────────────────────── */
+
   .pillars {
-    position: absolute;
-    left: 4.8%;
-    top: 68%;
-    width: 90%;
-  }
-
-  .pillars__head {
-    margin: 0 0 calc(18 * var(--u));
-    font-family: var(--font-mono);
-    font-size: calc(14 * var(--u));
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--text-faint);
-  }
-
-  .pillars ol {
     display: flex;
-    gap: calc(28 * var(--u));
+    flex-direction: column;
+    gap: calc(13 * var(--u));
     margin: 0;
-    padding: calc(16 * var(--u)) 0 0;
-    border-top: 1px solid var(--plate-edge);
+    padding: 0;
     list-style: none;
   }
 
   .pillars li {
-    flex: 1 1 0;
     display: flex;
     gap: calc(12 * var(--u));
+    padding-top: calc(11 * var(--u));
+    border-top: 1px solid var(--plate-edge);
+  }
+
+  .pillars li:first-child {
+    border-top: 0;
+    padding-top: 0;
   }
 
   .pillars__num {
-    font-size: calc(34 * var(--u));
-    font-weight: 300;
-    line-height: 0.9;
+    flex: none;
+    font-family: var(--font-mono);
+    font-size: calc(11 * var(--u));
+    line-height: 1.5;
     color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pillars__body {
+    display: flex;
+    flex-direction: column;
+    gap: calc(3 * var(--u));
+    min-width: 0;
   }
 
   .pillars__title {
     font-family: var(--font-mono);
-    font-size: calc(14 * var(--u));
+    font-size: calc(12 * var(--u));
     line-height: 1.4;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--text);
+  }
+
+  /* The statement that was in the config all along and never rendered. */
+  .pillars__line {
+    font-size: calc(12 * var(--u));
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  /* ── 07's what-I-got-wrong list ────────────────────────────────── */
+
+  .wrongs {
+    display: flex;
+    flex-direction: column;
+    gap: calc(9 * var(--u));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .wrongs li {
+    padding-left: calc(11 * var(--u));
+    border-left: 2px solid var(--fault);
+  }
+
+  .wrongs a {
+    /* SC 2.5.8: standalone, so it clears 24px on its own. */
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    font-size: calc(13 * var(--u));
+    line-height: 1.4;
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--text-faint);
+  }
+
+  .wrongs a:hover {
+    color: var(--signal);
+    text-decoration-color: var(--signal);
+  }
+
+  /* ── 07's portrait slot ────────────────────────────────────────── */
+
+  /*
+   * AN EMPTY SLOT THAT LOOKS DELIBERATE.
+   *
+   * The alternative to a generated face is not a hole. This is a drawn box in
+   * the frame's own proportions with a dashed edge and a stated reason, so a
+   * reader sees a decision rather than a missing asset — and so that when an
+   * owned photograph arrives it drops in here and nothing around it moves.
+   */
+  .portrait {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 5 / 4;
+    margin-bottom: calc(14 * var(--u));
+    border: 1px dashed var(--plate-edge);
+    border-radius: calc(4 * var(--u));
+    background: var(--bg-inset);
+  }
+
+  .portrait__mark {
+    font-family: var(--font-mono);
+    font-size: calc(11 * var(--u));
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    text-align: center;
+    padding: 0 calc(16 * var(--u));
   }
 
   /* ── 08's availability line ────────────────────────────────────── */

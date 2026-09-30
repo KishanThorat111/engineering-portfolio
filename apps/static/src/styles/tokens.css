@@ -87,6 +87,23 @@
     'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono',
     monospace;
 
+  /*
+   * THE SET'S ONE SERIF, AND IT COSTS NOTHING TO SHIP.
+   *
+   * Reference 07 is the only frame in the set set in a serif, and the
+   * decomposition calls it "the set's typographic outlier and its best moment":
+   * serif for judgment, sans for explanation, mono for record. Three families
+   * in one frame, each carrying a different register.
+   *
+   * This is a system stack, not a webfont. A display face downloaded for one
+   * heading on one station would be the largest single asset on a page whose
+   * whole argument is that it is fast, and the register the reference is after
+   * — a considered, human voice against the machine type everywhere else — is
+   * carried by the CLASS of face, not by a particular cut of it. Every platform
+   * in the stack has a real text serif.
+   */
+  --font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', Times, serif;
+
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
