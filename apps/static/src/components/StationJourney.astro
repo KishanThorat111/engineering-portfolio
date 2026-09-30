@@ -1140,10 +1140,19 @@ const MAP = [
     </p>
   </Panel>
 
+  {
+    /*
+    The serif carries to the narrow composition. It is the one frame in the set
+    set in a serif, and a phone reader seeing it in the same sans as every other
+    station simply does not get the frame.
+  */
+  }
   <div slot="mobile" class="m">
     <p class="m__eyebrow">07 / Think</p>
-    <h2 class="m__claim">Systems are only half the story. The other half is judgment.</h2>
-    <p class="m__lede">
+    <h2 class="m__claim m__claim--serif">
+      Systems are only half the story. The other half is judgment.
+    </h2>
+    <p class="m__lede m__lede--serif">
       Knowing what to build, what not to build, what to measure, and when a simpler system is the
       better system.
     </p>
@@ -1151,8 +1160,11 @@ const MAP = [
       {
         PILLARS.map((pillar, i) => (
           <li>
-            <span>{i + 1}</span>
-            {pillar.title}
+            <span class="m__pillarNum">{String(i + 1).padStart(2, '0')}</span>
+            <span class="m__pillarBody">
+              <span class="m__pillarTitle">{pillar.title}</span>
+              <span class="m__pillarLine">{pillar.line}</span>
+            </span>
           </li>
         ))
       }
@@ -2209,13 +2221,46 @@ const MAP = [
   .m__pillars li {
     display: flex;
     gap: 0.7rem;
-    padding: 0.55rem 0;
+    padding: 0.75rem 0;
     border-bottom: 1px solid var(--plate-edge);
     font-size: 0.85rem;
     color: var(--text);
   }
 
-  .m__pillars li span {
+  /* The statement, which the narrow composition had been dropping exactly as
+     the wide one used to. */
+  .m__pillarBody {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+
+  .m__pillarTitle {
+    color: var(--text);
+  }
+
+  .m__pillarLine {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  .m__claim--serif {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+
+  .m__lede--serif {
+    font-family: var(--font-serif);
+    letter-spacing: 0;
+  }
+
+  .m__pillarNum,
+  .m__pillars li > span:first-child {
+    flex: none;
     color: var(--text-faint);
     font-variant-numeric: tabular-nums;
   }
