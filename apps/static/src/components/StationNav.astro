@@ -104,8 +104,20 @@ const { current } = Astro.props;
     color: var(--structure);
   }
 
+  /*
+   * THE TEN STATIONS COME FIRST WHEN SPACE RUNS OUT.
+   *
+   * The status pill was added to this rail after the index was laid out, and it
+   * is `flex: none` — so at 1440 it took its width first and "10 / END" was
+   * clipped off the end of the scroller. The index is the site's structure and
+   * the pill is a readout; when they compete the structure wins the pixels.
+   *
+   * `flex: 1 1 auto` with `min-width: 0` lets the index take what is left after
+   * the wordmark, the pill and the CV link, and it still scrolls rather than
+   * wrapping when that is genuinely not enough.
+   */
   .station-nav__index {
-    flex: 1;
+    flex: 1 1 auto;
     min-width: 0;
   }
 
@@ -184,7 +196,8 @@ const { current } = Astro.props;
   }
 
   .station-nav__status {
-    flex: none;
+    flex: 0 1 auto;
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: 0.45rem;
@@ -271,6 +284,31 @@ const { current } = Astro.props;
 
   /* Below 720px the ten labels cannot fit; the numbers alone still navigate,
      and each link keeps its accessible name from the visually-hidden label. */
+  /*
+   * The pill keeps its label only where there is genuinely room for it.
+   *
+   * Measured at 1440: the index needs 967px and was being given 923px, so
+   * "10 / END" fell off the end of the scroller — the last station, the one
+   * that closes the arc, was the one that disappeared. The label costs about
+   * 94px and the shortfall was 44px, so dropping it below 1600 gives the ten
+   * stations room at every width a laptop actually has.
+   *
+   * Nothing about the STATE is dropped: the dot carries its colour and the
+   * value still reads "live" or "no answer" in words. Only the word
+   * "control plane" goes, and a status pill in a navigation rail is not
+   * ambiguous about what it is describing.
+   */
+  @media (max-width: 1600px) {
+    .station-nav__status-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+
   @media (max-width: 720px) {
     .station-nav__label {
       position: absolute;

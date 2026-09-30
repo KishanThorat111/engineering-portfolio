@@ -167,8 +167,7 @@ const HOPS: Hop[] = [
       <a class="enter__cta enter__cta--quiet" href="/cv.pdf" download>Download CV</a>
     </div>
     <p class="enter__ctaNote">
-      A real multi-tenant system, labelled a demonstration. It provisions you a tenant, invites you
-      to attack it, and shows you the layer that stopped you.
+      A real system, labelled a demonstration. It gives you a tenant and invites you to attack it.
     </p>
   </div>
 
@@ -189,8 +188,7 @@ const HOPS: Hop[] = [
       */
     }
     <p class="enter__note">
-      No uptime or throughput figure is published anywhere on this site. None is measured, and an
-      unmeasured number is not a number.
+      No uptime or throughput figure is published anywhere on this site. None is measured.
     </p>
   </div>
 
@@ -341,16 +339,37 @@ const HOPS: Hop[] = [
     color: var(--text);
   }
 
+  /*
+   * THE PRIMARY ACTION GETS ITS OWN LINE.
+   *
+   * Three controls in one row inside a 25%-wide column put every label on two
+   * lines — "ENTER THE LIVE / SYSTEM", "SEE THE / SYSTEMS" — which reads as a
+   * layout accident rather than a hierarchy. The primary now sits alone and the
+   * two secondaries share the row beneath it, which is also the correct reading
+   * order: one thing to do, two things to read.
+   *
+   * `white-space: nowrap` on the control itself is the other half: a button
+   * whose label wraps has stopped being a button and become a paragraph with a
+   * border.
+   */
   .enter__actions {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: calc(22 * var(--u));
+    gap: calc(16 * var(--u)) calc(24 * var(--u));
     margin-top: calc(34 * var(--u));
+  }
+
+  .enter__actions .enter__cta--primary {
+    /* Own row: the two quiet links wrap beneath it. */
+    flex: 0 0 100%;
+    justify-content: space-between;
   }
 
   .enter__cta {
     display: inline-flex;
     align-items: center;
+    white-space: nowrap;
     gap: calc(12 * var(--u));
     padding: calc(16 * var(--u)) calc(26 * var(--u));
     border: 1px solid var(--text-muted);
@@ -410,10 +429,20 @@ const HOPS: Hop[] = [
    * position was measured correctly and then applied to a column carrying more
    * text; the composition moves rather than the words.
    */
+  /*
+   * 79%, not 73.5%.
+   *
+   * The left column grew when the live-system CTA took its own row and gained a
+   * line of explanation beneath it, and the readout — positioned against the
+   * reference frame, whose column is shorter — was overlapped by 33px at 1440.
+   * Measured, not eyeballed. The reference position was right for the
+   * reference's column; this one carries more, so the block beneath it moves
+   * rather than the words being cut to fit.
+   */
   .enter__readout {
     position: absolute;
     left: 4.8%;
-    top: 73.5%;
+    top: 79%;
     width: 29%;
   }
 
