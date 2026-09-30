@@ -1,0 +1,213 @@
+---
+/**
+ * THE STATUS BAR — reference 06's bottom rail, and the place honesty principle
+ * 12 is actually discharged.
+ *
+ * The reference prints "SYSTEM STATUS: ALL SYSTEMS OPERATIONAL" across the
+ * bottom of its control room. §3's ruling on that banner is explicit: it must
+ * be DERIVED, never asserted, and if the live plane is down this is the first
+ * thing that has to say so.
+ *
+ * That is the whole reason this component exists rather than a row of styled
+ * text. Every state it can show is bound to the one measurement the page makes,
+ * through the root's `data-liveness` attribute:
+ *
+ *   live       the control plane answered
+ *   down       it did not answer
+ *   unknown    nothing has been attempted yet — the state the markup SHIPS in,
+ *              because a page that renders "operational" before it has asked
+ *              anything is lying for as long as the request is in flight
+ *
+ * THERE IS NO DEGRADED BRANCH, AND THAT IS ON PURPOSE.
+ * The measurement this page makes resolves to exactly two outcomes: the control
+ * plane answered, or it did not. A third word styled for a state the
+ * measurement cannot produce would be a light that can never come on — it would
+ * render identically whether or not the backend existed, which is the
+ * definition of decoration here. If the measurement ever learns to distinguish
+ * a slow answer from a good one, the word gets added with it and not before.
+ *
+ * `unknown` being the served state is the important detail. It means the
+ * honest answer is what a reader sees with scripting off, on a slow link, and
+ * in the first frame — and the good news, if there is any, has to be earned by
+ * an actual response.
+ *
+ * THE UNITS AND THE READINGS ARE ONE THING
+ * A figure slot renders its unit only when a reading has landed, for the same
+ * reason: "— ms" reads as a millisecond measurement that is merely missing,
+ * when in fact nothing was measured at all.
+ */
+export interface Field {
+  label: string;
+  /** Static text. Omit where the field is bound to the measurement. */
+  value?: string;
+  /** Binds this field to the page's one live reading. */
+  live?: 'rtt' | 'state' | 'demos';
+  unit?: string;
+}
+
+interface Props {
+  fields: Field[];
+  /** The sentence that says what "live" here does and does not mean. */
+  note?: string;
+  class?: string;
+}
+
+const { fields, note, class: className } = Astro.props;
+---
+
+<div class:list={['sb', className]}>
+  <p class="sb__state">
+    <span class="sb__dot" aria-hidden="true"></span>
+    <span class="sb__stateLabel">Control plane</span>
+    {
+      /*
+      Four sentences ship; CSS reveals the one the measurement supports. They
+      are real text, not a template a script fills, so a reader with no
+      JavaScript gets the true one rather than an empty element.
+    */
+    }
+    <span class="sb__word sb__word--unknown">not yet checked</span>
+    <span class="sb__word sb__word--live">answering</span>
+    <span class="sb__word sb__word--down">no answer</span>
+  </p>
+
+  <dl class="sb__fields">
+    {
+      fields.map((f) => (
+        <div class="sb__field">
+          <dt>{f.label}</dt>
+          <dd>
+            <span data-live-value={f.live}>{f.value ?? '—'}</span>
+            {f.unit && (f.value !== undefined || f.live) && <span class="sb__unit">{f.unit}</span>}
+          </dd>
+        </div>
+      ))
+    }
+  </dl>
+
+  {note && <p class="sb__note">{note}</p>}
+</div>
+
+<style>
+  .sb {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: calc(10 * var(--u, 1px)) calc(24 * var(--u, 1px));
+  }
+
+  .sb__state {
+    display: flex;
+    align-items: baseline;
+    gap: calc(9 * var(--u, 1px));
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: calc(11 * var(--u, 1px));
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .sb__stateLabel {
+    color: var(--text-faint);
+  }
+
+  .sb__dot {
+    align-self: center;
+    width: calc(7 * var(--u, 1px));
+    height: calc(7 * var(--u, 1px));
+    min-width: 5px;
+    min-height: 5px;
+    border-radius: 50%;
+    background: var(--text-faint);
+  }
+
+  /*
+   * NOTHING GLOWS WITHOUT A READING BEHIND IT. The unknown and down states get
+   * a flat dot; only a plane that actually answered lights one.
+   */
+  :global(:root[data-liveness='live']) .sb__dot {
+    background: var(--signal);
+    box-shadow: 0 0 calc(8 * var(--u, 1px)) var(--signal);
+  }
+
+  :global(:root[data-liveness='down']) .sb__dot {
+    background: var(--fault);
+  }
+
+  /* Exactly one word is shown, and the served default is the honest one. */
+  .sb__word {
+    display: none;
+    color: var(--text);
+  }
+
+  .sb__word--unknown {
+    display: inline;
+    color: var(--text-muted);
+  }
+
+  :global(:root[data-liveness]) .sb__word--unknown {
+    display: none;
+  }
+
+  :global(:root[data-liveness='live']) .sb__word--live {
+    display: inline;
+    color: var(--signal);
+  }
+
+  :global(:root[data-liveness='down']) .sb__word--down {
+    display: inline;
+    color: var(--fault);
+  }
+
+  .sb__fields {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: calc(8 * var(--u, 1px)) calc(24 * var(--u, 1px));
+    margin: 0;
+  }
+
+  .sb__field {
+    display: flex;
+    align-items: baseline;
+    gap: calc(8 * var(--u, 1px));
+  }
+
+  .sb__field dt {
+    font-family: var(--font-mono);
+    font-size: calc(10 * var(--u, 1px));
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+
+  .sb__field dd {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: calc(12 * var(--u, 1px));
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  .sb__unit {
+    display: none;
+    color: var(--text-faint);
+  }
+
+  :global(:root[data-liveness='live']) .sb__unit {
+    display: inline;
+  }
+
+  .sb__note {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding-top: calc(10 * var(--u, 1px));
+    border-top: 1px solid var(--plate-edge, #2b3345);
+    font-size: calc(11 * var(--u, 1px));
+    line-height: 1.5;
+    color: var(--text-faint);
+  }
+</style>

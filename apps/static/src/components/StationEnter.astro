@@ -328,7 +328,11 @@ const HOPS: Hop[] = [
       {STATUS_CHIPS.map((chip) => <li>{chip}</li>)}
     </ul>
     <dl class="enterM__stats">
-      <div><dt>Round trip</dt><dd><span data-live-value="rtt">—</span> ms</dd></div>
+      {/* The unit is part of the reading; with no reading there is no unit. */}
+      <div>
+        <dt>Round trip</dt>
+        <dd><span data-live-value="rtt">—</span><span class="unit">&nbsp;ms</span></dd>
+      </div>
       <div><dt>Control plane</dt><dd data-live-value="state">—</dd></div>
       <div><dt>Demonstrations</dt><dd>5</dd></div>
       <div><dt>Isolation layers</dt><dd>2</dd></div>
@@ -355,6 +359,16 @@ const HOPS: Hop[] = [
 </Stage>
 
 <style>
+  /* "— ms" claims a millisecond figure that is merely missing. Nothing was
+     measured, so the unit waits for the reading it belongs to. */
+  .unit {
+    display: none;
+  }
+
+  :global(:root[data-liveness='live']) .unit {
+    display: inline;
+  }
+
   /* ── The stage composition ─────────────────────────────────────── */
   .enter__col {
     position: absolute;

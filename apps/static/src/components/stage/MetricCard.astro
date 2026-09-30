@@ -66,7 +66,19 @@ const {
     ) : (
       <p class:list={['mc__value', `mc__value--${tone}`]}>
         <span data-live-value={live}>{value ?? '—'}</span>
-        {unit && <span class="mc__unit">{unit}</span>}
+        {/*
+          A UNIT IS PART OF A READING, SO IT ONLY EXISTS WHEN THE READING DOES.
+
+          This rendered "—ms" whenever the figure was unmeasured, which reads as
+          a measurement in milliseconds whose value happens to be missing. It is
+          not: there is no reading at all. The dash means "not measured" and a
+          unit welded to it contradicts that.
+
+          A card with no value and no live binding never emits the unit. A
+          live-bound card emits it, because a reading may land a moment later,
+          and hides it until the root says one has.
+        */}
+        {unit && (value !== null || live) && <span class="mc__unit">{unit}</span>}
       </p>
     )
   }
@@ -76,6 +88,15 @@ const {
 </div>
 
 <style>
+  /*
+   * The unit on a live-bound card, hidden until the measurement arrives. The
+   * card ships with the unit in the markup so nothing has to be inserted at
+   * runtime; the root's liveness state reveals it.
+   */
+  :global(:root:not([data-liveness='live'])) .mc__value [data-live-value] + .mc__unit {
+    display: none;
+  }
+
   .mc {
     display: flex;
     flex-direction: column;

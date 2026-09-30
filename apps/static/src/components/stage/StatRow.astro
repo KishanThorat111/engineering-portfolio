@@ -57,9 +57,28 @@ const style = positioned ? `--x:${x}%; --y:${y}%; --w:${w ?? 40}%` : undefined;
     items.map((item) => (
       <div class="stats__col" data-live={item.live}>
         <dt class="stats__label">{item.label}</dt>
-        <dd class="stats__value" data-live-value={item.live}>
-          {item.value ?? <span class="stats__pending">—</span>}
-          {item.unit && <span class="stats__unit">{item.unit}</span>}
+        {/*
+          THE BINDING SITS ON A SPAN INSIDE THE VALUE, NOT ON THE VALUE ITSELF.
+
+          It used to sit on the <dd>, with the unit as a sibling of the figure
+          INSIDE it, and the liveness script fills a bound node by assigning
+          textContent. That wiped every child. The two states were therefore
+          exactly inverted: with no reading the cell rendered "—ms", claiming a
+          millisecond figure that was merely missing; and the moment a real
+          reading landed the unit was destroyed, so the one case that had a unit
+          to show lost it.
+
+          Binding the figure alone leaves the unit a sibling the script never
+          touches, and the unit is then revealed by the same liveness state as
+          the reading it belongs to.
+        */}
+        <dd class="stats__value">
+          <span data-live-value={item.live}>
+            {item.value ?? <span class="stats__pending">—</span>}
+          </span>
+          {item.unit && (item.value != null || item.live) && (
+            <span class="stats__unit">{item.unit}</span>
+          )}
         </dd>
       </div>
     ))
@@ -127,6 +146,11 @@ const style = positioned ? `--x:${x}%; --y:${y}%; --w:${w ?? 40}%` : undefined;
   */
   .stats__pending {
     color: var(--text-faint);
+  }
+
+  /* A unit is part of a reading and waits for one. */
+  :global(:root:not([data-liveness='live'])) .stats__col[data-live] .stats__unit {
+    display: none;
   }
 
   .stats__unit {
