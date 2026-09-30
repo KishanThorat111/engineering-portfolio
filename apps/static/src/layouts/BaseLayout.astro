@@ -45,9 +45,24 @@ interface Props {
    * public page leaves it alone.
    */
   noindex?: boolean;
+  /**
+   * Whether this page declares itself canonical. True everywhere but the 404.
+   *
+   * `rel=canonical` means "this is the preferred URL for this content", which
+   * every real page should say. The 404 is the one page that must not:
+   * `wrangler.jsonc` sets `not_found_handling: "404-page"`, so that single file
+   * is served at an unbounded number of addresses, and a self-canonical on it
+   * tells a crawler the error page is a real destination — inviting /404/ into
+   * the index. Dossier §15 has carried this as open since Phase 8.
+   *
+   * It is NOT tied to `noindex`: `/dev/components/` and the `/live/*` station
+   * pages are noindex too, but each is one genuine destination a deep link
+   * resolves to, and keeps its canonical.
+   */
+  canonical?: boolean;
 }
 
-const { title, description, noindex = false } = Astro.props;
+const { title, description, noindex = false, canonical = true } = Astro.props;
 
 /*
  * Absolute URLs come from the configured production origin (blueprint §7.4),
@@ -62,7 +77,7 @@ if (!origin) {
   );
 }
 
-const canonical = new URL(Astro.url.pathname, origin).href;
+const canonicalHref = new URL(Astro.url.pathname, origin).href;
 const ogImage = new URL(`/og/${ogSlugFor(Astro.url.pathname)}.png`, origin).href;
 ---
 
@@ -74,7 +89,7 @@ const ogImage = new URL(`/og/${ogSlugFor(Astro.url.pathname)}.png`, origin).href
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="theme-color" content="#0B0E14" />
-    <link rel="canonical" href={canonical} />
+    {canonical && <link rel="canonical" href={canonicalHref} />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 
     {noindex && <meta name="robots" content="noindex, nofollow" />}
@@ -88,7 +103,7 @@ const ogImage = new URL(`/og/${ogSlugFor(Astro.url.pathname)}.png`, origin).href
           <meta property="og:type" content="website" />
           <meta property="og:site_name" content="Kishan Thorat" />
           <meta property="og:locale" content="en_GB" />
-          <meta property="og:url" content={canonical} />
+          <meta property="og:url" content={canonicalHref} />
           <meta property="og:title" content={title} />
           <meta property="og:description" content={description} />
           <meta property="og:image" content={ogImage} />

@@ -121,6 +121,29 @@ const navLinks = [
     padding: 0;
   }
 
+  /*
+   * WCAG 2.2 AA, SC 2.5.8 Target Size (Minimum).
+   *
+   * These are the site's primary navigation and they sat on a 17px line box —
+   * under the 24px minimum on every page, at every width. They are standalone
+   * controls in a list, not links inside a sentence, so the criterion's inline
+   * exception does not apply to them.
+   *
+   * The target is grown with padding and the padding undone with an equal
+   * negative margin, so the hit area clears 24px and the header does not move
+   * by a pixel. `.contact-cta` already clears it through its own button
+   * padding and is excluded so its filled background does not grow.
+   */
+  .site-nav a:not(.contact-cta) {
+    /* inline-flex + min-width so short labels like "CV" also clear 24px wide. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    padding-block: 4px;
+    margin-block: -4px;
+  }
+
   .site-nav a {
     color: var(--text-muted);
     text-decoration: none;

@@ -158,11 +158,42 @@ for (const file of htmlFiles(DIST)) {
   const rel = file.replace(DIST, '').replace(/\\/g, '/');
 
   /* Pages excluded from discovery carry no share card by design, so they are
-     outside this section's remit — but they must still be canonical. */
+     outside this section's remit. */
   const isNoindex = /<meta name="robots" content="noindex/i.test(html);
 
+  /*
+   * THE 404 MUST NOT SELF-CANONICALISE. EVERY REAL PAGE STILL MUST.
+   *
+   * This required a canonical on EVERY page, which is what kept the 404
+   * emitting `rel=canonical href=".../404/"` — dossier §15 has carried that as
+   * open since Phase 8.
+   *
+   * The 404 is structurally unlike every other page here: `wrangler.jsonc` sets
+   * `not_found_handling: "404-page"`, so that ONE file is served at an unbounded
+   * number of addresses. A self-canonical on it tells a crawler that the error
+   * page is a real destination with a preferred URL, and invites /404/ into the
+   * index. No other page has that property — `/dev/components/` and the
+   * `/live/*` station pages are noindex, but each is a single genuine
+   * destination that a deep link legitimately resolves to, and a canonical
+   * there is at worst redundant.
+   *
+   * So the rule is stated where the data model actually puts it rather than
+   * broadened to every noindex page, which would have forced a change on the
+   * experience app for a defect it does not have. Nothing is loosened: every
+   * page that is not the 404 is checked exactly as before, and the 404 gains an
+   * assertion it never had.
+   */
   const canonical = html.match(/<link rel="canonical" href="([^"]+)"/);
-  if (!canonical) {
+  const isNotFoundPage = rel === '/404.html';
+  if (isNotFoundPage) {
+    if (canonical) {
+      fail(
+        `${rel}: the 404 page must not declare a canonical (found "${canonical[1]}") — ` +
+          'it is served for every unmatched address',
+      );
+    }
+    if (!isNoindex) fail(`${rel}: the 404 page must carry a robots noindex`);
+  } else if (!canonical) {
     fail(`${rel}: no canonical link`);
   } else if (!canonical[1].startsWith(origin)) {
     fail(`${rel}: canonical "${canonical[1]}" is not on the profile's origin ${origin}`);

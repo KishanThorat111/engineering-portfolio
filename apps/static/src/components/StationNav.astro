@@ -146,6 +146,21 @@ const { current } = Astro.props;
     overflow-x: auto;
     scrollbar-width: none;
     scroll-snap-type: x proximity;
+    /*
+     * `contain: paint` stops this scroller's overflow propagating to the page.
+     *
+     * Giving each station link a 24px minimum target (SC 2.5.8) made the row's
+     * content wider than its box, which is exactly what a horizontal scroller is
+     * for — but the browser still grew the DOCUMENT's scrollWidth by 17px at
+     * 390, so the whole page could be dragged sideways. `overflow-x: auto`
+     * clipped the paint and not the propagation.
+     *
+     * Found by elimination in a real browser: `min-width: 0`, `max-width: 100%`,
+     * `overflow: hidden` on the parent and disabling scroll-snap all left it at
+     * 407px; `contain: paint` returned it to 390. The rail still scrolls and all
+     * ten stations stay reachable — verified, not assumed.
+     */
+    contain: paint;
     /* Room for the focus ring of the first and last items. */
     padding-inline: 2px;
   }
@@ -159,9 +174,21 @@ const { current } = Astro.props;
     scroll-snap-align: start;
   }
 
+  /*
+   * WCAG 2.2 AA, SC 2.5.8 Target Size (Minimum).
+   *
+   * Below 720px the rail hides each station's word and shows only its number,
+   * which left a 16x27px target — under the 24px minimum on the axis that
+   * matters, and on the device where a finger is doing the tapping. The rail
+   * scrolls horizontally, so widening each item costs nothing but scroll
+   * distance.
+   */
   .station-nav__link {
     display: inline-flex;
     align-items: baseline;
+    justify-content: center;
+    min-width: 24px;
+    min-height: 24px;
     gap: 0.3rem;
     padding: 0.2rem 0;
     border-bottom: 2px solid transparent;
@@ -268,6 +295,12 @@ const { current } = Astro.props;
 
   .station-nav__cta {
     flex: none;
+    /* SC 2.5.8: "CV" is a 16x19px target on its own. */
+    display: inline-flex;
+    align-items: center;
+    min-width: 24px;
+    min-height: 24px;
+    justify-content: center;
     font-family: var(--font-mono);
     font-size: 0.6875rem;
     letter-spacing: 0.14em;

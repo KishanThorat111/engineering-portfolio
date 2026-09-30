@@ -165,6 +165,22 @@ import {
     font-size: var(--text-md);
   }
 
+  /*
+   * WCAG 2.2 AA, SC 2.5.8 Target Size (Minimum). The CV's contact links are a
+   * standalone list, not links inside a sentence, so the criterion's inline
+   * exception does not apply. They sat on a 19px line box. The target grows with
+   * padding and the padding is undone with an equal negative margin, so the hit
+   * area clears 24px and the header block does not move.
+   *
+   * These are the links a recruiter actually taps, on a phone, which is exactly
+   * the case the criterion exists for.
+   */
+  .cv-contact li a {
+    display: inline-block;
+    padding-block: 3px;
+    margin-block: -3px;
+  }
+
   .cv-contact {
     list-style: none;
     display: flex;

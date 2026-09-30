@@ -249,6 +249,20 @@ const lessons = (await getCollection('lessons')).sort((a, b) => a.data.order - b
     gap: var(--space-6);
   }
 
+  /*
+   * WCAG 2.2 AA, SC 2.5.8 Target Size (Minimum): a control that is not inline
+   * in a sentence needs a 24x24 CSS-pixel target. These links sit on a ~19px
+   * line box, so the hit area is grown with padding and the padding is undone
+   * with an equal negative margin — the target grows, the layout does not move
+   * by a pixel. Links that genuinely sit inside a sentence are exempt under the
+   * same criterion and are left alone.
+   */
+  .cross-link a {
+    display: inline-block;
+    padding-block: 4px;
+    margin-block: -4px;
+  }
+
   .cross-link {
     margin-block-start: var(--space-3);
     font-size: var(--text-sm);

@@ -125,13 +125,38 @@ const HOPS: Hop[] = [
   <div class="enter__col">
     <p class="enter__eyebrow">Engineering complexity<br />into real systems.</p>
 
+    {
+      /*
+        THE LINE BREAKS ARE VISUAL; THE SENTENCE IS NOT.
+
+        Each display line is a block `<span>`, and adjacent tags carry no
+        whitespace — so the heading's own text content read
+        "I design,build,and operateproduction systems.", with the words welded
+        together. Anything that takes an element's text rather than its rendered
+        layout got that: search crawlers, text extraction, the reading mode in a
+        browser, and screen readers whose name computation does not insert a
+        space at a block boundary.
+
+        A `visually-hidden` paragraph repeating the sentence used to paper over
+        it, which meant the page stated its most important claim twice and a
+        screen reader announced it twice — the heading, then the same words
+        again as body text.
+
+        An explicit space between the lines fixes the cause instead. The spans
+        are blocks, so it changes nothing visually, and the heading now reads
+        correctly on its own. The duplicate paragraph is gone with it.
+      */
+    }
     <h1 class="enter__claim" id="claim">
-      {CLAIM_LINES.map((line) => <span>{line}</span>)}
+      {
+        CLAIM_LINES.map((line) => (
+          <>
+            <span>{line}</span>{' '}
+          </>
+        ))
+      }
       <span><em>{CLAIM_TAIL}</em></span>
     </h1>
-
-    {/* The claim, unbroken, for anything that reads rather than looks. */}
-    <p class="visually-hidden">{SITE.claim}</p>
 
     <p class="enter__lede">{SITE.subline}</p>
 
