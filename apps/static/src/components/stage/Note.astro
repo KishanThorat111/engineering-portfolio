@@ -1,0 +1,110 @@
+---
+/**
+ * A LABELLED BLOCK OF PROSE — a caption above a paragraph, with an optional
+ * register rule down its left edge.
+ *
+ * `Inspector` already does label/value pairs, but a value there is a few words
+ * on one line. This is for the other shape the content actually has: a short
+ * mono caption naming what the paragraph is, and a paragraph long enough to say
+ * something. Station 05's lessons carry three of them each — what happened,
+ * what it cost, what changed — and only the first was ever rendered.
+ *
+ * THE RULE IS OPTIONAL AND MEANS SOMETHING WHEN IT IS THERE
+ * A `tone` draws a 2px rule down the left in that register's colour. It is used
+ * where the block IS that thing — a cost is drawn in --fault because a cost is
+ * what the choice actually took — and omitted everywhere else. A rule on every
+ * block would decorate all of them and distinguish none.
+ */
+interface Props {
+  label: string;
+  /** Draws the left rule in this register. Omit for a plain block. */
+  tone?: 'signal' | 'pending' | 'isolation' | 'record' | 'fault' | 'structure';
+  /** Sets the body in the smaller, quieter size. */
+  quiet?: boolean;
+  class?: string;
+}
+
+const { label, tone, quiet = false, class: className } = Astro.props;
+---
+
+<div class:list={['nt', tone && `nt--${tone}`, quiet && 'nt--quiet', className]}>
+  <p class="nt__label">{label}</p>
+  <div class="nt__body"><slot /></div>
+</div>
+
+<style>
+  .nt {
+    display: flex;
+    flex-direction: column;
+    gap: calc(5 * var(--u, 1px));
+  }
+
+  .nt--signal,
+  .nt--pending,
+  .nt--isolation,
+  .nt--record,
+  .nt--fault,
+  .nt--structure {
+    padding-left: calc(11 * var(--u, 1px));
+    border-left: 2px solid var(--nt-rule);
+  }
+
+  .nt--signal {
+    --nt-rule: var(--signal);
+  }
+  .nt--pending {
+    --nt-rule: var(--pending);
+  }
+  .nt--isolation {
+    --nt-rule: var(--isolation);
+  }
+  .nt--record {
+    --nt-rule: var(--record);
+  }
+  .nt--fault {
+    --nt-rule: var(--fault);
+  }
+  .nt--structure {
+    --nt-rule: var(--structure);
+  }
+
+  .nt__label {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: calc(10 * var(--u, 1px));
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .nt__body {
+    font-size: calc(13 * var(--u, 1px));
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  .nt--quiet .nt__body {
+    font-size: calc(12 * var(--u, 1px));
+    color: var(--text-faint);
+  }
+
+  .nt__body :global(p) {
+    margin: 0;
+  }
+
+  .nt__body :global(p + p) {
+    margin-top: calc(8 * var(--u, 1px));
+  }
+
+  .nt__body :global(a) {
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--text-faint);
+  }
+
+  .nt__body :global(a:hover) {
+    color: var(--signal);
+    text-decoration-color: var(--signal);
+  }
+</style>

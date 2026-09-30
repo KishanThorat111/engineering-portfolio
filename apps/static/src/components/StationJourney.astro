@@ -46,6 +46,7 @@ import Inspector from './stage/Inspector.astro';
 import DissectionIndex from './stage/DissectionIndex.astro';
 import Legend from './stage/Legend.astro';
 import StatusBar from './stage/StatusBar.astro';
+import Note from './stage/Note.astro';
 import StatRow, { type Stat } from './stage/StatRow.astro';
 import TraceRail, { type Hop } from './stage/TraceRail.astro';
 import { SITE } from '../config/site';
@@ -174,6 +175,20 @@ const DISCLOSED: Entry[] = systems.slice(0, 3).flatMap((system) => {
       ]
     : [];
 });
+
+/*
+ * WHY THE LESSONS HAPPENED — the field this frame never published.
+ *
+ * Each lesson records what happened, what it cost, what changed, AND why it
+ * happened in the first place. The first three are on the record panels; the
+ * fourth is the analytical one, and it is the reason the collection is worth
+ * reading rather than just honest. It gets its own panel.
+ */
+const LESSON_CAUSES: Entry[] = lessons.slice(0, 2).map((lesson) => ({
+  stamp: lesson.data.title,
+  text: lesson.data.why,
+  href: '/engineering#lessons',
+}));
 
 const PATTERNS: TLStage[] = [
   { name: 'Tenancy', detail: 'multi-tenant from the first migration', state: 'done' },
@@ -675,19 +690,66 @@ const MAP = [
   </div>
 
   {
+    /*
+      EACH LESSON, IN ALL THREE PARTS.
+
+      The collection records what happened, what it cost, and what rule changed
+      because of it — and this frame published only the first. The claim the
+      station makes is "Everything teaches", and the teaching is the third
+      field. A lesson shown without its cost is an anecdote; shown without what
+      changed it is an apology. Both ship, and the cost carries the fault rule
+      because a cost is what the choice actually took.
+    */
+  }
+  {
     lessons.slice(0, 2).map((lesson, i) => (
-      <Panel x={40} y={i === 0 ? 14 : 44} w={34} title={`Lesson 0${i + 1}`} status="fault">
+      <Panel x={38} y={i === 0 ? 8 : 52} w={36} title={`Lesson 0${i + 1}`} status="fault">
         <p class="sys__title sys__title--fault">{lesson.data.title}</p>
-        <p class="sys__line">{lesson.data.whatHappened}</p>
+        <div class="lesson">
+          <Note label="What happened">
+            <p>{lesson.data.whatHappened}</p>
+          </Note>
+          <Note label="What it cost" tone="fault">
+            <p>{lesson.data.cost}</p>
+          </Note>
+          <Note label="What changed" tone="signal">
+            <p>{lesson.data.ruleChanged}</p>
+            {lesson.data.crossLink && (
+              <p>
+                <a href={lesson.data.crossLink.href}>{lesson.data.crossLink.label}</a>
+              </p>
+            )}
+          </Note>
+        </div>
       </Panel>
     ))
   }
 
-  <Panel x={78} y={70} w={18} title="What is measured here" dense>
-    <p>
-      {counts.lessons} lessons published, {counts.decisions} decisions recorded. The reference puts frame
-      rates and particle counts in this frame; none of them exist, so none of them ship.
+  {
+    /*
+      Moved out of the bottom-right corner, where it sat alone against a frame
+      that was otherwise empty from the call to action downwards. The reference
+      puts an experiment selector, a controls cluster and a telemetry stream in
+      this column; none of those experiments exist and no telemetry is kept, so
+      the column says what IS counted and names what was cut.
+    */
+  }
+  <Panel x={4.8} y={48} w={28} title="What is measured here">
+    <StatRow
+      items={[
+        { label: 'Lessons', value: String(counts.lessons) },
+        { label: 'Decisions', value: String(counts.decisions) },
+      ]}
+    />
+    <p class="note">
+      The reference puts frame rates, particle counts and a running experiment timer in this frame.
+      None of them exist here, so none of them ship. What is published instead is every lesson in
+      full, including the part that cost something.
     </p>
+  </Panel>
+
+  <Panel x={4.8} y={64} w={28} title="Why they happened" note="the fourth field">
+    <Feed entries={LESSON_CAUSES} wrap />
   </Panel>
 
   <div slot="mobile" class="m">
@@ -699,6 +761,8 @@ const MAP = [
           <li>
             <p class="m__cardTitle">{lesson.data.title}</p>
             <p class="m__cardLine">{lesson.data.whatHappened}</p>
+            <p class="m__cardLine m__cardLine--cost">{lesson.data.cost}</p>
+            <p class="m__cardLine m__cardLine--changed">{lesson.data.ruleChanged}</p>
           </li>
         ))
       }
@@ -1359,6 +1423,14 @@ const MAP = [
     color: var(--signal);
   }
 
+  /* The three parts of a lesson, spaced so each reads as its own statement. */
+  .lesson {
+    display: flex;
+    flex-direction: column;
+    gap: calc(14 * var(--u));
+    margin-top: calc(4 * var(--u));
+  }
+
   /*
    * A UNIT WITHOUT ITS READING IS A CLAIM.
    *
@@ -1762,6 +1834,21 @@ const MAP = [
     font-size: 0.88rem;
     line-height: 1.55;
     color: var(--text-muted);
+  }
+
+  /* On the narrow composition the three parts of a lesson are told apart by a
+     register rule rather than by a caption, which would triple the line count
+     on a phone for no gain in meaning. */
+  .m__cardLine--cost,
+  .m__cardLine--changed {
+    padding-left: 0.7rem;
+    border-left: 2px solid var(--fault);
+    font-size: 0.83rem;
+    color: var(--text-faint);
+  }
+
+  .m__cardLine--changed {
+    border-left-color: var(--signal);
   }
 
   .m__layers,
