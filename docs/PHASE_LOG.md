@@ -3666,3 +3666,151 @@ needs restarting), there is no headshot, the demo-tenant screenshots and hospita
 permissions are outstanding, the mid-range device frame measurement carried since P4 has not been
 taken, and 72 "as of Jul 2026" qualifiers remain unrefreshed because none of the underlying
 numbers were re-checked.
+
+---
+
+## S6 — The stations rebuilt as composed interfaces · 1 October 2026
+
+The owner's verdict on S2's result was that it did not look professional, and the
+diagnosis was correct and specific: `design-references/README.md` says the ten plates
+are **visual specifications**, not background images, and the implementation was using
+each one as a near-full-bleed background with a headline and two or three panels over
+it. Reference 09 alone specifies a donut, two gauges, a six-stage timeline, a flow
+diagram, a three-branch decision tree with five criteria, a live feed, a ranked list, a
+trace inspector and a six-metric stat bar. Almost none of it was built. That gap was
+the defect.
+
+This stage builds the component kit the references actually call for and composes all
+ten stations out of it, shipping in increments rather than as one commit.
+
+### The kit
+
+`Sparkline`, `Donut`, `Gauge`, `MetricCard`, `RankedList`, `Feed`, `StageTimeline`,
+`FlowDiagram`, `DecisionTree`, `Inspector`, `StatusBar`, `Legend`, `DissectionIndex`,
+`Note` — alongside the existing `Stage`, `Panel`, `Callout`, `Chip`, `StatRow`,
+`TraceRail`.
+
+Two rules shaped almost every one of them.
+
+**The empty state is the important state.** This site measures one thing live and
+counts a handful at build time. The references put a trend line in every card. The
+component therefore treats "no series" as a first-class rendering — a dashed baseline
+at the vertical middle with a stated label, occupying exactly the box a populated
+series would — rather than as a failure path. Omitting the chart is what produced the
+empty frames this stage exists to fix.
+
+**A thing that appears twice must be different the second time.** The six-part
+dissection index was written out identically on stations 02 and 03. Two identical
+lists on consecutive frames read as a copy-paste. It is now one component with one
+piece of state: 02 shows the structure with nothing marked, 03 marks the part that
+frame is showing. The active row is `--structure`, because "where you are" is not one
+of the five operational registers and must not borrow one.
+
+### What each station gained
+
+- **02** — the disclosed limitation of each system, printed verbatim on the frame that
+  promises them; the shared patterns as a stage rail; the estate as a real ring.
+- **03** — the four architecture decisions with what each cost, which the lede had been
+  promising and never showing; the sidebar reference 03 specifies.
+- **05** — all four fields of every lesson. It published `whatHappened` and nothing
+  else; `cost`, `ruleChanged` and `why` were sitting unused in the content.
+- **06** — the bottom status rail, which is where honesty principle 12 is discharged and
+  which was simply missing; the event stream in its designed empty state.
+- **07** — the set's one serif, a system stack rather than a webfont; the five
+  principles with their statements; "what I got wrong" in short form; the career
+  timeline from the experience collection; and the portrait slot, built, marked and
+  left empty.
+- **09** — built in S2's late passes; unchanged here beyond the shared kit extraction.
+- **10** — all ten stations named on the map (its own comment claimed ten and listed
+  seven), and the four routes out.
+
+### Decisions taken, and recorded because they were judgement calls
+
+**No `degraded` state on the status bar.** The measurement resolves to two outcomes.
+A third word styled for a state the system cannot produce would render identically
+whether or not the backend existed, which is the definition of decoration here.
+
+**No orbit diagram on 07, no second request trace on 03.** Reference 07 draws
+concentric rings and reference 03 draws a trace ribbon with per-hop timings. The rings
+would be bound to nothing and the timings do not exist; station 04 owns the one trace
+this site can honestly draw. Components of equal weight carrying true statements took
+both slots.
+
+**The portrait slot is empty and the composition is arranged to hold that way.** No
+owned photograph exists. A generated face on a personal site reads as a photograph of
+its subject. The frame's weight is carried by the serif column and the panels beneath
+it, so when a real photograph arrives it drops into the box and nothing else moves.
+
+### Three defects found by building, not by reading
+
+**The unit-without-a-reading.** Three places rendered "— ms" with nothing measured.
+`StatRow` was inverted: `data-live-value` sat on the `<dd>` with the unit as a child,
+and the liveness script fills a bound node with `textContent`, which wipes every child
+— so the one case that had a unit to show lost it the moment a reading landed, and the
+case with nothing to qualify kept it. Proved in both directions before and after.
+
+**The current role rendered as finished.** Its `to` field is the string `"Present"`,
+not an absent value, so a truthiness test marked it `done`.
+
+**Station 04's Browser callout overlapped the lede,** and had all along. Giving
+callouts a legibility scrim is what made it visible.
+
+### The contrast failures the gate cannot see
+
+The owner reported faint body copy over the plates. The gate said everything passed,
+because it compares token against token and this is token against artwork.
+
+A probe renders each station, makes the glyphs transparent while leaving every
+background in place, samples the brightest pixel in each text block's box and computes
+the ratio against that worst case. Before: callouts at 2.69–3.63, station 04's lede at
+2.20, station 06's eyebrow at 3.84, panel notes at 3.11 and 3.37, the quiet chip at
+4.38. After: nothing under 4.5, worst callout 5.67.
+
+The fixes are each the smaller of the two available. Callouts get a masked
+`backdrop-filter` rather than a scrim box — the component's own note was right that
+sixty boxes would bury the plate, and the first attempt, which skipped the mask, looked
+exactly like the rectangle the note warned about. Notes move from `--text-faint` to
+`--text-muted` rather than the panel scrim going opaque, because the honest caveat
+should not be the hardest line on the frame to read. Chips go opaque because a chip is
+too small for 8% of a plate showing through to be worth anything.
+
+**The probe disagreed with itself three times before it was trustworthy.** Hiding an
+element removes its own scrim; clearing `color` leaves a coloured `<em>`, an underline
+and a 1px row divider inside the sampled box. Each of those produced a confident,
+wrong number. The readings above are from the version that survived all three.
+
+### /live/
+
+Four measured layout defects. The ENTER control overlapped the readings strip by 64px
+at 1440x900 and 132px at 1280x800 — two absolutely positioned siblings cannot be made
+not to collide by adjusting offsets, so they are one column in flow now and clearance
+is +70/+27/+23/+24/+24px across five widths. The station rail wrapped onto the DEMO
+PLANE badge below 1300px; it never wraps now. The readings did not share a baseline.
+The trace panel's duration fallback repeated its own label.
+
+The reported orphaned "MRS" string was **not found**: not in the source, not in the DOM
+at 1440, 1920, 834 or 390 across nine scroll positions each, and not in a visual sweep
+of the bottom-right quadrant over the full page. No fix was invented for it.
+
+### Non-home routes
+
+`/engineering` ran every list as one column at a reading measure inside a 1120px
+container, so the right half was empty on any desktop. That emptiness is most of what
+made these routes read as a plainer, older site beside the home stations. Two columns
+above 1040px — the composition widens, the line length does not. No world markup,
+tokens, scripts or fonts were introduced; `station-check` stays green.
+
+### Verified
+
+`npm run verify` **exit 0** · `format:check` clean · `verify:render` **35/35** ·
+contrast probe clean across all ten stations · zero horizontal overflow at 390/834/1440
+· **zero JS files** on the home page · 20.2KB gz of HTML plus 13.3KB gz of CSS against
+a 90KB budget.
+
+### Still open
+
+The control plane is still offline, so every live reading on this site currently shows
+its unmeasured state — which is the state the rebuild was designed around and is the
+reason the empty states got the attention they did. The portrait remains an
+OWNER-INPUT. Stations 01, 08 and 09 keep the compositions S2 gave them; 04's plate does
+most of its own work and gained only the callout move.
