@@ -39,7 +39,8 @@
 import Stage from './stage/Stage.astro';
 import Callout from './stage/Callout.astro';
 import Panel from './stage/Panel.astro';
-import StatRow, { type Stat } from './stage/StatRow.astro';
+import MetricCard from './stage/MetricCard.astro';
+import Feed, { type Entry } from './stage/Feed.astro';
 import TraceRail, { type Hop } from './stage/TraceRail.astro';
 import { SITE, STATUS_CHIPS } from '../config/site';
 
@@ -82,19 +83,52 @@ const ESTATE = [
 ] as const;
 
 /*
- * The strip. `live` columns render the pending dash server-side; the liveness
- * script replaces them only on a real measurement.
+ * THE INSTRUMENT PANEL, AND WHAT EACH SLOT IS ALLOWED TO CONTAIN.
  *
- * DEMONSTRATIONS is not a live column: five is a build-time fact this
- * repository can prove without a network call, and CI asserts it on every push
- * ("Assert all five demonstrations are still published"). Binding it to a fetch
- * would make a true figure disappear whenever the tunnel is down.
+ * Reference 01's strip reads REQUESTS/MIN 2,487 · AVG LATENCY 32ms · UPTIME
+ * 99.99% · ERROR RATE 0.02%, each with a trend line. Every one is invented, and
+ * §3 rules on all four: rule 7 names uptime, tenant, user and throughput figures
+ * as not existing in evidence, and rule 4 forbids estimating the rest.
+ *
+ * Deleting them is what left this corner of the frame empty. The four cards are
+ * built instead, at the reference's density, and each carries one of the three
+ * things a card here is allowed to hold:
+ *
+ *   measured   the reader's own round trip, and the real control-plane state
+ *   counted    a build-time figure from this repository, CI-asserted
+ *   stated     a sentence where the reference put a metric that does not exist
+ *
+ * The trend under each card is a Sparkline with no series, which draws its own
+ * dashed "unmeasured" baseline. That is the honest shape of a trend this site
+ * does not keep, and it is why the cards look finished rather than truncated.
  */
-const STATS: Stat[] = [
-  { label: 'Round trip', value: null, unit: 'ms', live: 'rtt' },
-  { label: 'Control plane', value: null, live: 'state' },
-  { label: 'Demonstrations', value: '5' },
-  { label: 'Isolation layers', value: '2' },
+
+/** Real entries from this repository's own record — a true recent-additions feed. */
+const RECORD: Entry[] = [
+  {
+    stamp: 'Sep 2026',
+    text: 'Ten stations rebuilt as composed interfaces',
+    meta: 'design',
+    tone: 'record',
+  },
+  {
+    stamp: 'Sep 2026',
+    text: 'Dependency tree rebuilt — 0 advisories',
+    meta: 'security',
+    tone: 'signal',
+  },
+  {
+    stamp: 'Aug 2026',
+    text: 'Adversarial and load suites run against the stack',
+    meta: 'proof',
+    tone: 'record',
+  },
+  {
+    stamp: 'Aug 2026',
+    text: 'Tenant isolation proven by disabling RLS',
+    meta: 'isolation',
+    tone: 'isolation',
+  },
 ];
 
 /**
@@ -191,29 +225,42 @@ const HOPS: Hop[] = [
       <a class="enter__cta enter__cta--quiet" href="/systems">See the systems</a>
       <a class="enter__cta enter__cta--quiet" href="/cv.pdf" download>Download CV</a>
     </div>
-    <p class="enter__ctaNote">
-      A real system, labelled a demonstration. It gives you a tenant and invites you to attack it.
-    </p>
+    <p class="enter__ctaNote">A real system, labelled a demonstration.</p>
   </div>
 
-  {/* ── The state line and the strip ────────────────────────────── */}
+  {
+    /*
+      THE INSTRUMENT PANEL.
+
+      This corner held a status line, a four-column strip and a note, and below
+      it the frame simply stopped — the dead lower-left the rebuild is for. The
+      reference fills the same region with a labelled state, a dense metric row
+      and a scroll affordance, and it is the densest part of its composition.
+
+      It is now a real panel: four metric cards each with their own trend, a
+      state line bound to the one measurement the page makes, and the honest
+      statement that replaces the reference's uptime figure. The cards sit in a
+      2x2 grid rather than the reference's single row because this column is a
+      quarter of the frame rather than a third, and four figures across 25% would
+      each be four characters wide.
+    */
+  }
   <div class="enter__readout">
     <p class="enter__state">
       <span class="enter__state-dot" aria-hidden="true"></span>
       <span data-live-value="state-line">Control plane — not yet measured</span>
     </p>
-    <StatRow items={STATS} />
-    {
-      /*
-        The reference's fourth column is UPTIME 99.99%. There is no such
-        measurement and rule 7 says there is not one to publish, so the honest
-        statement takes the place a fabricated figure would have held. It is
-        also a more interesting line for a hiring engineer than a number they
-        could not check.
-      */
-    }
+
+    <div class="enter__metrics">
+      <MetricCard label="Round trip" live="rtt" unit="ms" />
+      <MetricCard label="Control plane" live="state" flat />
+      <MetricCard label="Demonstrations" value="5" qualifier="CI-asserted" flat />
+      <MetricCard label="Isolation layers" value="2" qualifier="org scope + RLS" flat />
+    </div>
+
     <p class="enter__note">
-      No uptime or throughput figure is published anywhere on this site. None is measured.
+      No uptime or throughput figure is published anywhere on this site. None is measured, and the
+      trends above are drawn empty because no series is kept.
     </p>
   </div>
 
@@ -243,6 +290,22 @@ const HOPS: Hop[] = [
         w={14}
       />
     ))
+  }
+
+  {
+    /*
+      NO RECORD FEED ON THIS FRAME.
+
+      One was built here and removed after rendering it. Reference 01 has no
+      feed — its lower-left is a state line, a metric row and a scroll cue, and
+      nothing else. Adding a feed pushed into the headline and solved a dead
+      region by creating a collision.
+
+      The feed is a real component and it belongs on 09, where reference 09
+      actually draws RECENT ADDITIONS. The dead region here is closed by the
+      instrument panel being genuinely dense instead, which is what the
+      reference does.
+    */
   }
 
   {/* ── The trace panel ─────────────────────────────────────────── */}
@@ -312,7 +375,7 @@ const HOPS: Hop[] = [
 
   .enter__claim {
     margin: 0;
-    font-size: calc(96 * var(--u));
+    font-size: calc(86 * var(--u));
     font-weight: 500;
     line-height: 0.98;
     letter-spacing: -0.028em;
@@ -336,7 +399,7 @@ const HOPS: Hop[] = [
   }
 
   .enter__lede {
-    margin: calc(30 * var(--u)) 0 0;
+    margin: calc(22 * var(--u)) 0 0;
     font-size: calc(20 * var(--u));
     line-height: 1.6;
     color: var(--text-muted);
@@ -346,8 +409,8 @@ const HOPS: Hop[] = [
   .enter__chips {
     display: flex;
     flex-wrap: wrap;
-    gap: calc(8 * var(--u));
-    margin: calc(24 * var(--u)) 0 0;
+    gap: calc(7 * var(--u));
+    margin: calc(18 * var(--u)) 0 0;
     padding: 0;
     list-style: none;
   }
@@ -382,7 +445,7 @@ const HOPS: Hop[] = [
     flex-wrap: wrap;
     align-items: center;
     gap: calc(16 * var(--u)) calc(24 * var(--u));
-    margin-top: calc(34 * var(--u));
+    margin-top: calc(24 * var(--u));
   }
 
   .enter__actions .enter__cta--primary {
@@ -467,8 +530,58 @@ const HOPS: Hop[] = [
   .enter__readout {
     position: absolute;
     left: 4.8%;
-    top: 79%;
+    top: 74%;
     width: 29%;
+    padding: calc(20 * var(--u)) calc(22 * var(--u)) calc(22 * var(--u));
+    border: 1px solid var(--plate-edge);
+    border-radius: calc(10 * var(--u));
+    background: var(--plate-scrim);
+    backdrop-filter: blur(calc(14 * var(--u)));
+  }
+
+  /*
+   * 2x2 rather than the reference's 1x4. This column is a quarter of the frame
+   * where the reference's is a third, and four figures across 25% would each be
+   * about four characters wide — a strip of abbreviations, not a readout.
+   */
+  /*
+   * THE READING CARRIES THE COLOUR, NOT THE MARKUP.
+   *
+   * These two cards were built with `tone="signal"`, which painted "no answer"
+   * green while the control plane was down — a failure state rendered in the
+   * colour that means running in production. Colour is a register on this site
+   * and it means one thing; a card that hard-codes it is asserting a state
+   * rather than reporting one.
+   *
+   * The tone now follows `data-liveness`, which the single measurement sets.
+   * Unmeasured is muted, answering is signal, not answering is fault, and the
+   * markup states none of the three.
+   */
+  .enter__metrics :global(.mc__value) {
+    color: var(--text-faint);
+  }
+
+  :global(:root[data-liveness='live']) .enter__metrics :global(.mc__value) {
+    color: var(--signal);
+  }
+
+  :global(:root[data-liveness='down']) .enter__metrics :global(.mc__value) {
+    color: var(--fault);
+  }
+
+  /* The two counted cards are facts, not readings — they stay text-coloured. */
+  .enter__metrics > :global(.mc:nth-child(n + 3) .mc__value),
+  :global(:root[data-liveness]) .enter__metrics > :global(.mc:nth-child(n + 3) .mc__value) {
+    color: var(--text);
+  }
+
+  .enter__metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: calc(13 * var(--u)) calc(20 * var(--u));
+    margin-top: calc(13 * var(--u));
+    padding-top: calc(13 * var(--u));
+    border-top: 1px solid var(--plate-edge);
   }
 
   .enter__state {
@@ -520,10 +633,16 @@ const HOPS: Hop[] = [
     text-shadow: 0 calc(1 * var(--u)) calc(6 * var(--u)) rgb(0 0 0 / 0.9);
   }
 
+  /*
+   * Moved out of the left column. The instrument panel grew to close the dead
+   * region and now runs to 93% of the frame, so the cue sat on its bottom edge.
+   * It moves under the callouts, left of the trace panel, where the frame is
+   * genuinely empty.
+   */
   .enter__scroll {
     position: absolute;
-    left: 4.8%;
-    top: 94.2%;
+    left: 34%;
+    top: 93%;
     display: flex;
     align-items: center;
     gap: calc(16 * var(--u));
@@ -589,15 +708,38 @@ const HOPS: Hop[] = [
     color: var(--text);
   }
 
+  /*
+   * ROWS, NOT A 2x2 GRID.
+   *
+   * The grid put "CONTROL PLANE" over two lines and "no answer" over two more,
+   * so a four-figure readout took eight lines and read as broken rather than
+   * dense. At 390 there is room for a label and a figure on one line and not for
+   * two of each, which is what a row layout says and a grid does not.
+   *
+   * The figure is right-aligned and never wraps: a value that breaks in half has
+   * stopped being a figure.
+   */
   .enterM__stats {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
     margin: 1.75rem 0 0;
-    padding: 1rem 1.1rem;
+    padding: 0.35rem 1.1rem;
     border: 1px solid var(--plate-edge);
     border-radius: 6px;
     background: var(--plate-scrim);
+  }
+
+  .enterM__stats > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--plate-edge);
+  }
+
+  .enterM__stats > div:last-child {
+    border-bottom: 0;
   }
 
   .enterM__stats dt {
@@ -609,11 +751,29 @@ const HOPS: Hop[] = [
   }
 
   .enterM__stats dd {
-    margin: 0.3rem 0 0;
-    font-size: 1.4rem;
+    margin: 0;
+    font-size: 1.1rem;
     font-weight: 500;
     color: var(--text);
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* The readings carry the state's colour here too. */
+  /*
+   * Both shapes: the round-trip cell wraps its value in a span so it can carry
+   * a unit, the control-plane cell carries the attribute on the dd itself.
+   * Matching only the first coloured one reading and not the other, which is
+   * worse than colouring neither.
+   */
+  :global(:root[data-liveness='down']) .enterM__stats dd[data-live-value],
+  :global(:root[data-liveness='down']) .enterM__stats dd:has([data-live-value]) {
+    color: var(--fault);
+  }
+
+  :global(:root[data-liveness='live']) .enterM__stats dd[data-live-value],
+  :global(:root[data-liveness='live']) .enterM__stats dd:has([data-live-value]) {
+    color: var(--signal);
   }
 
   .enterM__note,

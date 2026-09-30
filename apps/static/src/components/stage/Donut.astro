@@ -1,0 +1,149 @@
+---
+/**
+ * A DONUT — reference 09's EVIDENCE OVERVIEW, built to hold two-digit counts.
+ *
+ * The reference draws this with 3.62M records across Logs / Tests / Decisions /
+ * Metrics / Documents. Those are inventions. The real archive is twelve
+ * decisions, five evidence chips, two lessons, three systems and fourteen
+ * integration tests — and the decomposition's §3 ruling on this frame is
+ * explicit: "The reference's scale must not be matched; the reference's
+ * composition must. Design the panels for two-digit counts."
+ *
+ * So the chart is real and the numbers are small, which turns out to be the
+ * interesting version. A ring showing 12 decisions a person actually wrote and
+ * can read in full says more than a ring showing 14.6K that nobody can open.
+ *
+ * PURE SVG, NO LIBRARY
+ * Five arcs on one circle, drawn with `stroke-dasharray` on stacked circles —
+ * no path arithmetic, no charting dependency, no JavaScript, and it inherits
+ * the register tokens directly. A charting library would be the single largest
+ * thing on a page whose whole job is to be light.
+ *
+ * THE EMPTY STATE IS DESIGNED
+ * A total of zero draws the track alone with "no records" in the middle, at the
+ * same size, so the panel never collapses.
+ */
+export interface Slice {
+  label: string;
+  value: number;
+  tone: 'signal' | 'pending' | 'isolation' | 'record' | 'fault' | 'structure' | 'ember';
+}
+
+interface Props {
+  slices: Slice[];
+  /** Big number in the middle. Defaults to the total. */
+  centre?: string;
+  /** Small caption under the centre number. */
+  caption?: string;
+  /** Diameter in reference pixels. */
+  size?: number;
+  class?: string;
+}
+
+const { slices, centre, caption, size = 150, class: className } = Astro.props;
+
+const total = slices.reduce((sum, s) => sum + s.value, 0);
+
+/*
+ * r is chosen so the circumference is a round 100, which makes every
+ * dasharray a percentage and removes the arithmetic from the template.
+ */
+const R = 100 / (2 * Math.PI);
+const CX = 21;
+const STROKE = 6;
+
+/*
+ * Arc offsets are cumulative percentages, and the dashoffset below starts at 25
+ * so the first slice begins at twelve o'clock rather than at three — a ring
+ * that starts on the right reads as having been rotated by accident.
+ */
+let offset = 0;
+const arcs = slices
+  .filter((s) => s.value > 0)
+  .map((s) => {
+    const pct = total > 0 ? (s.value / total) * 100 : 0;
+    const arc = { ...s, pct, offset };
+    offset += pct;
+    return arc;
+  });
+---
+
+<figure class:list={['donut', className]} style={`--donut-size:${size}`}>
+  <svg viewBox="0 0 42 42" role="img" aria-label={`${total} records by type`}>
+    {/* The track. Always drawn, so an empty chart is still a chart. */}
+    <circle
+      cx={CX}
+      cy={CX}
+      r={R}
+      fill="none"
+      stroke="var(--plate-edge, #2b3345)"
+      stroke-width={STROKE}></circle>
+    {
+      arcs.map((a) => (
+        <circle
+          cx={CX}
+          cy={CX}
+          r={R}
+          fill="none"
+          stroke={`var(--${a.tone})`}
+          stroke-width={STROKE}
+          stroke-dasharray={`${a.pct} ${100 - a.pct}`}
+          stroke-dashoffset={25 - a.offset}
+          stroke-linecap="butt"
+        />
+      ))
+    }
+  </svg>
+
+  <figcaption class="donut__centre">
+    <span class="donut__value">{centre ?? (total > 0 ? String(total) : '—')}</span>
+    <span class="donut__caption">{caption ?? (total > 0 ? 'records' : 'no records')}</span>
+  </figcaption>
+</figure>
+
+<style>
+  .donut {
+    position: relative;
+    width: calc(var(--donut-size) * var(--u, 1px));
+    height: calc(var(--donut-size) * var(--u, 1px));
+    min-width: 96px;
+    min-height: 96px;
+    margin: 0;
+    flex: none;
+  }
+
+  .donut svg {
+    width: 100%;
+    height: 100%;
+    /* Twelve o'clock start; the arcs are laid out clockwise from there. */
+    transform: rotate(-90deg);
+  }
+
+  .donut__centre {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(3 * var(--u, 1px));
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .donut__value {
+    font-size: calc(30 * var(--u, 1px));
+    font-weight: 500;
+    line-height: 1;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .donut__caption {
+    font-family: var(--font-mono);
+    font-size: calc(11 * var(--u, 1px));
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+</style>

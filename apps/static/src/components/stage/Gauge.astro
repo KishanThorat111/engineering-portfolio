@@ -1,0 +1,195 @@
+---
+/**
+ * A RADIAL GAUGE — and the one component on this site most likely to lie.
+ *
+ * Reference 09 puts two of these in frame: EVIDENCE QUALITY 98.7% and SYSTEM
+ * CONFIDENCE 99.98%. Neither metric exists. There is no evidence-quality score
+ * in this repository and nothing computes a confidence figure, so the
+ * decomposition ruled both cut.
+ *
+ * Cutting them is what left reference 09's frame half empty. The component is
+ * built instead, and it has two honest modes:
+ *
+ *   a reading   `value` is a real measurement — the reader's own round trip is
+ *               the only one this site has — and the arc fills to it.
+ *   unmeasured  `value` is null. The track draws in full, the arc does not, and
+ *               the centre reads "unmeasured" rather than a number.
+ *
+ * The second is the common case and it is deliberately not styled as an error:
+ * same size, same weight, same position in the row. An instrument with nothing
+ * to report should look like an instrument with nothing to report, not like a
+ * broken one.
+ *
+ * A gauge with no scale is meaningless, so `min`/`max` are required whenever a
+ * value is given, and the scale ends are drawn.
+ */
+interface Props {
+  /** The reading. `null` renders the unmeasured state. */
+  value?: number | null;
+  min?: number;
+  max?: number;
+  /** Units, shown small beside the value. */
+  unit?: string;
+  label: string;
+  tone?: 'signal' | 'pending' | 'isolation' | 'record' | 'fault';
+  size?: number;
+  /** Bound to the liveness script, so the arc fills when a reading lands. */
+  live?: 'rtt';
+  class?: string;
+}
+
+const {
+  value = null,
+  min = 0,
+  max = 100,
+  unit,
+  label,
+  tone = 'signal',
+  size = 130,
+  live,
+  class: className,
+} = Astro.props;
+
+/*
+ * A 240° sweep starting at 150°, which leaves the bottom open for the scale
+ * ends — the shape the reference draws, and the shape a dial has when it is
+ * showing a range rather than a proportion.
+ */
+const SWEEP = 240;
+const START = 150;
+const R = 38;
+const C = 50;
+const TRACK = (SWEEP / 360) * (2 * Math.PI * R);
+
+const has = value !== null && Number.isFinite(value);
+const clamped = has ? Math.min(Math.max(value as number, min), max) : min;
+const frac = has ? (clamped - min) / (max - min || 1) : 0;
+const filled = TRACK * frac;
+
+const polar = (deg: number, r: number) => {
+  const rad = ((deg - 90) * Math.PI) / 180;
+  return [C + r * Math.cos(rad), C + r * Math.sin(rad)] as const;
+};
+const [sx, sy] = polar(START, R);
+const [ex, ey] = polar(START + SWEEP, R);
+const arc = `M${sx.toFixed(2)} ${sy.toFixed(2)} A${R} ${R} 0 ${SWEEP > 180 ? 1 : 0} 1 ${ex.toFixed(2)} ${ey.toFixed(2)}`;
+---
+
+<figure
+  class:list={['gauge', !has && !live && 'gauge--empty', className]}
+  style={`--gauge-size:${size}`}
+  data-gauge={live}
+>
+  <svg viewBox="0 0 100 100" role="img" aria-label={`${label}: ${has ? clamped : 'unmeasured'}`}>
+    {/* The track is always full — the scale exists whether or not a needle does. */}
+    <path
+      d={arc}
+      fill="none"
+      stroke="var(--plate-edge, #2b3345)"
+      stroke-width="7"
+      stroke-linecap="round"></path>
+    <path
+      class="gauge__fill"
+      d={arc}
+      fill="none"
+      stroke={`var(--${tone})`}
+      stroke-width="7"
+      stroke-linecap="round"
+      stroke-dasharray={`${filled.toFixed(2)} ${TRACK.toFixed(2)}`}
+      style={`--gauge-track:${TRACK.toFixed(2)}`}></path>
+  </svg>
+
+  <figcaption class="gauge__centre">
+    <span class="gauge__value">
+      <span data-live-value={live}>{has ? String(clamped) : '—'}</span>
+      {unit && <span class="gauge__unit">{unit}</span>}
+    </span>
+    <span class="gauge__label">{label}</span>
+  </figcaption>
+
+  <span class="gauge__scale gauge__scale--min" aria-hidden="true">{min}</span>
+  <span class="gauge__scale gauge__scale--max" aria-hidden="true">{max}</span>
+</figure>
+
+<style>
+  .gauge {
+    position: relative;
+    width: calc(var(--gauge-size) * var(--u, 1px));
+    height: calc(var(--gauge-size) * var(--u, 1px));
+    min-width: 92px;
+    min-height: 92px;
+    margin: 0;
+    flex: none;
+  }
+
+  .gauge svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /*
+   * An unmeasured gauge shows the track and no arc. Stated here rather than by
+   * omitting the element, so the arc can appear later without a reflow when a
+   * live reading lands.
+   */
+  .gauge--empty .gauge__fill,
+  :global(:root:not([data-liveness='live'])) [data-gauge] .gauge__fill {
+    stroke-dasharray: 0 var(--gauge-track);
+  }
+
+  .gauge__centre {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(4 * var(--u, 1px));
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .gauge__value {
+    display: flex;
+    align-items: baseline;
+    gap: calc(3 * var(--u, 1px));
+    font-size: calc(26 * var(--u, 1px));
+    font-weight: 500;
+    line-height: 1;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .gauge__unit {
+    font-family: var(--font-mono);
+    font-size: calc(12 * var(--u, 1px));
+    color: var(--text-muted);
+  }
+
+  .gauge__label {
+    font-family: var(--font-mono);
+    font-size: calc(10 * var(--u, 1px));
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    max-width: 80%;
+  }
+
+  .gauge__scale {
+    position: absolute;
+    bottom: calc(6 * var(--u, 1px));
+    font-family: var(--font-mono);
+    font-size: calc(10 * var(--u, 1px));
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .gauge__scale--min {
+    left: calc(10 * var(--u, 1px));
+  }
+
+  .gauge__scale--max {
+    right: calc(10 * var(--u, 1px));
+  }
+</style>

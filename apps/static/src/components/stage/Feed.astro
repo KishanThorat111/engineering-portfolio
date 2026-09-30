@@ -1,0 +1,163 @@
+---
+/**
+ * AN ACTIVITY FEED — reference 06's LIVE EVENT STREAM and 09's RECENT ADDITIONS.
+ *
+ * The references fill these with invented traffic: `20:23:11 POST /api/bookings
+ * 800 30ms`, `Load Test Results — R2, 3m ago`, `Tenant Migration Log, 15m ago`.
+ * There is no event stream to read while the control plane is offline, and the
+ * repository's own recent activity is commits, not requests.
+ *
+ * Two honest sources fill it instead:
+ *
+ *   build-time   real entries from the repository's own collections — the
+ *                decisions, lessons and evidence that were actually written,
+ *                with the dates they carry. This is a true "recent additions"
+ *                feed and it needs no network.
+ *   live         when a row is bound to the liveness measurement it renders its
+ *                unmeasured state until a reading lands.
+ *
+ * WHEN THERE IS NOTHING TO SHOW, IT SAYS SO IN THE FEED'S OWN SHAPE
+ * An empty feed draws its rule and a single row explaining why it is empty,
+ * rather than disappearing. A panel that vanishes when its source is down is
+ * how a frame ends up with a hole in it, and the reader learns nothing.
+ */
+export interface Entry {
+  /** Left column — a timestamp, a date, a short kind. */
+  stamp: string;
+  /** The event itself. */
+  text: string;
+  /** Right column — a status, a count, a source. */
+  meta?: string;
+  tone?: 'signal' | 'pending' | 'isolation' | 'record' | 'fault' | 'structure';
+  href?: string;
+}
+
+interface Props {
+  entries: Entry[];
+  /** Sentence shown when there are no entries. */
+  emptyNote?: string;
+  /** Caps the rendered rows so a long collection cannot blow the panel. */
+  limit?: number;
+  class?: string;
+}
+
+const {
+  entries,
+  emptyNote = 'Nothing to report. This feed fills from the repository’s own record.',
+  limit = 6,
+  class: className,
+} = Astro.props;
+
+const rows = entries.slice(0, limit);
+---
+
+<ol class:list={['feed', className]}>
+  {
+    rows.length === 0 ? (
+      <li class="feed__empty">{emptyNote}</li>
+    ) : (
+      rows.map((e) => (
+        <li class="feed__row">
+          <span class="feed__stamp">{e.stamp}</span>
+          {e.href ? (
+            <a class="feed__text" href={e.href}>
+              {e.text}
+            </a>
+          ) : (
+            <span class="feed__text">{e.text}</span>
+          )}
+          {e.meta && (
+            <span class:list={['feed__meta', `feed__meta--${e.tone ?? 'structure'}`]}>
+              {e.meta}
+            </span>
+          )}
+        </li>
+      ))
+    )
+  }
+</ol>
+
+<style>
+  .feed {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .feed__row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: baseline;
+    gap: calc(12 * var(--u, 1px));
+    padding: calc(8 * var(--u, 1px)) 0;
+    border-bottom: 1px solid var(--plate-edge, #2b3345);
+  }
+
+  .feed__row:last-child {
+    border-bottom: 0;
+  }
+
+  .feed__stamp {
+    font-family: var(--font-mono);
+    font-size: calc(11 * var(--u, 1px));
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .feed__text {
+    font-size: calc(13 * var(--u, 1px));
+    line-height: 1.4;
+    color: var(--text);
+    min-width: 0;
+    /* One line per event: a feed is scanned, not read. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  a.feed__text {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--text-faint);
+  }
+
+  a.feed__text:hover {
+    color: var(--signal);
+    text-decoration-color: var(--signal);
+  }
+
+  .feed__meta {
+    font-family: var(--font-mono);
+    font-size: calc(11 * var(--u, 1px));
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    color: var(--text-muted);
+  }
+
+  .feed__meta--signal {
+    color: var(--signal);
+  }
+  .feed__meta--pending {
+    color: var(--pending);
+  }
+  .feed__meta--fault {
+    color: var(--fault);
+  }
+  .feed__meta--record {
+    color: var(--record);
+  }
+  .feed__meta--isolation {
+    color: var(--isolation);
+  }
+
+  .feed__empty {
+    font-size: calc(12 * var(--u, 1px));
+    line-height: 1.55;
+    color: var(--text-faint);
+    padding: calc(12 * var(--u, 1px)) 0;
+    border-top: 1px dashed var(--plate-edge, #2b3345);
+    border-bottom: 1px dashed var(--plate-edge, #2b3345);
+  }
+</style>

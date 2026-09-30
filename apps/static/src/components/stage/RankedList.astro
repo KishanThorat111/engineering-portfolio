@@ -1,0 +1,147 @@
+---
+/**
+ * A RANKED LIST WITH MAGNITUDE BARS — reference 09's TOP ARTIFACTS.
+ *
+ * The reference ranks Access Logs 1.0M, Test Results 543K, API Traces 621K,
+ * Audit Records 457K, Config Changes 315K. All invented.
+ *
+ * The real archive is two-digit, and the decomposition's §3 ruling says to
+ * design for that rather than match the reference's scale. A bar chart of
+ * twelve decisions and fourteen tests is a smaller chart, not a worse one: the
+ * bars are still proportional, the ranking still reads at a glance, and every
+ * row is something a reader can actually open.
+ *
+ * The bar is a CSS width, not an SVG — one element, no viewBox, and it inherits
+ * the register token directly. `aria-hidden` on the bar with the figure in real
+ * text beside it means a screen reader gets the number rather than a
+ * decoration.
+ *
+ * An empty list renders its own row saying so rather than collapsing, because a
+ * panel that vanishes when a collection is empty is how frames end up with
+ * holes in them.
+ */
+export interface Row {
+  label: string;
+  value: number;
+  /** Shown instead of the raw number — "12 records", "as of Sep 2026". */
+  display?: string;
+  tone?: 'signal' | 'pending' | 'isolation' | 'record' | 'fault' | 'structure' | 'ember';
+  /** Makes the row a link to where the thing can actually be read. */
+  href?: string;
+}
+
+interface Props {
+  rows: Row[];
+  /** Shown when `rows` is empty. */
+  emptyLabel?: string;
+  class?: string;
+}
+
+const { rows, emptyLabel = 'Nothing recorded yet', class: className } = Astro.props;
+
+/* Bars are proportional to the largest row, so the ranking is readable even
+   when every value is small — which here they are, and correctly so. */
+const max = rows.reduce((m, r) => Math.max(m, r.value), 0) || 1;
+const sorted = [...rows].sort((a, b) => b.value - a.value);
+---
+
+<ul class:list={['ranked', className]}>
+  {
+    sorted.length === 0 ? (
+      <li class="ranked__empty">{emptyLabel}</li>
+    ) : (
+      sorted.map((r) => (
+        <li class="ranked__row">
+          {r.href ? (
+            <a class="ranked__label" href={r.href}>
+              {r.label}
+            </a>
+          ) : (
+            <span class="ranked__label">{r.label}</span>
+          )}
+          <span class="ranked__value">{r.display ?? r.value}</span>
+          <span
+            class="ranked__bar"
+            aria-hidden="true"
+            style={`--pct:${((r.value / max) * 100).toFixed(1)}%; --bar:var(--${r.tone ?? 'record'})`}
+          />
+        </li>
+      ))
+    )
+  }
+</ul>
+
+<style>
+  .ranked {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: calc(11 * var(--u, 1px));
+  }
+
+  .ranked__row {
+    display: grid;
+    /* label takes the room, figure is right-aligned, bar spans both beneath. */
+    grid-template-columns: 1fr auto;
+    gap: calc(4 * var(--u, 1px)) calc(12 * var(--u, 1px));
+    align-items: baseline;
+  }
+
+  .ranked__label {
+    font-size: calc(13 * var(--u, 1px));
+    line-height: 1.35;
+    color: var(--text);
+    min-width: 0;
+  }
+
+  a.ranked__label {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--text-faint);
+  }
+
+  a.ranked__label:hover {
+    text-decoration-color: var(--signal);
+    color: var(--signal);
+  }
+
+  .ranked__value {
+    font-family: var(--font-mono);
+    font-size: calc(13 * var(--u, 1px));
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .ranked__bar {
+    grid-column: 1 / -1;
+    height: calc(3 * var(--u, 1px));
+    min-height: 2px;
+    border-radius: 2px;
+    /*
+     * The track is the full width and the fill is a gradient stop at --pct, so
+     * the bar is one element rather than a wrapper plus a child.
+     */
+    background: linear-gradient(
+      to right,
+      var(--bar) 0%,
+      var(--bar) var(--pct),
+      var(--plate-edge, #2b3345) var(--pct),
+      var(--plate-edge, #2b3345) 100%
+    );
+  }
+
+  .ranked__empty {
+    font-family: var(--font-mono);
+    font-size: calc(12 * var(--u, 1px));
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    padding: calc(10 * var(--u, 1px)) 0;
+    border-top: 1px dashed var(--plate-edge, #2b3345);
+    border-bottom: 1px dashed var(--plate-edge, #2b3345);
+    text-align: center;
+  }
+</style>

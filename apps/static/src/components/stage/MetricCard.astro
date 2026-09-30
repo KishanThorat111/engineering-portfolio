@@ -1,0 +1,155 @@
+---
+/**
+ * A METRIC CARD — label, figure, trend, and a state that is allowed to be "no".
+ *
+ * The references hang rows of these on almost every frame: REQUEST RATE 24.8K,
+ * P95 LATENCY 32ms, ERROR RATE 0.82%, ACTIVE TENANTS 12.4K, each with a trend
+ * line. Every one of those figures is invented and most of the metrics do not
+ * exist here at all.
+ *
+ * The card is still the right component. What changes is what a card is allowed
+ * to contain:
+ *
+ *   live      `live` binds the figure to the one measurement this page makes —
+ *             the reader's own round trip — and it renders as a dash until that
+ *             measurement lands. It never shows a stale or cached value.
+ *   counted   a real figure from this repository, at its true magnitude.
+ *   stated    `value` is null and `note` carries a sentence instead. This is the
+ *             slot that replaces a fabricated metric with a true statement, and
+ *             it is the pattern the site already does well.
+ *
+ * The trend is a `Sparkline`, which draws its own unmeasured baseline when it
+ * has no series — so a card with a real figure and no history still looks like
+ * a finished card rather than one missing a chart.
+ */
+import Sparkline from './Sparkline.astro';
+
+interface Props {
+  label: string;
+  /** The figure. `null` renders the pending dash, or `note` if given. */
+  value?: string | null;
+  unit?: string;
+  /** Series for the trend. Empty draws the unmeasured baseline. */
+  series?: number[];
+  tone?: 'signal' | 'pending' | 'isolation' | 'record' | 'fault' | 'structure';
+  /** Binds the figure to the liveness measurement. */
+  live?: 'rtt' | 'state' | 'demos';
+  /** A sentence in place of a figure, for a metric that does not exist. */
+  note?: string;
+  /** Small qualifier under the figure — a date, a source, a scope. */
+  qualifier?: string;
+  /** Drops the trend entirely for the densest rows. */
+  flat?: boolean;
+  class?: string;
+}
+
+const {
+  label,
+  value = null,
+  unit,
+  series = [],
+  tone = 'structure',
+  live,
+  note,
+  qualifier,
+  flat = false,
+  class: className,
+} = Astro.props;
+---
+
+<div class:list={['mc', note && 'mc--stated', className]}>
+  <p class="mc__label">{label}</p>
+
+  {
+    note ? (
+      <p class="mc__note">{note}</p>
+    ) : (
+      <p class:list={['mc__value', `mc__value--${tone}`]}>
+        <span data-live-value={live}>{value ?? '—'}</span>
+        {unit && <span class="mc__unit">{unit}</span>}
+      </p>
+    )
+  }
+
+  {qualifier && <p class="mc__qualifier">{qualifier}</p>}
+  {!flat && !note && <Sparkline points={series} tone={tone} h={30} />}
+</div>
+
+<style>
+  .mc {
+    display: flex;
+    flex-direction: column;
+    gap: calc(7 * var(--u, 1px));
+    min-width: 0;
+  }
+
+  .mc__label {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: calc(11 * var(--u, 1px));
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mc__value {
+    display: flex;
+    align-items: baseline;
+    gap: calc(5 * var(--u, 1px));
+    margin: 0;
+    font-size: calc(28 * var(--u, 1px));
+    font-weight: 500;
+    line-height: 1.05;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    /*
+     * A figure slot is one line. A value that wraps stops being a figure and
+     * starts being a sentence, and drags every card beside it out of alignment.
+     */
+    white-space: nowrap;
+  }
+
+  .mc__value--signal {
+    color: var(--signal);
+  }
+  .mc__value--pending {
+    color: var(--pending);
+  }
+  .mc__value--fault {
+    color: var(--fault);
+  }
+  .mc__value--record {
+    color: var(--record);
+  }
+  .mc__value--isolation {
+    color: var(--isolation);
+  }
+
+  .mc__unit {
+    font-family: var(--font-mono);
+    font-size: calc(13 * var(--u, 1px));
+    color: var(--text-muted);
+  }
+
+  /*
+   * The stated variant. It takes the same vertical space as a figure plus its
+   * trend, so a row mixing figures and statements stays a row.
+   */
+  .mc__note {
+    margin: 0;
+    font-size: calc(13 * var(--u, 1px));
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  .mc__qualifier {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: calc(10 * var(--u, 1px));
+    letter-spacing: 0.08em;
+    color: var(--text-faint);
+  }
+</style>

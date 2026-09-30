@@ -1,0 +1,190 @@
+---
+/**
+ * A SPARKLINE — and, more often on this site, the honest absence of one.
+ *
+ * The references put a trend line inside almost every metric card. Most of the
+ * series they imply do not exist: this site measures one thing live (the
+ * reader's own round trip) and counts a handful of things at build time. The
+ * reference's answer would be to draw a plausible wiggle. Ours is to draw the
+ * component and let it say it has no series.
+ *
+ * WHY THE EMPTY STATE IS THE IMPORTANT STATE
+ * Omitting the chart is what produced the empty frames this rebuild exists to
+ * fix. A metric card with a hole where its trend should be reads as unfinished.
+ * A metric card with a flat, labelled baseline reads as an instrument reporting
+ * that nothing has been measured — which is true, and is a stronger thing to
+ * show a hiring engineer than an invented curve.
+ *
+ * So `points` empty is not a failure path. It is a first-class rendering: a
+ * dashed baseline at the vertical middle, drawn in the faint colour, with the
+ * caller's own label. It occupies exactly the same box as a populated series so
+ * a row of cards stays aligned whether or not any of them have data.
+ *
+ * SVG, NOT CANVAS
+ * It server-renders, costs no JavaScript, scales without a redraw, inherits
+ * currentColor, and is visible to a reader with scripting off. A Canvas here
+ * would need a script per instance to draw a line that never changes.
+ */
+interface Props {
+  /** The series. Empty renders the unmeasured baseline. */
+  points?: number[];
+  /** Register entry for the stroke. */
+  tone?: 'signal' | 'pending' | 'isolation' | 'record' | 'fault' | 'structure';
+  /** Height in reference pixels; width fills its container. */
+  h?: number;
+  /** Shown inside the box when there is no series. */
+  emptyLabel?: string;
+  /** Fills the area under the line. Off for dense rows. */
+  area?: boolean;
+  class?: string;
+}
+
+const {
+  points = [],
+  tone = 'structure',
+  h = 34,
+  emptyLabel = 'unmeasured',
+  area = false,
+  class: className,
+} = Astro.props;
+
+/*
+ * A fixed viewBox with `preserveAspectRatio="none"`. The line stretches to the
+ * container's width, which is what a sparkline in a flexible card wants, and it
+ * means the path can be computed once here rather than measured in a browser.
+ */
+const W = 100;
+const H = 32;
+const PAD = 3;
+
+const has = points.length >= 2;
+let d = '';
+let areaD = '';
+
+if (has) {
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  /* A flat series is a real reading, not a divide-by-zero. It draws flat. */
+  const span = max - min || 1;
+  const step = W / (points.length - 1);
+  const coords = points.map((value, i) => {
+    const x = i * step;
+    const y = H - PAD - ((value - min) / span) * (H - PAD * 2);
+    return [x, y] as const;
+  });
+  d = coords.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`).join(' ');
+  areaD = `${d} L${W} ${H} L0 ${H} Z`;
+}
+
+const stroke = `var(--${tone})`;
+const id = `spk-${Math.random().toString(36).slice(2, 9)}`;
+---
+
+<span class:list={['spk', !has && 'spk--empty', className]} style={`--spk-h:${h}`}>
+  <svg
+    viewBox={`0 0 ${W} ${H}`}
+    preserveAspectRatio="none"
+    role="img"
+    aria-label={has ? `Trend, ${points.length} readings` : `No series: ${emptyLabel}`}
+  >
+    {
+      has ? (
+        <>
+          {area && (
+            <>
+              <defs>
+                <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color={stroke} stop-opacity="0.28" />
+                  <stop offset="100%" stop-color={stroke} stop-opacity="0" />
+                </linearGradient>
+              </defs>
+              <path d={areaD} fill={`url(#${id})`} />
+            </>
+          )}
+          <path
+            d={d}
+            fill="none"
+            stroke={stroke}
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            vector-effect="non-scaling-stroke"
+          />
+        </>
+      ) : (
+        /*
+          THE UNMEASURED BASELINE.
+          Dashed, centred, faint — a drawn statement that the instrument is
+          present and the series is not. `vector-effect` keeps the dash the same
+          weight however wide the card stretches.
+        */
+        <line
+          x1="0"
+          y1={H / 2}
+          x2={W}
+          y2={H / 2}
+          stroke="var(--text-faint)"
+          stroke-width="1"
+          stroke-dasharray="3 4"
+          vector-effect="non-scaling-stroke"
+        />
+      )
+    }
+  </svg>
+  {!has && emptyLabel && <span class="spk__empty">{emptyLabel}</span>}
+</span>
+
+<style>
+  /*
+   * A `<span>`, NOT a `<div>`, and `display: block` to behave like one.
+   *
+   * The html gate caught this: the station rail puts a trend inside its status
+   * pill, which is a `<p>` of phrasing content, and a `<div>` is not permitted
+   * there. Making the root phrasing content means one component works in a
+   * panel body and inside a line of text without the caller having to know
+   * which context it is in.
+   */
+  .spk {
+    display: block;
+    position: relative;
+    width: 100%;
+    /*
+     * `--u` is one reference pixel inside a station stage. Outside one — the
+     * narrow compositions, and any page that reuses the kit — it is undefined,
+     * so the fallback keeps the box a sane absolute size rather than collapsing
+     * to zero.
+     */
+    height: calc(var(--spk-h) * var(--u, 1px));
+    min-height: 22px;
+  }
+
+  .spk svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .spk__empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: calc(10 * var(--u, 1px));
+    min-font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    /* The label sits on the baseline, so the baseline is cut behind it. */
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      var(--plate-scrim, rgb(10 14 21 / 0.92)) 22%,
+      var(--plate-scrim, rgb(10 14 21 / 0.92)) 78%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+</style>

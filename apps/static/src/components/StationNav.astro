@@ -15,6 +15,7 @@
  * offer.
  */
 import { STATIONS, type StationId } from '../config/visual-world';
+import Sparkline from './stage/Sparkline.astro';
 
 interface Props {
   /** Which station this page represents, for aria-current. */
@@ -71,6 +72,18 @@ const { current } = Astro.props;
     <span class="station-nav__status-dot" aria-hidden="true"></span>
     <span class="station-nav__status-label">Control plane</span>
     <span class="station-nav__status-value" data-live-value="state">not measured</span>
+    {
+      /*
+        The reference draws a live trend inside this pill on every one of the
+        ten frames. This site keeps no series — it takes one measurement, once —
+        so the sparkline renders its own dashed unmeasured baseline rather than
+        a plausible wiggle. The instrument is present and reports that it has
+        nothing to plot, which is the true state.
+      */
+    }
+    <span class="station-nav__spark" aria-hidden="true">
+      <Sparkline points={[]} h={16} emptyLabel="" tone="structure" />
+    </span>
   </p>
 
   <a class="station-nav__cta" href="/cv">CV</a>
@@ -291,6 +304,23 @@ const { current } = Astro.props;
 
   :global(:root[data-liveness='down']) .station-nav__status-value {
     color: var(--fault);
+  }
+
+  /*
+   * The trend sits inside the pill at desktop widths only. Below 1200 the pill
+   * is already shedding its label to give the ten stations room, and a 40px
+   * sparkline is the next thing that can go without losing a reading.
+   */
+  .station-nav__spark {
+    display: none;
+    width: 42px;
+    flex: none;
+  }
+
+  @media (min-width: 1200px) {
+    .station-nav__spark {
+      display: block;
+    }
   }
 
   .station-nav__cta {
