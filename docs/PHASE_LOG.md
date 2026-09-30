@@ -3150,3 +3150,152 @@ person to see this deserves the cause.
   surface's 15KB budget is deliberately not spending.
 - **The mid-range device frame measurement**, carried since P4, remains outstanding.
 - Reference 11 (SYSTEM MAP) remains out of scope.
+
+---
+
+## S3 — The world is returned to the home page · 30 September 2026
+
+**Scheme: a correction stage.** Owner-directed, and a correction of scope rather than of code
+quality: the ten-station world was commissioned for the home page and was built into the site
+instead. Everything outside `/` is restored to exactly what it was before the world existed.
+
+### What was over-applied, and how
+
+The baseline is **45038a6**, established from the history rather than assumed: `065f51e` is the
+very next commit, and `45038a6` contains no station, visual-world, scene or design-reference
+file. It is unambiguously the last pre-world commit.
+
+Comparing the full tree from that baseline to `512c103` gives a narrower fault than expected.
+**No non-home page file was ever modified.** `/about`, `/engineering`, `/systems`, `/cv`,
+`/experience`, the three case studies and `/404` were restyled entirely by proxy, through three
+separate leaks in files every page shares:
+
+| leak | mechanism | effect |
+|---|---|---|
+| markup | `BaseLayout` replaced `Header` with `StationNav` | every route wore the station rail |
+| stylesheet | `BaseLayout` imported `stations.css` | the world's tokens loaded site-wide |
+| the import alone | `BaseLayout` imported `StationNav` | **26 scoped rules** entered the shared sheet |
+| script | `BaseLayout` ran `initVisualWorld` + `initLiveness` | a parallax driver with no plates, and a liveness probe, on the CV |
+
+The third is the one worth recording. Importing a component into a layout is enough to put its
+CSS into the bundle every page downloads, **whether or not the component is ever rendered**. A
+boolean prop would have hidden the rail and still shipped its stylesheet — home-only in
+appearance and site-wide in bytes. It was found by grepping the built CSS, not by reasoning.
+
+`/live/` was a different and larger case: commit `065f51e` replaced the surface wholesale with a
+station world (46 new files — `kit/`, `scenes/`, `world/`, a bench harness).
+
+### What was restored
+
+- **`apps/experience/` in full** to baseline. The 46 world files are deleted and the six
+  modified ones reverted. `/live/` is the P9 lattice surface again: the 3D scene, the document
+  column, the demonstration deep-links (`/live/isolation`, `/payments`, `/fraud`, `/ai`,
+  `/limits`), and the honest REPLAY state.
+- **`BaseLayout`** to baseline, differing now by exactly one line.
+- **`fonts.css` and both font preloads** to baseline. These were changed for the world's LCP
+  and CLS, so they were not independent fixes and had no business applying site-wide. Removing
+  them cost nothing: with the rail home-only, the home page measures **performance 0.96,
+  CLS 0.000** on restored `font-display: swap` with both faces preloaded. The workarounds were
+  only ever needed because the world was everywhere.
+- **`copy-check.mjs` and `render-verify.mjs`** to baseline. Both had been adapted to the world —
+  `copy-check` read `enter.claimLines` from the station copy shape, and `render-verify` sampled
+  a screen region chosen for the station composition.
+
+### The nav is a slot, not a flag
+
+`BaseLayout` now renders `<slot name="nav"><Header /></slot>`. A page that hands it nothing gets
+the site it always had; `/` hands it `StationNav`. There is deliberately no `world` boolean: a
+flag is something a future page can set by accident, and a slot is something a page has to pass
+content to. It also means the layout never names the world's components, which is what stops the
+CSS leak at its root.
+
+`stations.css` and the world's two scripts moved into `index.astro`, so Astro bundles them into
+the home page alone.
+
+### A guard that did not exist, and is the point of this stage
+
+Every gate in this repository asks whether what shipped is TRUE. Not one asked **where** it
+shipped, which is why the whole site could wear a design meant for one page for five weeks with
+CI green throughout.
+
+`station-check` gained a third section. It walks every built HTML page that is not `/` and fails
+on any trace of the world — the rail, the plate layer, the stage shell, a plate URL — **and on
+the world's tokens appearing in any stylesheet that page links.** Scoping a design's assertions
+to the route that owns it is not loosening: the world is still fully asserted on `/`, and is now
+additionally asserted to be absent from the other sixteen pages, which is strictly more coverage
+than before.
+
+Proven by injecting both real mechanisms:
+
+- rail back into the shared layout → **exit 1**, naming `404.html`, `about/`, `cv/` and the
+  shared stylesheet;
+- `stations.css` imported in shared frontmatter, with no visible rail anywhere → **exit 1** on
+  `--plate-scrim`, `--plate-edge` and `station-nav`. A markup-only check would have called that
+  clean.
+
+### A guard that had to follow the risk
+
+Restoring `copy-check` to baseline removed its locked-claim parity block, which asserted that the
+experience hero's display lines rejoined to blueprint §1's sentence. That check existed because
+reference 01's hero was once line-broken as "I design, / I build, / and I operate", quietly
+adding two pronouns to locked wording.
+
+The experience surface no longer splits anything — **but the splitting did not disappear, it
+moved to the home hero**, which renders the claim as four spans. `station-check`'s existing check
+did not cover it: station 01 also carries the whole sentence in a visually-hidden paragraph, so
+the old assertion passed even when the visible lines said something else.
+
+The guard now strips the visible `<h1 id="claim">` to text and requires it to BE the locked
+sentence. Injected with the exact historical failure — **exit 1**, printing locked and rendered
+side by side.
+
+### Kept from the redesign period, deliberately
+
+Everything below is independent of the visual design and stays:
+
+- the rebuilt lockfile and the dependency bumps (**0 vulnerabilities**);
+- the `pg_advisory_lock` in `migrate()`, which fixed a real race two API replicas would hit;
+- the Dockerfile `mkdir -p` that stopped the image build depending on npm hoisting;
+- `emit-headers` deriving `img-src` from `PUBLIC_VISUAL_WORLD_BASE`;
+- `contrast-check` reading `stations.css` as well as `tokens.css` — **34 pairings**;
+- the plate pipeline, the responsive width ladder, and the **crops that removed the generated
+  people from plates 07 and 08**;
+- `sourcemap: 'hidden'` on the live surface, re-applied onto the restored config;
+- every Truth Constitution content decision on the home page.
+
+### Verified
+
+`npm run verify` **exit 0** — 9 gates. `npm run api:verify` **121/121**. `format:check` clean.
+`npm audit --omit=dev --audit-level=high` **exit 0**.
+
+The baseline was built in a temporary git worktree at `45038a6` and served beside the current
+build. Nine non-home routes were rendered in a real browser at **1440, 834 and 390** against
+both, and compared **pixel by pixel**: 27 pairs, **0.0000% differing pixels**, identical document
+heights, zero horizontal overflow, zero page errors, `.vw` 0, `.station-nav` 0, `.site-header` 1
+on every one. Screenshots under `build/verify/` as `CUR-*` and `BASE-*`.
+
+Home keeps its world: 10 stages, zero horizontal overflow at all three widths, and the station
+rail on **one row at 390px**, which is what it was rebuilt to do.
+
+`/live/` was driven in a browser: a live WebGL context, zero `.vw`, zero rail, and the honest
+degraded copy — "The control plane did not answer. Nothing was provisioned." It is not
+pretending, and the control plane is genuinely down.
+
+### A local flake, re-confirmed rather than re-diagnosed
+
+Six purge tests failed once more and passed **121/121** on a recreated database. `services/`
+was not touched by this stage — confirmed at zero changed files — so the cause is the one
+already recorded in S2: stale expired-but-unpurged tenants accumulating in a long-lived local
+dev database and competing for the sweep's batch and advisory lock. CI provisions a fresh
+Postgres per run.
+
+### Still open
+
+- **The control plane is offline** (Cloudflare 1033). A VM/`cloudflared` problem outside this
+  repository. Both surfaces say so honestly and neither invents a reading.
+- **No headshot**; the OWNER-INPUT marker on `/about` stands, and the generated people remain
+  cropped out of the plates rather than published.
+- **Demo-tenant screenshots**, **hospital telemetry permissions**, and the **mid-range device
+  frame measurement** carried since P4 all remain outstanding.
+- **72 "as of Jul 2026" qualifiers** remain unrefreshed, for the reason given in S2: none of the
+  underlying numbers were re-checked.

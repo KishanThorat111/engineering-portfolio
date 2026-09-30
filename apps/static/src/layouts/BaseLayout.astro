@@ -4,20 +4,42 @@ import '../styles/fonts.css';
 import '../styles/global.css';
 import '../styles/prose.css';
 import '../styles/motion.css';
-import '../styles/stations.css';
 import SkipLink from '../components/SkipLink.astro';
-import StationNav from '../components/StationNav.astro';
+import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import JsonLd from '../components/JsonLd.astro';
 import { ogSlugFor } from '../lib/og-cards';
 import { personSchema } from '../lib/structured-data';
-import type { StationId } from '../config/visual-world';
 
 interface Props {
   title: string;
   description: string;
-  /** Which station this page represents, for the nav's aria-current. */
-  station?: StationId;
+  /**
+   * THIS LAYOUT KNOWS NOTHING ABOUT THE VISUAL WORLD, AND THAT IS THE FIX.
+   *
+   * The ten-station world was commissioned for the home page. It arrived here
+   * instead: the station rail replaced `Header` for every route, `stations.css`
+   * was imported in this frontmatter so its tokens loaded site-wide, and the
+   * parallax and liveness scripts ran on the CV and on every case study. A
+   * design meant for one page became the design of the site because it was
+   * wired into the one file every page shares.
+   *
+   * Three separate mechanisms had to be undone, because each leaked on its own:
+   *
+   *   markup      the rail is now `<slot name="nav">`, whose FALLBACK is the
+   *               ordinary `Header`. A page that supplies nothing gets the site
+   *               it always had.
+   *   stylesheet  `stations.css` is imported by the home page, not here. A bare
+   *               import in layout frontmatter is unconditional — a boolean prop
+   *               would have hidden the rail while still shipping its CSS.
+   *   the import  even importing `StationNav` here was enough to drag its 26
+   *               scoped rules into the shared stylesheet that every route
+   *               downloads. Measured in the built output, not assumed. The slot
+   *               means this file never names the component at all.
+   *
+   * There is deliberately no `world` boolean. A flag is something a future page
+   * can set by accident; a slot is something a page has to hand content to.
+   */
   /**
    * Set on the component-gallery route, which is excluded from search. Every
    * public page leaves it alone.
@@ -25,7 +47,7 @@ interface Props {
   noindex?: boolean;
 }
 
-const { title, description, noindex = false, station } = Astro.props;
+const { title, description, noindex = false } = Astro.props;
 
 /*
  * Absolute URLs come from the configured production origin (blueprint §7.4),
@@ -84,43 +106,16 @@ const ogImage = new URL(`/og/${ogSlugFor(Astro.url.pathname)}.png`, origin).href
 
     {/* Person, site-wide. Pages add their own node alongside it. */}
     <JsonLd data={personSchema(origin)} />
-    {
-      /*
-        THE TWO FONTS ARE DELIBERATELY NOT PRELOADED.
-
-        They were, and it cost the homepage its performance budget. `preload
-        as="font"` fetches at High priority, so 88KB of Inter and JetBrains Mono
-        left the wire in the same instant as the station plate — and the plate is
-        the largest contentful element. On a simulated slow-4G link that is most
-        of a second of contention for bytes that are not needed to paint
-        anything, because both faces already declare `font-display: swap`: text
-        is visible in the fallback from the first paint and swaps when the face
-        arrives.
-
-        Preloading a swap font buys a slightly earlier swap at the direct
-        expense of LCP. Measured on the built output: dropping these took the
-        homepage from 0.92 to a comfortable pass while FCP was unchanged, which
-        is the correct trade for a page whose largest element is an image.
-
-        Inter alone IS preloaded, below, and JetBrains Mono is not. Measured on
-        the built output over three runs each: both preloaded scored 0.92,
-        neither preloaded 0.96, Inter only 0.97. Inter sets the H1 and every
-        line of body copy and is worth its 48KB on the critical path; JetBrains
-        Mono sets eyebrows and labels at small sizes and is not.
-
-        What this did NOT do is change CLS, and the first version of this comment
-        claimed it did. Lighthouse reports 0.026 with or without either preload.
-        Driving the built page in a real browser at 412x823, DPR 1.75, 1.6Mbps
-        and 4x CPU throttling and reading `layout-shift` entries directly gives
-        **0.0000 across zero entries**, so the residual is an artifact of
-        Lighthouse's own emulation rather than a shift a visitor experiences. It
-        is recorded rather than explained away, and it is inside the 0.05 budget
-        either way.
-      */
-    }
     <link
       rel="preload"
       href="/fonts/inter-latin-wght-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/jetbrains-mono-latin-wght-normal.woff2"
       as="font"
       type="font/woff2"
       crossorigin
@@ -174,28 +169,10 @@ const ogImage = new URL(`/og/${ogSlugFor(Astro.url.pathname)}.png`, origin).href
   </head>
   <body>
     <SkipLink />
-    <StationNav current={station} />
+    <slot name="nav"><Header /></slot>
     <main id="main">
       <slot />
     </main>
     <Footer />
-
-    <script>
-      /*
-       * Parallax and lazy plate loading. Loaded as a module so it defers by
-       * default and never blocks first paint — and the page is complete
-       * without it: no plate carries readable content, and every station is
-       * fully laid out before this runs.
-       */
-      import { initVisualWorld } from '../scripts/visual-world';
-      import { initLiveness } from '../scripts/liveness';
-      initVisualWorld();
-      /*
-       * ONE measurement for the whole page. Every station instrument reads its
-       * result rather than asking again — four readouts of one fact must not be
-       * able to disagree with each other.
-       */
-      initLiveness();
-    </script>
   </body>
 </html>

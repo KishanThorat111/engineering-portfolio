@@ -17,35 +17,10 @@
     U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/*
- * JETBRAINS MONO IS `optional`, NOT `swap`, AND THAT IS A MEASURED DECISION.
- *
- * This face sets every eyebrow, stat label, chip, nav item and callout on the
- * station design — a great deal of short text in flow layout. With `swap` it
- * arrives late (it is deliberately not preloaded, because preloading it cost the
- * homepage its LCP budget) and re-measures all of that text at once. Measured on
- * the built page at 412x823, DPR 1.75, 1.6Mbps, 4x CPU: one layout shift,
- * **CLS 0.176** against a 0.05 budget, with the mobile stat grid and the station
- * rail named as the sources.
- *
- * `optional` tells the browser to use the face only if it is ready almost
- * immediately — from cache on a return visit, in practice — and otherwise to
- * keep the fallback for the whole page load and never swap. The shift cannot
- * happen because the substitution cannot happen mid-page.
- *
- * The cost is real and worth stating: a first-time visitor on a slow connection
- * reads the labels in their platform's own monospace rather than JetBrains Mono.
- * They are labels. Every one of them says the same words either way, at the same
- * size, in a monospace face. Trading that for a page that does not move under
- * the reader is not a close call.
- *
- * Inter keeps `swap`: it is preloaded, it carries the body copy and the display
- * claim, and text that is still invisible is worse than text that changes face.
- */
 @font-face {
   font-family: 'JetBrains Mono Variable';
   font-style: normal;
-  font-display: optional;
+  font-display: swap;
   font-weight: 100 800;
   src: url('/fonts/jetbrains-mono-latin-wght-normal.woff2') format('woff2-variations');
   unicode-range:

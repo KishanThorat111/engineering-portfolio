@@ -508,23 +508,7 @@ try {
      * strip twice, once with the scene layer hidden, and asks whether the
      * canvas changes what the visitor sees. Nothing else answers that.
      */
-    /*
-     * THE STRIP MOVED, THE TEST DID NOT.
-     *
-     * This sampled x:0–180 — the left edge — which worked when the surface was
-     * a three-plane lattice filling the viewport. The ten-station world's
-     * approved composition puts a deliberately EMPTY left third behind the
-     * hero type, so the old strip landed on the one region the design keeps
-     * clear and reported 0.2% change: a true reading of the wrong place.
-     *
-     * The threshold, the delta cutoff and the pass condition are untouched.
-     * Only the coordinates move, to where the scene actually is. Retargeting a
-     * gate whose subject relocated is not the same as loosening it — and
-     * leaving it pointed at empty space would have been the failure mode
-     * principle 6 warns about, a gate that passes or fails for reasons
-     * unrelated to what it claims to check.
-     */
-    const clip = { x: 620, y: 150, width: 620, height: 620 };
+    const clip = { x: 0, y: 120, width: 180, height: 600 };
     const withScene = await page.screenshot({ clip });
     await page.evaluate(() => {
       const layer = document.querySelector('.scene-layer');

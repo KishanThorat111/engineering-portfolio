@@ -11,9 +11,7 @@
  * that says what it is. A quiet live plane is left quiet.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { StationWorld } from './world/StationWorld.tsx';
-import { StationOverlays } from './world/StationOverlays.tsx';
-import { StationScroller } from './world/StationScroller.tsx';
+import { Scene } from './render/Scene.tsx';
 import { LiveDocument } from './ui/Document.tsx';
 import { Arrival } from './ui/Arrival.tsx';
 import { Stations } from './ui/Stations.tsx';
@@ -254,22 +252,11 @@ export function App() {
       <a className="skip-link" href="#document">
         {COPY.actions.skipToDocument}
       </a>
-      {/*
-        THE TEN-STATION WORLD. This replaces the three-plane lattice the old
-        Scene rendered — that surface is no longer mounted, so there is no
-        hybrid of the old design and the new one running underneath.
-
-        aria-hidden because it is an illustration of what the document below
-        already says in full. A visitor on a screen reader, a keyboard, or a
-        device with no WebGL loses nothing.
-      */}
       {webgl ? (
         <div className="scene-layer" aria-hidden="true">
-          <StationWorld />
+          <Scene />
         </div>
       ) : null}
-      {webgl ? <StationOverlays /> : null}
-      {webgl ? <StationScroller /> : null}
       {/*
         The status bar sits above the document and stays there. It states what
         the page already knew — source, tenant, expiry, connections — in the

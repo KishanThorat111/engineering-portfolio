@@ -26,8 +26,25 @@
  * are empty (constitution rule 9), so content lights them up rather than edits
  * here.
  */
+/*
+ * THE WORLD'S STYLESHEET IS IMPORTED HERE, NOT IN THE LAYOUT.
+ *
+ * `stations.css` carries the world's material tokens — `--structure`,
+ * `--ember`, `--plate-scrim`, `--plate-edge` — and the station shell. It was
+ * imported by `BaseLayout`, which made it part of the stylesheet every route
+ * loads: the CV and every case study downloaded and applied a design system
+ * they never render. Astro bundles a page's frontmatter imports into that
+ * page's own CSS, so importing it here confines it to `/`.
+ *
+ * It cannot be made conditional inside the layout. A bare `import` in
+ * frontmatter runs whatever a prop says, so the flag would have hidden the rail
+ * while still shipping its stylesheet — home-only in appearance and site-wide
+ * in bytes.
+ */
+import '../styles/stations.css';
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import StationNav from '../components/StationNav.astro';
 import LiveEstatePanel from '../components/LiveEstatePanel.astro';
 import SystemField from '../components/SystemField.astro';
 import StationEnter from '../components/StationEnter.astro';
@@ -68,7 +85,20 @@ const stagger = (index: number) => `--reveal-delay: ${Math.min(index * 60, 240)}
 const ordinal = (index: number) => String(index + 1).padStart(2, '0');
 ---
 
-<BaseLayout title={title} description={SITE.subline} station="enter">
+<BaseLayout title={title} description={SITE.subline}>
+  {
+    /*
+      The station rail, handed to the layout's nav slot. Every other route
+      supplies nothing and gets the layout's fallback, which is the site's
+      ordinary `Header` — the one it had before the world existed.
+
+      It is passed rather than flagged so that the layout never imports this
+      component: an import alone was enough to put its 26 scoped rules into the
+      stylesheet every page downloads.
+    */
+  }
+  <StationNav slot="nav" current="enter" />
+
   {
     /* ── OPENING ─────────────────────────────────────────────────────────
       Asymmetric and full-bleed. The claim takes the display tier and the
@@ -77,6 +107,32 @@ const ordinal = (index: number) => String(index + 1).padStart(2, '0');
   }
   <StationEnter counts={stationCounts} />
   <StationJourney systems={systems} chips={chips} lessons={lessons} counts={stationCounts} />
+
+  <script>
+    /*
+     * THE WORLD'S CLIENT CODE, ON THE WORLD'S PAGE.
+     *
+     * `initVisualWorld` drives the plate parallax; `initLiveness` makes ONE
+     * request to /health and writes the result to <html data-liveness>, which
+     * every instrument on this page reads so that four readouts of one fact
+     * cannot disagree.
+     *
+     * Both were in `BaseLayout` and therefore ran on the CV, on /about and on
+     * every case study — a parallax driver with no plates to drive, and a
+     * liveness probe on pages that display no liveness. Astro bundles a page's
+     * own `<script>` into that page, so this is the whole of the world's
+     * JavaScript and it exists only at `/`.
+     *
+     * Deferred as a module, so it never blocks first paint. The page is complete
+     * without it: no plate carries readable content, every station is laid out
+     * by CSS, and the liveness readouts render their honest unmeasured state
+     * from the server.
+     */
+    import { initVisualWorld } from '../scripts/visual-world';
+    import { initLiveness } from '../scripts/liveness';
+    initVisualWorld();
+    initLiveness();
+  </script>
 </BaseLayout>
 
 <style>

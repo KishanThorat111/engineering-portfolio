@@ -32,7 +32,7 @@
  * `config/site.ts`, so an edit to either side without the other fails here
  * rather than shipping.
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const DIST = resolve('dist');
@@ -191,6 +191,47 @@ if (!flat.includes(claim)) {
   fail(`the locked claim is missing from the built homepage: "${claim}"`);
 }
 
+/*
+ * THE VISIBLE HERO MUST REJOIN TO THE LOCKED SENTENCE.
+ *
+ * `copy-check` used to assert this for the experience surface, where the hero
+ * was split into display lines. That surface has been reverted to its
+ * pre-world design and no longer splits anything, so that block went with it —
+ * but the splitting did not disappear, it MOVED HERE. The home hero renders the
+ * claim as four `<span>`s for the reference composition.
+ *
+ * The check above does not cover it. Station 01 also carries the whole sentence
+ * in a visually-hidden paragraph for screen readers, so `flat.includes(claim)`
+ * passes even if the visible lines say something else entirely — which is the
+ * precise failure the original check was written after: reference 01's hero was
+ * once line-broken as "I design, / I build, / and I operate", quietly adding two
+ * pronouns to a sentence blueprint §1 locks.
+ *
+ * So the guard follows the risk. The visible `<h1>` is stripped of markup,
+ * whitespace-collapsed, and must BE the locked sentence.
+ */
+const heroMatch = html.match(/<h1[^>]*id="claim"[^>]*>([\s\S]*?)<\/h1>/);
+if (!heroMatch) {
+  console.error(
+    'station-check: could not find the home hero (h1#claim) in the built output. ' +
+      'The markup changed and this gate can no longer see the sentence it guards.',
+  );
+  process.exit(1);
+}
+const heroText = heroMatch[1]
+  .replace(/<[^>]*>/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+if (heroText !== claim) {
+  fail(
+    `the visible home hero does not rejoin to the locked claim.
+` +
+      `    locked:   ${claim}
+` +
+      `    rendered: ${heroText}`,
+  );
+}
+
 const chipsBlock = siteSource.match(/STATUS_CHIPS = \[([\s\S]*?)\]/)?.[1] ?? '';
 const chips = [...chipsBlock.matchAll(/'([^']+)'/g)].map((m) => m[1]);
 if (chips.length !== 4) {
@@ -237,6 +278,88 @@ for (const list of chipLists) {
 
 if (!flat.includes(chips[0])) fail(`locked status chips are absent from the homepage entirely`);
 
+/* ---- 3. the world does not leak past the home page ------------------ */
+
+/*
+ * THE GATE THIS REPOSITORY MOST NEEDED AND DID NOT HAVE.
+ *
+ * The ten-station world was commissioned for `/`. It shipped on every route,
+ * because it was wired into `BaseLayout` — the rail replaced the site header
+ * site-wide, `stations.css` was imported in shared frontmatter, and the parallax
+ * and liveness scripts ran on the CV. Nothing failed. Every gate stayed green
+ * for five weeks while the whole site quietly wore a design meant for one page.
+ *
+ * No existing gate could have caught it, because every one of them asks whether
+ * what shipped is TRUE. None of them asked where it shipped. This one does.
+ *
+ * It scans every built HTML page that is not the home page and fails on any
+ * trace of the world: the station rail, the plate layer, the stage shell, or
+ * the world's material tokens in that page's stylesheets. Scoping a check to
+ * the route that owns a design is not loosening it — the design is still fully
+ * asserted on `/` by the two sections above, and it is now asserted to be
+ * ABSENT everywhere else, which is strictly more than was checked before.
+ */
+const WORLD_MARKERS = [
+  { re: /class="[^"]*station-nav/, what: 'the station rail' },
+  { re: /class="[^"]*vw/, what: 'the plate layer (.vw)' },
+  { re: /class="[^"]*stage/, what: 'the station stage shell' },
+  { re: /\/visual-world\//, what: 'a visual-world plate reference' },
+];
+
+/** Every built page, so a route added later is covered without an edit here. */
+function htmlPages(dir) {
+  const out = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = resolve(dir, entry.name);
+    if (entry.isDirectory()) out.push(...htmlPages(full));
+    else if (entry.name.endsWith('.html')) out.push(full);
+  }
+  return out;
+}
+
+const pages = htmlPages(DIST);
+if (pages.length < 5) {
+  console.error(`station-check: only ${pages.length} built page(s) found — dist looks wrong.`);
+  process.exit(1);
+}
+
+/** Stylesheets a given page actually links, so the check follows the bundle. */
+function sheetsFor(page, source) {
+  return [...source.matchAll(/href="(\/_astro\/[^"]+\.css)"/g)]
+    .map((m) => resolve(DIST, m[1].replace(/^\//, '')))
+    .filter((f) => existsSync(f));
+}
+
+let scanned = 0;
+for (const page of pages) {
+  if (page === HOME) continue;
+  const source = readFileSync(page, 'utf8');
+  const rel = page
+    .slice(DIST.length + 1)
+    .split(String.fromCharCode(92))
+    .join('/');
+  scanned += 1;
+
+  for (const marker of WORLD_MARKERS) {
+    if (marker.re.test(source)) fail(`${rel} carries ${marker.what} — the world belongs to / only`);
+  }
+
+  /*
+   * The stylesheet matters as much as the markup. Importing `StationNav` into
+   * the shared layout was enough to put 26 of its scoped rules into the sheet
+   * every route downloads, with no visible rail anywhere to show for it — a
+   * leak that a markup-only check would have declared clean.
+   */
+  for (const sheet of sheetsFor(page, source)) {
+    const css = readFileSync(sheet, 'utf8');
+    for (const token of ['--plate-scrim', '--plate-edge', 'station-nav']) {
+      if (css.includes(token)) {
+        fail(`${rel} loads ${sheet.slice(DIST.length + 1)}, which carries "${token}"`);
+      }
+    }
+  }
+}
+
 /* ---- report --------------------------------------------------------- */
 
 if (failed > 0) {
@@ -246,5 +369,6 @@ if (failed > 0) {
 
 console.log(
   `station-check: OK — ${stations.length} station/plate mappings verified against built output, ` +
-    `plus the locked claim and ${chips.length} locked status chips.`,
+    `the locked claim and ${chips.length} locked status chips, ` +
+    `and ${scanned} non-home page(s) free of the world.`,
 );

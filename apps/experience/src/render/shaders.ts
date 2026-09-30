@@ -18,21 +18,6 @@
  * one material. If a future change wants cyan anywhere else, that is a palette
  * change and §12.1 makes it an owner decision.
  *
- * AMENDED 22 Aug 2026 — the ten approved design references (C1, recorded in
- * docs/REFERENCE_DECOMPOSITION.md §1.5) use cyan as their dominant structural
- * hue: plate rims, grid lines, edge routing. Honouring them literally would
- * have spent the locked colour on structure, so the rule was kept and the hue
- * was not: structural edges now take `structure`, a desaturated blue-grey that
- * carries no state and is deliberately NOT a register entry. The references'
- * warm data plane takes `ember`, which is material temperature under §3.3
- * ("load raises their internal temperature") and therefore a measurement.
- * `isolationCyan` is unchanged and still has exactly one meaning.
- *
- * THE GLOW RULE (C2, ruled 22 Aug 2026). Nothing in this world emits light
- * unless it is carrying a real measurement. An unlit panel means idle, not
- * unstyled. See kit/glow.ts, which is where that rule is enforced in code
- * rather than merely stated in a comment.
- *
  * WHY NO TRANSMISSION MATERIAL
  * §3.3 asks for thin translucent shells with refraction and interior light.
  * The obvious tool is MeshTransmissionMaterial, which renders the scene again
@@ -58,29 +43,6 @@ export const PALETTE = {
    * Do not reuse this for anything else — §3.4 is explicit and §12.1 locks it.
    */
   isolationCyan: '#a8f0ff',
-  /**
-   * The written record: decisions, evidence, lessons, sources. Matches
-   * --record on the static surface so crossing between the two surfaces does
-   * not look like crossing sites. The references use this hue for core
-   * services, AI routing and the archive drawers, all of which are record.
-   */
-  record: '#a78bfa',
-  /**
-   * STRUCTURE — plate rims, grid lines, edge routing, leader rules.
-   *
-   * Not a register entry, and that is the whole point of it. Structural edges
-   * describe where a thing is, not what state it is in, so they must not be
-   * able to be confused with a status. This exists so that the references'
-   * pervasive cool edge light could be reproduced without spending
-   * `isolationCyan` on scenery.
-   */
-  structure: '#8fa3c8',
-  /**
-   * EMBER — the data plane's temperature. Interpolated toward from `dark` by
-   * real load, never set as a constant fill. Warm because §3.1 asks for warmth
-   * in a cold room, and because a busy data plane genuinely is hotter.
-   */
-  ember: '#f0913c',
 } as const;
 
 /* ------------------------------------------------------------------ *

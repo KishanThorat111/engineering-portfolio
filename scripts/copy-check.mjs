@@ -33,7 +33,7 @@
  *
  * This gate is never disabled to make a build pass.
  */
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
 const DIST = resolve('dist');
@@ -129,56 +129,6 @@ for (const file of [...markup, ...text]) {
       }
     }
   }
-}
-
-/* ------------------------------------------------------------------ *
- * LOCKED CLAIM PARITY (added R2)
- *
- * P9 recorded a gap: rebuilding a hero silently dropped locked content and
- * "no gate covers them". R2 then walked straight into it — reference 01's
- * hero was line-broken as "I design, / I build, / and I operate", which
- * matches the design reference's rhythm and quietly added two pronouns to a
- * sentence blueprint §1 locks. It was caught by hand, which is exactly the
- * kind of catch that does not happen twice.
- *
- * The experience surface renders the claim as separate display lines for
- * composition. Those lines, rejoined, must still BE the locked sentence. This
- * asserts that against the BUILT artifact, not the source.
- * ------------------------------------------------------------------ */
-{
-  const copyPath = join(DIST, 'live', 'copy.json');
-  if (!existsSync(copyPath)) {
-    console.error(
-      'copy-check: FAILED — dist/live/copy.json is missing, so the locked-claim check has ' +
-        'nothing to read. A gate that silently checks nothing is worse than one that fails.',
-    );
-    process.exit(1);
-  }
-
-  const copy = JSON.parse(readFileSync(copyPath, 'utf8'));
-  const locked = copy?.claim;
-  const lines = copy?.enter?.claimLines;
-  const tail = copy?.enter?.claimTail;
-
-  if (typeof locked !== 'string' || !Array.isArray(lines) || typeof tail !== 'string') {
-    console.error(
-      'copy-check: FAILED — copy.json no longer carries `claim` and `enter.claimLines`/' +
-        '`enter.claimTail`. If the hero was restructured, this check must be updated to match ' +
-        'the new shape, never deleted.',
-    );
-    process.exit(1);
-  }
-
-  const rendered = [...lines, tail].join(' ');
-  if (rendered !== locked) {
-    console.error('copy-check: FAILED — the experience hero is not the locked claim.');
-    console.error(`  locked:   ${locked}`);
-    console.error(`  rendered: ${rendered}`);
-    console.error('  Blueprint §1 locks this wording; a change requires an amendment.');
-    process.exit(1);
-  }
-
-  console.log('copy-check: OK — experience hero matches the locked claim verbatim.');
 }
 
 if (ownerInputs.length > 0) {
