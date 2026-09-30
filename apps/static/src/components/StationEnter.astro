@@ -140,10 +140,36 @@ const HOPS: Hop[] = [
       {STATUS_CHIPS.map((chip) => <li>{chip}</li>)}
     </ul>
 
+    {
+      /*
+        THE PRIMARY ACTION IS THE LIVE SYSTEM.
+
+        Reference 01 puts a single bordered CTA here reading "ENTER THE SYSTEM",
+        and it is the one place on this page where the composition points a
+        visitor at something to DO rather than something to read. That slot was
+        being spent on "See the systems", a link to a static index, while the
+        genuinely unusual thing this site has — a running multi-tenant system in
+        a real 3D world that a visitor can attack — sat behind a link partway
+        down the page.
+
+        The wording says "live system" rather than the reference's bare "the
+        system" because the destination is a demonstration plane and rule 11
+        requires it be labelled one. The page it opens says DEMO PLANE in its
+        first screen; this button does not need to oversell it, and the line
+        beneath states plainly what it is before a visitor commits a click.
+      */
+    }
     <div class="enter__actions">
-      <a class="enter__cta" href="/systems">See the systems <span aria-hidden="true">→</span></a>
+      <a class="enter__cta enter__cta--primary" href="/live/" data-live-cta>
+        Enter the live system <span aria-hidden="true">→</span>
+      </a>
+      <a class="enter__cta enter__cta--quiet" href="/systems">See the systems</a>
       <a class="enter__cta enter__cta--quiet" href="/cv.pdf" download>Download CV</a>
     </div>
+    <p class="enter__ctaNote">
+      A real multi-tenant system, labelled a demonstration. It provisions you a tenant, invites you
+      to attack it, and shows you the layer that stopped you.
+    </p>
   </div>
 
   {/* ── The state line and the strip ────────────────────────────── */}
@@ -225,9 +251,16 @@ const HOPS: Hop[] = [
       No uptime or throughput figure is published anywhere on this site. None is measured.
     </p>
     <div class="enterM__actions">
-      <a class="enter__cta" href="/systems">See the systems <span aria-hidden="true">→</span></a>
+      <a class="enter__cta enter__cta--primary" href="/live/">
+        Enter the live system <span aria-hidden="true">→</span>
+      </a>
+      <a class="enter__cta enter__cta--quiet" href="/systems">See the systems</a>
       <a class="enter__cta enter__cta--quiet" href="/cv.pdf" download>Download CV</a>
     </div>
+    <p class="enterM__note">
+      A real multi-tenant system, labelled a demonstration. It provisions you a tenant and invites
+      you to attack it.
+    </p>
     <p class="enterM__counts">
       {counts.systems} systems · {counts.decisions} decisions recorded · {counts.tests} integration tests
       · {counts.lessons} lessons published
@@ -334,6 +367,29 @@ const HOPS: Hop[] = [
   .enter__cta:hover {
     border-color: var(--signal);
     color: var(--signal);
+  }
+
+  /*
+   * The one emphasised control on the page. It takes the signal border rather
+   * than a filled background so it still reads as an instrument rather than a
+   * marketing button, which is the register §3.2 binds this site to.
+   */
+  .enter__cta--primary {
+    border-color: var(--signal);
+    color: var(--signal);
+  }
+
+  .enter__cta--primary:hover {
+    background: color-mix(in srgb, var(--signal) 14%, var(--plate-scrim));
+  }
+
+  .enter__ctaNote {
+    max-width: calc(430 * var(--u));
+    margin: calc(16 * var(--u)) 0 0;
+    font-size: calc(14 * var(--u));
+    line-height: 1.55;
+    color: var(--text-faint);
+    text-shadow: 0 calc(1 * var(--u)) calc(6 * var(--u)) rgb(0 0 0 / 0.9);
   }
 
   .enter__cta--quiet {

@@ -411,13 +411,31 @@ try {
     await page.close();
   }
 
-  /* ---- 4c. THE HOMEPAGE'S LIVE PANEL IS HONEST ----------------------- */
-  console.log('\n=== the live estate panel ===');
+  /* ---- 4c. THE HOMEPAGE'S LIVE READOUTS ARE HONEST -------------------- */
+  console.log('\n=== the home page live readouts ===');
   {
     /*
-     * The panel is the first thing a visitor meets, and it makes a claim about
-     * a system being alive. Three things have to hold, and the interesting two
-     * are the failure paths.
+     * THE SUBJECT MOVED; THE CLAIMS DID NOT.
+     *
+     * This block used to wait on `[data-live-panel]`, the estate panel the home
+     * page carried before the ten-station world replaced its composition. The
+     * panel is gone. What it asserted is not: the home page still measures a
+     * real control plane, still offers the route into the live world, and still
+     * has to be honest when that plane does not answer.
+     *
+     * Those instruments are now station 01's status line and stat strip and the
+     * rail's status pill, all driven by one measurement that writes
+     * `data-liveness` on <html>. The three assertions below are unchanged in
+     * substance and only their selectors move — the same retargeting this file
+     * already did once when the scene's composition changed, for the same
+     * reason: a gate pointed at markup that no longer exists is not strict, it
+     * is broken.
+     *
+     * One assertion is STRONGER than before. The old check counted visible
+     * `[data-metric]` elements and passed at zero. This reads the round-trip
+     * slots' text and requires no DIGIT in any of them, which catches a slot
+     * rendering a stale value, a cached one, or a zero standing in for an
+     * answer — not merely one that failed to hide itself.
      *
      * Served from DEAD_PORT, where no control plane exists, so this is the real
      * unreachable case rather than a stub.
@@ -426,36 +444,40 @@ try {
     await page.goto(`http://localhost:${DEAD_PORT}/`, { waitUntil: 'load' });
     await page.waitForTimeout(3000);
 
-    const frame = page.locator('[data-live-panel]');
-    const rendered = (await frame.count()) > 0;
-    const state = await frame.getAttribute('data-state');
-    const status = (await frame.locator('[data-live-status-text]').innerText()).trim();
-    // The route in must survive the plane being down: /live/ has its own
-    // degraded mode and explains itself far better than a tile could.
-    const ctaHref = await frame.locator('a[href="/live/"]').first().getAttribute('href');
+    const liveness = await page.evaluate(() => document.documentElement.dataset.liveness ?? null);
+    const ctaHref = await page
+      .locator('[data-live-cta]')
+      .first()
+      .getAttribute('href')
+      .catch(() => null);
+
+    const stateTexts = await page.locator('[data-live-value="state"]').allInnerTexts();
+    const saysDown = stateTexts.length > 0 && stateTexts.every((t) => !/live/i.test(t));
+
     /*
-     * No figure may be shown that was never measured. `data-metric` marks only
-     * the two that require the API — latency and the demonstration count — so
-     * with the plane unreachable both must still be hidden. The architectural
-     * facts carry no such attribute because they are true regardless.
+     * "No digit", not "is an em dash". The stat strip renders the dash and its
+     * unit in one element, so that slot reads "— ms" while the narrow
+     * composition's reads "—". Both are correct and neither is a measurement.
+     * What matters is that nothing NUMERIC appears in a slot that was never
+     * measured, which is the fabricated reading rule 12 forbids.
      */
-    const metricsShown = await frame.locator('[data-metric]:not([hidden])').count();
-    const architecturalOnly = metricsShown === 0;
+    const rttTexts = await page.locator('[data-live-value="rtt"]').allInnerTexts();
+    const noneNumeric = rttTexts.length > 0 && rttTexts.every((t) => !/[0-9]/.test(t));
 
     record(
-      'the panel renders and offers the route in even with no control plane',
-      `present: ${rendered}, cta: ${ctaHref}`,
-      rendered && ctaHref === '/live/',
+      'the home page offers the route into the world even with no control plane',
+      `cta: ${ctaHref}`,
+      ctaHref === '/live/',
     );
     record(
-      'with the plane unreachable the panel says so rather than claiming live',
-      `state: ${state}, status: "${status}"`,
-      state === 'down' && !/\blive\b/i.test(status),
+      'with the plane unreachable the home page says so rather than claiming live',
+      `data-liveness: ${liveness}, state readouts: ${JSON.stringify(stateTexts)}`,
+      liveness === 'down' && saysDown,
     );
     record(
       'no measured figure is shown that was never measured',
-      `${metricsShown} measured metric(s) visible — expected none`,
-      architecturalOnly,
+      `${rttTexts.length} round-trip slot(s) ${JSON.stringify(rttTexts)} — none numeric: ${noneNumeric}`,
+      noneNumeric,
     );
     await page.close();
   }
@@ -508,7 +530,23 @@ try {
      * strip twice, once with the scene layer hidden, and asks whether the
      * canvas changes what the visitor sees. Nothing else answers that.
      */
-    const clip = { x: 0, y: 120, width: 180, height: 600 };
+    /*
+     * THE STRIP MOVED, THE TEST DID NOT.
+     *
+     * This sampled x:0–180 — the left edge — which worked when the surface was
+     * a three-plane lattice filling the viewport. The ten-station world's
+     * approved composition puts a deliberately EMPTY left third behind the
+     * hero type, so the old strip landed on the one region the design keeps
+     * clear and reported 0.2% change: a true reading of the wrong place.
+     *
+     * The threshold, the delta cutoff and the pass condition are untouched.
+     * Only the coordinates move, to where the scene actually is. Retargeting a
+     * gate whose subject relocated is not the same as loosening it — and
+     * leaving it pointed at empty space would have been the failure mode
+     * principle 6 warns about, a gate that passes or fails for reasons
+     * unrelated to what it claims to check.
+     */
+    const clip = { x: 620, y: 150, width: 620, height: 620 };
     const withScene = await page.screenshot({ clip });
     await page.evaluate(() => {
       const layer = document.querySelector('.scene-layer');

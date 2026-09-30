@@ -323,6 +323,28 @@ if (pages.length < 5) {
   process.exit(1);
 }
 
+/*
+ * `/live/` IS A DIFFERENT APPLICATION AND IS SCOPED OUT OF THIS SCAN.
+ *
+ * The scan below exists to keep the home page's IMAGE world off the static
+ * pages. `/live/` is not a static page: it is the experience app, a React and
+ * Three.js surface that renders its own ten-station world in WebGL, and it is
+ * SUPPOSED to be a world. Asserting it is free of one would assert the opposite
+ * of what it is for.
+ *
+ * Today the exclusion changes nothing — the 3D world renders client-side, so
+ * its shells contain none of the markers below and would pass by accident.
+ * Passing by accident is not being correct, and a gate that happens to pass for
+ * a reason unrelated to its subject is the failure mode engineering principle 6
+ * warns about. If a scene ever server-rendered a matching class name, this gate
+ * would have failed a legitimate design.
+ *
+ * So the exclusion is explicit, and the assertions after the scan cover `/live/`
+ * on its own terms instead.
+ */
+const LIVE_PREFIX = resolve(DIST, 'live');
+const isLiveSurface = (page) => page.startsWith(LIVE_PREFIX);
+
 /** Stylesheets a given page actually links, so the check follows the bundle. */
 function sheetsFor(page, source) {
   return [...source.matchAll(/href="(\/_astro\/[^"]+\.css)"/g)]
@@ -332,7 +354,7 @@ function sheetsFor(page, source) {
 
 let scanned = 0;
 for (const page of pages) {
-  if (page === HOME) continue;
+  if (page === HOME || isLiveSurface(page)) continue;
   const source = readFileSync(page, 'utf8');
   const rel = page
     .slice(DIST.length + 1)
@@ -360,6 +382,64 @@ for (const page of pages) {
   }
 }
 
+/* ---- 4. the two surfaces do not borrow each other's weight ---------- */
+
+/*
+ * THE 3D BUNDLE BELONGS TO `/live/` AND NOWHERE ELSE.
+ *
+ * The home page is the fast lane. Its whole job is to be light: plates, real
+ * HTML, and a few hundred bytes of inline script. `/live/` carries React, Three
+ * and the station world — roughly 367KB gzipped. One `<script>` or one preload
+ * hint pointing at that bundle from a static page would quietly move the entire
+ * weight of the 3D world onto a page whose budget was written assuming it was
+ * not there, and nothing else here would notice: the page would still be true,
+ * still accessible, still pass every other gate, and still be slow.
+ *
+ * So no static page may reference `/live/assets/`. A LINK to `/live/` is
+ * expected and checked for below — a link costs nothing until it is followed,
+ * which is the entire point of putting the world behind one.
+ */
+for (const page of pages) {
+  if (isLiveSurface(page)) continue;
+  const source = readFileSync(page, 'utf8');
+  const rel = page
+    .slice(DIST.length + 1)
+    .split(String.fromCharCode(92))
+    .join('/');
+  for (const m of source.matchAll(/["'(]([^"'()]*\/live\/assets\/[^"'()]+)["')]/g)) {
+    fail(`${rel} references the 3D bundle (${m[1]}) — that weight belongs to /live/ alone`);
+  }
+}
+
+/*
+ * And the reverse: `/live/` must actually be shipping the world. A gate that
+ * keeps the bundle off the static pages, while the bundle quietly stops being
+ * built at all, has proven nothing.
+ */
+const liveShell = resolve(DIST, 'live', 'index.html');
+if (!existsSync(liveShell)) {
+  console.error(
+    'station-check: dist/live/index.html is missing — the experience app did not build.',
+  );
+  process.exit(1);
+}
+if (!/\/live\/assets\/[^"']+\.js/.test(readFileSync(liveShell, 'utf8'))) {
+  fail('dist/live/index.html loads no bundle — the 3D world is not being shipped');
+}
+
+/*
+ * THE ROUTE INTO THE WORLD.
+ *
+ * The 3D world is the most unusual thing this site has and it is one click off
+ * the home page. That click is the whole structure: a fast home page, and a
+ * heavy world behind a button. If the button is lost in a redesign the world
+ * becomes unreachable to anyone who does not know the URL, and nothing would
+ * fail — the site would simply get quieter. Cheap to assert, expensive to lose.
+ */
+if (!/href="\/live\/"/.test(html)) {
+  fail('the home page has no link to /live/ — the world would be unreachable');
+}
+
 /* ---- report --------------------------------------------------------- */
 
 if (failed > 0) {
@@ -370,5 +450,6 @@ if (failed > 0) {
 console.log(
   `station-check: OK — ${stations.length} station/plate mappings verified against built output, ` +
     `the locked claim and ${chips.length} locked status chips, ` +
-    `and ${scanned} non-home page(s) free of the world.`,
+    `${scanned} static page(s) free of the world, ` +
+    `the 3D bundle confined to /live/, and the route into it intact.`,
 );

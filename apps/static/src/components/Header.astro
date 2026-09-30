@@ -13,13 +13,26 @@ import { SITE } from '../config/site';
  * internal items land; that has now happened, and the footer still carries
  * both (blueprint §2 puts them there).
  */
-/* All five blueprint §2 items now exist, so the nav is complete. */
+/*
+ * All five blueprint §2 items now exist, plus the live surface.
+ *
+ * `Live` is the sixth and is a deliberate addition rather than a restoration:
+ * the 3D demonstration plane is the most unusual thing this site has, and until
+ * now the only route to it was a link partway down the home page. A visitor who
+ * landed on /about or a case study had no way to reach it at all.
+ *
+ * It is last on purpose — the five blueprint items are the site's spine and
+ * keep their order — and it is a plain nav item rather than a highlighted call
+ * to action, because the page it leads to labels itself a demonstration and the
+ * nav should not oversell it (rule 11).
+ */
 const navLinks = [
   { label: 'Systems', href: '/systems' },
   { label: 'Experience', href: '/experience' },
   { label: 'Engineering', href: '/engineering' },
   { label: 'About', href: '/about' },
   { label: 'CV', href: '/cv' },
+  { label: 'Live', href: '/live/' },
 ];
 ---
 

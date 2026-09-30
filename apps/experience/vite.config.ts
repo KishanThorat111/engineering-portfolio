@@ -77,6 +77,61 @@ function injectCanonical() {
  * directory with an index.html in it.
  */
 const STATION_PAGES = [
+  /*
+   * The ten narrative stations. Each is a real page a static host serves, so a
+   * link to /live/dissection/ opens AT that station rather than opening at the
+   * start and travelling — which is what §2.9 means by shareable. `enter` is
+   * /live/ itself and needs no entry.
+   *
+   * These sit alongside the five demonstration routes below. The two schemes
+   * are different things: a station is a place the camera stands; a
+   * demonstration is a mechanism the visitor operates.
+   */
+  {
+    path: 'systems',
+    title: 'Systems',
+    description: 'Four systems, three of them load-bearing, each disclosing what it does worst.',
+  },
+  {
+    path: 'dissection',
+    title: 'Dissection',
+    description: 'Seven architecture layers, exploded, with the tenancy boundary visible.',
+  },
+  {
+    path: 'data',
+    title: 'Data',
+    description: 'One request crossing every boundary, at the speed it actually took.',
+  },
+  {
+    path: 'lab',
+    title: 'Lab',
+    description: 'The renderer measuring itself, and the experiments that did not ship.',
+  },
+  {
+    path: 'live',
+    title: 'Live',
+    description: 'The control plane, and the one latency reading that is genuinely yours.',
+  },
+  {
+    path: 'think',
+    title: 'Think',
+    description: 'Systems are half the story. The other half is judgment.',
+  },
+  {
+    path: 'build',
+    title: 'Build',
+    description: 'The next system. State: undefined.',
+  },
+  {
+    path: 'proof',
+    title: 'Proof',
+    description: 'The engineering archive, holding what this repository actually contains.',
+  },
+  {
+    path: 'end',
+    title: 'End',
+    description: 'The estate at rest, and the next problem — unknown.',
+  },
   {
     path: 'isolation',
     title: 'Isolation',
@@ -182,15 +237,13 @@ export default defineConfig({
      * bundle, so the maps were requested and served in production: 5.4MB of
      * them, and `/live/assets/index-*.js.map` returned 200 to anyone who asked.
      * This repository is public, so nothing secret leaked — but 5.4MB of deploy
-     * weight was being carried for a debugging aid no visitor uses, and the
-     * decision had never been recorded either way.
+     * weight was being carried for a debugging aid no visitor uses.
      *
      * 'hidden' still EMITS the maps, so they remain in `dist/live/assets/` for
-     * local debugging and for an error reporter that is given them out of band.
-     * It only removes the comment that tells every browser to go and fetch one.
+     * local debugging and for an error reporter given them out of band. It only
+     * removes the comment that tells every browser to go and fetch one.
      *
-     * Kept across the station-world revert: it is a deployment-weight fix with
-     * no connection to the redesign, and it is correct for either surface.
+     * This is the ONLY intentional difference between this file and 065f51e.
      */
     sourcemap: 'hidden',
     rollupOptions: {

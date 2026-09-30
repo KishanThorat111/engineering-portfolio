@@ -3299,3 +3299,178 @@ Postgres per run.
   frame measurement** carried since P4 all remain outstanding.
 - **72 "as of Jul 2026" qualifiers** remain unrefreshed, for the reason given in S2: none of the
   underlying numbers were re-checked.
+
+---
+
+## S4 — The 3D world restored to /live/, and the two surfaces separated properly · 30 September 2026
+
+**Scheme: a correction of a correction.** S3 was asked to stop the image world leaking off the
+home page and did that correctly — but it also restored `/live/` to the pre-world lattice
+surface and deleted 46 files of the owner's 3D world from the working tree. That was destroying
+work, not scoping it. This entry restores it and fixes the structure properly.
+
+### Backups first
+
+Before touching anything, two annotated tags were created and pushed:
+
+| tag | commit | what it protects |
+|---|---|---|
+| `backup-3d-world-065f51e` | `065f51e` | the ten-station 3D world — ThinkScene, Globe, the kit, every station scene |
+| `backup-baseline-45038a6` | `45038a6` | the pre-world design of every static page |
+
+Neither existed. The 3D world had been recoverable only from commit history, which is true but is
+not the same as being labelled. They are never to be deleted or moved.
+
+### The intended structure, now built
+
+1. **`/`** — the fast lane. The ten-station world as generated plate IMAGES. No 3D, no WebGL, and
+   **zero external JavaScript files**.
+2. **A primary button on `/`** — "Enter the live system" — into the world.
+3. **`/live/`** — the owner's ten-station 3D world from `065f51e`, in full.
+4. **Everything else** — the baseline design from `45038a6`.
+
+### What was restored, and what differs from 065f51e
+
+`git checkout 065f51e -- apps/experience` brought back all 46 deleted files. Diffing the result
+against `065f51e` afterwards leaves **exactly one difference**, and it is intentional:
+
+- `vite.config.ts`: `sourcemap: 'hidden'` instead of `true`. A deployment-weight fix with no
+  bearing on the 3D world — 5.4MB of maps were being served to anyone who asked. The maps are
+  still emitted for local debugging; only the comment telling browsers to fetch one is gone.
+  Verified in the rebuilt bundles: **0 `sourceMappingURL` comments**.
+
+Two shared scripts also had to come back to their `065f51e` versions, decided by reading the
+diffs rather than assumed:
+
+- **`copy-check.mjs`** — its locked-claim parity block reads `enter.claimLines` and
+  `enter.claimTail` from the experience surface's `copy.json`. The restored `copy.ts` carries
+  both again, and the `/live/` hero genuinely does split the locked sentence across display
+  lines, so the check has a real subject again. Restored.
+- **`render-verify.mjs`** — its scene-sampling clip was chosen for the station composition.
+  Restored, then one block retargeted (below).
+
+### Two surfaces, and the gate that now keeps them apart
+
+`station-check` gained the distinction the site actually has. `/live/` is **explicitly scoped
+out** of the "no world here" scan, because it is not a static page — it is the experience app,
+and it is *supposed* to be a world. Today that exclusion changes nothing: the 3D world renders
+client-side, so its shells contain none of the markers and would have passed by accident.
+Passing by accident is not being correct, and if any scene ever server-rendered a matching class
+name the gate would have failed a legitimate design.
+
+Two new assertions cover `/live/` on its own terms instead, and both were proven by injection:
+
+- **No static page may reference `/live/assets/`.** One `<script>` or one preload hint would move
+  the entire 380KB gzipped 3D bundle onto a page whose budget assumed it was absent — and nothing
+  else would notice, because the page would still be true, still accessible, still pass every
+  other gate, and simply be slow. Injected a `modulepreload` into the shared layout → **exit 1**
+  naming `404.html`, `about/` and `cv/`.
+- **`/live/` must actually be shipping the bundle**, so a gate that keeps the weight off the
+  static pages cannot quietly pass while the world stops being built at all.
+- **The home page must link to `/live/`.** The world is one click off home, and that click is the
+  whole structure. If the button is lost in a future redesign the world becomes unreachable to
+  anyone who does not know the URL and *nothing would fail* — the site would just get quieter.
+  Injected by removing every `/live/` href from the home page and its config → **exit 1**.
+
+### A gate whose subject had moved
+
+`render-verify` failed after the restore, waiting 30s for `[data-live-panel]` — the estate panel
+the home page carried before the ten-station world replaced its composition. The panel is gone;
+what it asserted is not. The home page still measures a real control plane, still offers the
+route into the world, and still has to be honest when that plane does not answer.
+
+Those three assertions were retargeted to the station world's instruments (`data-liveness`,
+`data-live-cta`, `data-live-value`) — the same retargeting this file already performed once when
+the scene's composition changed, recorded there in the same terms: a gate pointed at markup that
+no longer exists is not strict, it is broken.
+
+One of the three came back **stronger**. The old check counted visible `[data-metric]` elements
+and passed at zero. The new one reads the round-trip slots' text and requires **no digit** in
+any of them, which catches a slot rendering a stale value, a cached one, or a zero standing in
+for an answer — not merely one that failed to hide itself. Its own first version was too literal
+(it demanded exactly `—` and failed on the true string `"— ms"`), which is recorded because the
+fix made it both looser about punctuation and stricter about the thing it exists to catch.
+
+**`render-verify` 35/35.**
+
+### The routes in and out
+
+- Home's primary hero CTA is now **"Enter the live system →"**, taking the slot reference 01
+  spends on "ENTER THE SYSTEM". That slot was going to a static index while the genuinely
+  unusual thing — a running multi-tenant system a visitor can attack — sat behind a link most of
+  the way down the page. A line beneath states what it is before a visitor commits a click, and
+  the wording says "live system" rather than the reference's bare "the system" because the
+  destination is a demonstration and rule 11 requires it be labelled one. The destination labels
+  itself **DEMO PLANE** in its first screen.
+- The shared `Header` gained a sixth item, **Live**. Until now a visitor who landed on `/about`
+  or a case study had no route to the world at all. It is last, after the five blueprint §2
+  items, and is a plain nav item rather than a highlighted CTA, because the nav should not
+  oversell a page that calls itself a demonstration.
+- `/live/` already had its way back at `065f51e` — `Back to the main site` in the document and
+  the `KT.` wordmark in every station overlay. Verified present, **2 links to `/`**, unchanged.
+
+### Measured, not asserted
+
+Real transfer cost, same machine, same browser:
+
+| | requests | transfer | JavaScript | images | LCP (local) |
+|---|---|---|---|---|---|
+| **`/`** | 10 | 636 KB raw / 520 KB gz | **0 KB external** | 411 KB | 268 ms |
+| **`/live/`** | 10 | 1361 KB raw / 381 KB gz | 1304 KB / **367 KB gz** | 0 KB | 136 ms |
+
+The separation is exactly the intended one: home is images and no JavaScript bundle; the world is
+the JavaScript bundle and no images. Home's weight is plate artwork, already compressed, fetched
+by the browser's own `srcset` choice.
+
+**Home Lighthouse, three runs: performance 0.96 / 0.95 / 0.96, LCP ~2.63s, CLS 0.000,
+accessibility 1, SEO 1.** `best-practices` is 0.96 for the reason recorded in S2: the liveness
+probe logs a network error while the control plane is down, which is the honest behaviour.
+
+**`/live/` Lighthouse: 0.56, against `065f51e`'s 0.57** — identical within run variance, so the
+restore introduced no regression. It is reported as information only: `/live/` is deliberately
+absent from `lighthouserc.json`, with the reasoning recorded there since P8 — scoring a WebGL
+world as a static document measures the wrong contract, and its real gate is `render-verify`
+against a real GPU. That was true at `065f51e` and is unchanged here.
+
+### Verified
+
+`npm run verify` **exit 0** (9 gates) · `npm run api:verify` **121/121** · `format:check` clean ·
+`npm audit --omit=dev --audit-level=high` **exit 0** · `verify:render` **35/35**.
+
+Both reference commits were built in temporary git worktrees and served alongside the current
+build:
+
+- **`/live/` vs `065f51e`** at 1440/834/390: **0.058% / 0.002% / 0.000%** differing pixels. The
+  residue is animated-scene variance, not a difference — `065f51e` compared against *itself*
+  across two loads gives **0.029%**, the same order. WebGL context alive and not lost at every
+  width, canvas non-blank, zero horizontal overflow, and the only console errors are the control
+  plane's 404s, present identically in both.
+- **Nine static routes vs `45038a6`** at three widths: document heights **identical everywhere**,
+  `.vw` 0, `.station-nav` 0, `.site-header` 1, overflow 0. The only pixel difference is the new
+  `Live` nav item, and it is provably confined to it: the differing bounding box is
+  **y 17–27**, a ten-pixel band, on every page. At 390px the diff is **0.0000%**, because the nav
+  collapses behind the hamburger.
+- **The full journey**, 11 steps, all passing: home loads → no 3D bundle on home → CTA →
+  `/live/` → live WebGL canvas → DEMO PLANE label → route back → home with 10 stations → old
+  header on other pages → header links to `/live/` → header link reaches the world.
+
+### A note on CI coverage
+
+Every gate in `npm run verify`, including `gate:stations`, runs in CI. **`verify:render` does
+not, and that is by design** — Phase 3 decision 9: it drives an already-installed Edge or Chrome
+with a real GPU and downloads no browser, which is precisely why a GitHub runner cannot run it
+meaningfully. That was true at `065f51e` and is unchanged. It is stated here rather than left to
+be discovered, because "35/35 locally" and "covered in CI" are different claims.
+
+### Still open
+
+- **The control plane is offline** — Cloudflare 1033, the tunnel has no connection. The VM or
+  `cloudflared` needs restarting; it is outside this repository. Both surfaces degrade honestly:
+  `/live/` shows its REPLAY badge and says "The control plane did not answer. Nothing was
+  provisioned.", and home's readouts hold the unmeasured dash. Neither invents a number.
+- **No headshot**; the OWNER-INPUT marker stands and the generated people remain cropped out of
+  plates 07 and 08 rather than published.
+- **Demo-tenant screenshots**, **hospital telemetry permissions**, and the **mid-range device
+  frame measurement** carried since P4 remain outstanding.
+- **72 "as of Jul 2026" qualifiers** remain unrefreshed — none of the underlying numbers were
+  re-checked in this stage.
