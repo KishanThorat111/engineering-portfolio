@@ -1,0 +1,240 @@
+---
+/**
+ * A DECISION TREE — reference 09's DECISION INSIGHT, and the one component in
+ * the set that the repository can fill better than the reference imagined it.
+ *
+ * The reference draws: a DECISION box (Tenant Isolation Strategy), three OPTION
+ * boxes (Shared DB / Schema per Tenant / DB per Tenant, each with a cost), and
+ * a row of five evaluation criteria (Security, Compliance, Scalability, Cost,
+ * Performance). Its option labels and criteria values are invented.
+ *
+ * This site keeps twelve real architecture decision records, and each one
+ * carries exactly this structure in its own frontmatter: the decision, why the
+ * alternatives were rejected, and what the choice costs. The last of those —
+ * the trade-off — is the field most architecture records leave out and the one
+ * this collection always fills.
+ *
+ * So the tree is drawn from a real record, the chosen option is MARKED as
+ * chosen, and the trade-off is given its own row beneath rather than being
+ * dropped. A decision tree that shows only the branch that was taken is a
+ * diagram of a conclusion; showing what it cost is the part worth drawing.
+ *
+ * CSS GRID, NOT SVG
+ * The boxes are text of unpredictable length and must wrap, reflow and be
+ * selectable. The connectors are short borders on pseudo-elements. An SVG here
+ * would need measured text to place its lines.
+ */
+export interface Option {
+  label: string;
+  detail?: string;
+  /** Exactly one option should be the one that was taken. */
+  chosen?: boolean;
+}
+
+interface Props {
+  /** What was being decided. */
+  decision: string;
+  options: Option[];
+  /** The criteria the choice was judged on. */
+  criteria?: { label: string; value: string }[];
+  /** What the chosen option costs. Never omitted when the record has one. */
+  tradeoff?: string;
+  /** Where the record can be read in full. */
+  href?: string;
+  class?: string;
+}
+
+const { decision, options, criteria = [], tradeoff, href, class: className } = Astro.props;
+---
+
+<div class:list={['dt', className]}>
+  <div class="dt__root">
+    <span class="dt__rootLabel">Decision</span>
+    {
+      href ? (
+        <a class="dt__rootValue" href={href}>
+          {decision}
+        </a>
+      ) : (
+        <span class="dt__rootValue">{decision}</span>
+      )
+    }
+  </div>
+
+  <ul class="dt__options">
+    {
+      options.map((o) => (
+        <li class:list={['dt__option', o.chosen && 'dt__option--chosen']}>
+          <span class="dt__optionLabel">
+            {o.label}
+            {o.chosen && <span class="dt__taken">taken</span>}
+          </span>
+          {o.detail && <span class="dt__optionDetail">{o.detail}</span>}
+        </li>
+      ))
+    }
+  </ul>
+
+  {
+    criteria.length > 0 && (
+      <ul class="dt__criteria">
+        {criteria.map((c) => (
+          <li>
+            <span class="dt__critLabel">{c.label}</span>
+            <span class="dt__critValue">{c.value}</span>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  {
+    tradeoff && (
+      <p class="dt__tradeoff">
+        <span class="dt__tradeoffLabel">What it costs</span>
+        {tradeoff}
+      </p>
+    )
+  }
+</div>
+
+<style>
+  .dt {
+    display: flex;
+    flex-direction: column;
+    gap: calc(14 * var(--u, 1px));
+  }
+
+  .dt__root,
+  .dt__option {
+    border: 1px solid var(--plate-edge, #2b3345);
+    border-radius: calc(5 * var(--u, 1px));
+    padding: calc(9 * var(--u, 1px)) calc(11 * var(--u, 1px));
+    display: flex;
+    flex-direction: column;
+    gap: calc(4 * var(--u, 1px));
+    min-width: 0;
+  }
+
+  .dt__rootLabel,
+  .dt__optionLabel,
+  .dt__critLabel,
+  .dt__tradeoffLabel {
+    font-family: var(--font-mono);
+    font-size: calc(10 * var(--u, 1px));
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .dt__rootValue {
+    font-size: calc(15 * var(--u, 1px));
+    line-height: 1.35;
+    color: var(--text);
+  }
+
+  a.dt__rootValue {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--text-faint);
+  }
+
+  a.dt__rootValue:hover {
+    color: var(--signal);
+    text-decoration-color: var(--signal);
+  }
+
+  /*
+   * The three branches. Connectors are a border on a pseudo-element rather than
+   * a drawn line, so they reflow with the boxes at any width.
+   */
+  .dt__options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(calc(110 * var(--u, 1px)), 1fr));
+    gap: calc(10 * var(--u, 1px));
+    margin: 0;
+    padding: calc(12 * var(--u, 1px)) 0 0;
+    list-style: none;
+    position: relative;
+  }
+
+  .dt__options::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    height: calc(10 * var(--u, 1px));
+    border-left: 1px solid var(--plate-edge, #2b3345);
+  }
+
+  .dt__optionLabel {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: calc(8 * var(--u, 1px));
+    color: var(--text);
+    letter-spacing: 0.1em;
+  }
+
+  .dt__optionDetail {
+    font-size: calc(12 * var(--u, 1px));
+    line-height: 1.4;
+    color: var(--text-muted);
+  }
+
+  /*
+   * The branch that was taken is the only one that carries colour. Marking all
+   * three would say nothing; marking none would make this a menu rather than a
+   * decision.
+   */
+  .dt__option--chosen {
+    border-color: color-mix(in srgb, var(--signal) 55%, transparent);
+    background: color-mix(in srgb, var(--signal) 7%, transparent);
+  }
+
+  .dt__taken {
+    font-size: calc(9 * var(--u, 1px));
+    letter-spacing: 0.12em;
+    color: var(--signal);
+    white-space: nowrap;
+  }
+
+  .dt__criteria {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(calc(78 * var(--u, 1px)), 1fr));
+    gap: calc(8 * var(--u, 1px));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .dt__criteria li {
+    display: flex;
+    flex-direction: column;
+    gap: calc(3 * var(--u, 1px));
+    padding: calc(7 * var(--u, 1px)) calc(9 * var(--u, 1px));
+    border: 1px solid var(--plate-edge, #2b3345);
+    border-radius: calc(4 * var(--u, 1px));
+  }
+
+  .dt__critValue {
+    font-size: calc(12 * var(--u, 1px));
+    color: var(--text);
+  }
+
+  /*
+   * The trade-off gets its own row and the fault rule, because it is the cost
+   * of the decision and the site's whole position is that costs are published.
+   */
+  .dt__tradeoff {
+    margin: 0;
+    padding-left: calc(10 * var(--u, 1px));
+    border-left: 2px solid var(--fault);
+    font-size: calc(12 * var(--u, 1px));
+    line-height: 1.5;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    gap: calc(4 * var(--u, 1px));
+  }
+</style>

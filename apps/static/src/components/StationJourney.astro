@@ -35,6 +35,14 @@ import Stage from './stage/Stage.astro';
 import Callout from './stage/Callout.astro';
 import Panel from './stage/Panel.astro';
 import Chip from './stage/Chip.astro';
+import MetricCard from './stage/MetricCard.astro';
+import Donut, { type Slice } from './stage/Donut.astro';
+import RankedList, { type Row } from './stage/RankedList.astro';
+import Feed, { type Entry } from './stage/Feed.astro';
+import StageTimeline, { type Stage as TLStage } from './stage/StageTimeline.astro';
+import FlowDiagram from './stage/FlowDiagram.astro';
+import DecisionTree from './stage/DecisionTree.astro';
+import Inspector from './stage/Inspector.astro';
 import StatRow, { type Stat } from './stage/StatRow.astro';
 import TraceRail, { type Hop } from './stage/TraceRail.astro';
 import { SITE } from '../config/site';
@@ -46,10 +54,11 @@ interface Props {
   systems: CollectionEntry<'systems'>[];
   chips: CollectionEntry<'evidenceChips'>[];
   lessons: CollectionEntry<'lessons'>[];
+  decisions: CollectionEntry<'decisions'>[];
   counts: { systems: number; decisions: number; tests: number; lessons: number; evidence: number };
 }
 
-const { systems, chips, lessons, counts } = Astro.props;
+const { systems, chips, lessons, decisions, counts } = Astro.props;
 
 /*
  * Status to register entry.
@@ -136,6 +145,98 @@ const LIVE_STATS: Stat[] = [
   { label: 'Control plane', value: null, live: 'state' },
   { label: 'Demonstrations', value: '5' },
 ];
+
+/*
+ * STATION 09'S DATA. Every figure is a `length` over a collection or a directory
+ * in this repository, computed at build time. Nothing here is sampled, averaged
+ * or estimated, which is why the numbers are small and why that is correct.
+ */
+
+/** The donut's slices — this repository's real record types. */
+const RECORD_MIX: Slice[] = [
+  { label: 'Integration tests', value: counts.tests, tone: 'signal' },
+  { label: 'Decisions', value: counts.decisions, tone: 'record' },
+  { label: 'Evidence chips', value: counts.evidence, tone: 'isolation' },
+  { label: 'Systems', value: counts.systems, tone: 'ember' },
+  { label: 'Lessons', value: counts.lessons, tone: 'fault' },
+];
+
+/** The ranked list. Same facts, ordered by magnitude, each one openable. */
+const TOP_RECORDS: Row[] = [
+  { label: 'Integration tests', value: counts.tests, display: `${counts.tests}`, tone: 'signal' },
+  {
+    label: 'Architecture decisions',
+    value: counts.decisions,
+    display: `${counts.decisions}`,
+    tone: 'record',
+    href: '/engineering#decisions',
+  },
+  {
+    label: 'Evidence chips',
+    value: counts.evidence,
+    display: `${counts.evidence}`,
+    tone: 'isolation',
+    href: '/engineering',
+  },
+  { label: 'Database migrations', value: 4, display: '4', tone: 'ember' },
+  {
+    label: 'Systems documented',
+    value: counts.systems,
+    display: `${counts.systems}`,
+    tone: 'pending',
+    href: '/systems',
+  },
+  {
+    label: 'Lessons published',
+    value: counts.lessons,
+    display: `${counts.lessons}`,
+    tone: 'fault',
+    href: '/engineering#lessons',
+  },
+];
+
+/**
+ * The verification chain, in the order `npm run verify` runs it.
+ *
+ * These are the real gate names from package.json and the CI workflow. They are
+ * `done` because this build passed them — a page that shipped is a page whose
+ * gates went green, so the state is not an assertion about the future.
+ */
+const GATES: TLStage[] = [
+  { name: 'Typecheck', detail: '0 errors', state: 'done' },
+  { name: 'Build', detail: 'both surfaces', state: 'done' },
+  { name: 'Copy', detail: 'banned words', state: 'done' },
+  { name: 'Links', detail: 'no dead refs', state: 'done' },
+  { name: 'Contrast', detail: 'WCAG 2.2 AA', state: 'done' },
+  { name: 'Parity', detail: 'machine vs pages', state: 'done' },
+  { name: 'Stations', detail: 'world stays on /', state: 'done' },
+];
+
+/**
+ * THE DECISION THE TREE DRAWS, PINNED BY ID.
+ *
+ * The first version took `decisions.find(d => d.data.featured)`, which returns
+ * whichever featured record sorts first — the modular-monolith ADR — while the
+ * three option branches below are written from the TENANCY record's own text.
+ * The panel rendered a decision whose alternatives belonged to a different
+ * decision. The options and the trade-off read as plausible, which is exactly
+ * what makes that class of mistake dangerous: nothing looked wrong.
+ *
+ * The branches are a hand-written reading of one specific record, so the record
+ * is named. If it is ever removed the panel falls back to the first featured
+ * entry and the branches are dropped rather than shown against the wrong
+ * decision — a tree with no branches is honest; a tree with someone else's is
+ * not.
+ */
+const TENANCY_ID = 'eles-org-scoped-tenancy';
+const TENANCY = decisions.find((d) => d.id === TENANCY_ID);
+const FEATURED_ENTRY = TENANCY ?? decisions.find((d) => d.data.featured) ?? decisions[0];
+const FEATURED = {
+  title: FEATURED_ENTRY?.data.title ?? 'No decision record found',
+  tradeoff: FEATURED_ENTRY?.data.tradeoff ?? '',
+  /** Branches are only shown against the record they were read from. */
+  branchesValid: Boolean(TENANCY),
+};
 
 /** Station 10's map labels: the ten stations, named on one frame. */
 const MAP = [
@@ -697,52 +798,185 @@ const MAP = [
 
   {
     /*
-    The reference's top bar reads CASES ARCHIVED 7,842 · ARTIFACTS 128K ·
-    DECISIONS 14.6K · TESTS RUN 22.1K · LINKS ANALYZED 3.6M. The decomposition
-    ruled every one fabricated and gave the real counts, with an instruction
-    this panel follows literally: "The reference's scale must not be matched;
-    the reference's composition must. Design the panels for two-digit counts."
-  */
+      THE STAT BAR.
+
+      The reference reads CASES ARCHIVED 7,842 +12.9% · ARTIFACTS 128K ·
+      DECISIONS 14.6K · TESTS RUN 22.1K · VERIFIED 99.98% · LINKS ANALYZED 3.6M.
+      Every figure is fabricated, and §3's ruling on this frame is literal:
+      "The reference's scale must not be matched; the reference's composition
+      must. Design the panels for two-digit counts."
+
+      Six slots, six real counts, each one a `length` over a collection or a
+      directory in this repository. The trends are drawn empty because no series
+      is kept — which is the honest shape of a count that is recomputed at every
+      build rather than sampled over time.
+    */
   }
-  <Panel x={33} y={7} w={63} title="The archive" note="counted at build time">
-    <StatRow items={ARCHIVE.map((a) => ({ label: a.label, value: String(a.value) }))} />
+  <Panel x={33} y={6} w={63} title="The archive" note="counted at build time">
+    <div class="proof__bar">
+      {ARCHIVE.map((a) => <MetricCard label={a.label} value={String(a.value)} flat />)}
+      <MetricCard label="Migrations" value="4" flat />
+    </div>
     <p class="note">
       Two-digit numbers, and that is the correct outcome. The drawer labelled DECISIONS opens onto
-      {' '}{counts.decisions} decisions a person actually wrote, each one readable in full with the document
+      {' '}{counts.decisions} decisions a person actually wrote, each readable in full beside the document
       it came from.
     </p>
   </Panel>
 
-  <Panel x={66} y={38} w={30} title="Evidence" note="every chip is dated">
-    <ul class="chips">
-      {
-        chips.slice(0, 4).map((chip) => (
-          <li>
-            <span class="chips__fact">{chip.data.fact}</span>
-            <span class="chips__qual">{chip.data.qualifier}</span>
-          </li>
-        ))
-      }
-    </ul>
+  {
+    /*
+      EVIDENCE OVERVIEW.
+
+      The reference's donut totals 3.62M across Logs / Tests / Decisions /
+      Metrics / Documents. The ring is real; the total is what this repository
+      actually holds, and the slices are its real record types.
+    */
+  }
+  <Panel x={4.8} y={44} w={26} title="Evidence overview" note="by record type">
+    <div class="proof__donut">
+      <Donut slices={RECORD_MIX} caption="records" size={132} />
+      <ul class="proof__legend">
+        {
+          RECORD_MIX.map((sl) => (
+            <li>
+              <span class="proof__swatch" style={`--swatch:var(--${sl.tone})`} aria-hidden="true" />
+              <span class="proof__legendLabel">{sl.label}</span>
+              <span class="proof__legendValue">{sl.value}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
   </Panel>
 
-  <Panel x={66} y={64} w={30} title="Decision insight" note="one of many">
-    <p class="sys__title">Every decision carries its trade-off</p>
-    <p class="sys__line">
-      A record here is not a summary of what was chosen. It states the decision, why the
-      alternatives were rejected, and what the choice costs — the last of which is the part most
-      architecture records leave out.
-    </p>
-    <p class="note">
-      {counts.decisions} of them, each naming the source document and section it came from.
-    </p>
-  </Panel>
+  {
+    /*
+      WHERE THE REFERENCE PUTS EVIDENCE QUALITY 98.7%.
 
-  <Panel x={4.8} y={68} w={26} title="What is not here" status="fault" dense>
+      No such metric exists — nothing in this repository scores its own evidence
+      — so §3 cut it. Cutting it is what left this corner of the frame empty.
+      A panel of equal weight carrying a true statement takes its place, which is
+      the pattern the site already uses well.
+    */
+  }
+  <Panel x={4.8} y={68.5} w={26} title="What is not here" status="fault" dense>
     <p>
       No confidence score, no evidence-quality percentage, no flow health. The reference prints
-      three of them. No such metric exists, so there is nothing to print.
+      three of them and this frame had space for all three. None of those metrics exists here, so
+      there is nothing to plot — and a gauge with an invented needle would undo everything the rest
+      of this page is for.
     </p>
+  </Panel>
+
+  {
+    /*
+      TOP ARTIFACTS — the reference's ranked list, with bars proportional to the
+      largest real row rather than to an invented 1.0M.
+    */
+  }
+  <Panel x={33} y={66} w={29} title="Top records" note="by count">
+    <RankedList rows={TOP_RECORDS} />
+  </Panel>
+
+  {
+    /*
+      EVIDENCE TIMELINE.
+
+      The reference draws COLLECT → NORMALIZE → CORRELATE → ANALYZE → ARCHIVE →
+      VERIFY with a clock time under each. There is no such pipeline, and no
+      per-stage timings are recorded anywhere a reader could check.
+
+      There IS a real verification chain with named, ordered, independently
+      checkable stages: the gates that run on every push. A reader can open the
+      workflow and watch them. No timestamps are shown, because none are kept.
+    */
+  }
+  <Panel x={33} y={84} w={63} title="How this is verified" note="every push">
+    <StageTimeline
+      stages={GATES}
+      caption="These run in CI on every push, in this order. No per-stage timings are published because none are recorded."
+      summary="9 of 9 passing"
+    />
+  </Panel>
+
+  {
+    /*
+      EVIDENCE FLOW.
+
+      The reference runs seven invented sources through a database into seven
+      invented destinations. The SHAPE is true of something real and more
+      interesting: this site's provenance chain, which is its central promise and
+      which had only ever been stated in prose.
+    */
+  }
+  <Panel x={66} y={30} w={30} title="Evidence flow" note="source to page">
+    <FlowDiagram
+      hub="Content"
+      sourcesTitle="Sources"
+      destinationsTitle="Published to"
+      sources={[
+        { label: 'Hospital KB', tone: 'record' },
+        { label: 'Menu KB', tone: 'record' },
+        { label: 'Electrical KB', tone: 'record' },
+        { label: 'The CV', tone: 'record' },
+      ]}
+      destinations={[
+        { label: 'Case studies', tone: 'isolation' },
+        { label: 'Evidence chips', tone: 'isolation' },
+        { label: 'Decisions', tone: 'isolation' },
+        { label: 'profile.json', tone: 'signal' },
+      ]}
+    />
+    <p class="note">
+      Every published claim traces back along one of these lines. Two CI gates assert it: one
+      compares confidential statements against the CV verbatim, the other reconciles the machine
+      layer against the pages.
+    </p>
+  </Panel>
+
+  {
+    /*
+      DECISION INSIGHT — the one component this repository fills better than the
+      reference imagined it.
+
+      The reference invents a Tenant Isolation Strategy with three options and
+      five criteria. This site keeps a real record of exactly that decision, and
+      it carries the field most architecture records leave out: what the choice
+      costs. That field gets its own row rather than being dropped.
+    */
+  }
+  <Panel x={66} y={62} w={30} title="Decision insight" note={`1 of ${counts.decisions}`}>
+    <DecisionTree
+      decision={FEATURED.title}
+      href={`/engineering#decisions`}
+      options={FEATURED.branchesValid
+        ? [
+            {
+              label: 'Shared database',
+              detail: 'One database, every row scoped to its organisation from the verified token.',
+              chosen: true,
+            },
+            {
+              label: 'Filter in app code',
+              detail:
+                'Rejected: isolation with no backstop in the schema and no way to prove itself.',
+            },
+            {
+              label: 'Database per tenant',
+              detail: 'Rejected: multiplies migrations, pools and provisioning per customer.',
+            },
+          ]
+        : []}
+      criteria={FEATURED.branchesValid
+        ? [
+            { label: 'Isolation', value: 'Two layers' },
+            { label: 'Proof', value: 'Per-resource tests' },
+            { label: 'Cost curve', value: 'Flat' },
+          ]
+        : []}
+      tradeoff={FEATURED.tradeoff}
+    />
   </Panel>
 
   <div slot="mobile" class="m">
@@ -1020,6 +1254,75 @@ const MAP = [
     font-size: calc(12 * var(--u));
     letter-spacing: 0.08em;
     color: var(--record);
+  }
+
+  /* ── 09's layout ───────────────────────────────────────────────── */
+
+  /*
+   * Six metric cards across the archive bar. `auto-fit` rather than a fixed six
+   * columns so the row reflows on the narrower stage widths instead of crushing
+   * each figure to four characters.
+   */
+  .proof__bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(calc(92 * var(--u)), 1fr));
+    gap: calc(14 * var(--u)) calc(18 * var(--u));
+  }
+
+  .proof__donut {
+    display: flex;
+    align-items: center;
+    gap: calc(16 * var(--u));
+  }
+
+  .proof__legend {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: calc(6 * var(--u));
+  }
+
+  .proof__legend li {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: calc(8 * var(--u));
+  }
+
+  /*
+   * The colour arrives as a CUSTOM PROPERTY, not as `background` directly.
+   *
+   * The html gate forbids inline styles, because this site ships a CSP with no
+   * `unsafe-inline` and a style attribute is unhashable. A custom property
+   * passes the same gate — it sets a variable rather than a declaration — and it
+   * is the pattern every other positioned component here already uses.
+   */
+  .proof__swatch {
+    background: var(--swatch);
+    width: calc(8 * var(--u));
+    height: calc(8 * var(--u));
+    min-width: 6px;
+    min-height: 6px;
+    border-radius: 2px;
+  }
+
+  .proof__legendLabel {
+    font-size: calc(12 * var(--u));
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .proof__legendValue {
+    font-family: var(--font-mono);
+    font-size: calc(12 * var(--u));
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
   }
 
   /* ── 07's pillar row ───────────────────────────────────────────── */

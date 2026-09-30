@@ -106,7 +106,13 @@ const ordinal = (index: number) => String(index + 1).padStart(2, '0');
       in the same screen rather than the evidence waiting below the fold. */
   }
   <StationEnter counts={stationCounts} />
-  <StationJourney systems={systems} chips={chips} lessons={lessons} counts={stationCounts} />
+  <StationJourney
+    systems={systems}
+    chips={chips}
+    lessons={lessons}
+    decisions={decisions}
+    counts={stationCounts}
+  />
 
   <script>
     /*

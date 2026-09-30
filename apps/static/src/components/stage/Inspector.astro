@@ -1,0 +1,168 @@
+---
+/**
+ * AN INSPECTOR — reference 09's TRACE INSPECTOR, 06's TENANT ACTIVITY, and the
+ * key/value block that appears on half the frames in the set.
+ *
+ * The reference fills it with an invented trace: TRACE ID 7F39A2C168E2, REQUEST
+ * GET /api/tenants/{id}, USER service-account, TIMESTAMP 2024-03-12 11:51:31,
+ * STATUS 200 OK.
+ *
+ * The only trace this site can show a reader is the one their own browser just
+ * made, and while the control plane is down there is not even that. So rows
+ * come in two kinds and the component makes the difference visible rather than
+ * levelling them:
+ *
+ *   fact   known at build time and true regardless of the network
+ *   live   bound to the one measurement the page makes, rendering its
+ *          unmeasured dash until a reading lands, and never a stale value
+ *
+ * `<dl>` rather than a table: these are name/value pairs, not tabular data, and
+ * a screen reader announces them as pairs. A table here would promise columns
+ * that do not exist.
+ */
+export interface Row {
+  label: string;
+  /** The value. `null` with `live` set renders the unmeasured dash. */
+  value?: string | null;
+  live?: 'rtt' | 'state' | 'demos';
+  tone?: 'signal' | 'pending' | 'isolation' | 'record' | 'fault';
+  /** Renders in the mono face — ids, paths, versions. */
+  mono?: boolean;
+}
+
+interface Props {
+  rows: Row[];
+  /** Optional action under the rows. */
+  action?: { label: string; href: string };
+  class?: string;
+}
+
+const { rows, action, class: className } = Astro.props;
+---
+
+<div class:list={['insp', className]}>
+  <dl class="insp__rows">
+    {
+      rows.map((r) => (
+        <div class="insp__row">
+          <dt class="insp__label">{r.label}</dt>
+          <dd
+            class:list={[
+              'insp__value',
+              r.mono && 'insp__value--mono',
+              r.tone && `insp__value--${r.tone}`,
+            ]}
+          >
+            <span data-live-value={r.live}>{r.value ?? '—'}</span>
+          </dd>
+        </div>
+      ))
+    }
+  </dl>
+
+  {
+    action && (
+      <a class="insp__action" href={action.href}>
+        {action.label} <span aria-hidden="true">→</span>
+      </a>
+    )
+  }
+</div>
+
+<style>
+  .insp {
+    display: flex;
+    flex-direction: column;
+    gap: calc(14 * var(--u, 1px));
+  }
+
+  .insp__rows {
+    margin: 0;
+  }
+
+  .insp__row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: calc(14 * var(--u, 1px));
+    padding: calc(8 * var(--u, 1px)) 0;
+    border-bottom: 1px solid var(--plate-edge, #2b3345);
+  }
+
+  .insp__row:last-child {
+    border-bottom: 0;
+  }
+
+  .insp__label {
+    font-family: var(--font-mono);
+    font-size: calc(10 * var(--u, 1px));
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+
+  .insp__value {
+    margin: 0;
+    font-size: calc(13 * var(--u, 1px));
+    line-height: 1.35;
+    color: var(--text);
+    text-align: right;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .insp__value--mono {
+    font-family: var(--font-mono);
+    font-size: calc(12 * var(--u, 1px));
+    font-variant-numeric: tabular-nums;
+  }
+
+  .insp__value--signal {
+    color: var(--signal);
+  }
+  .insp__value--pending {
+    color: var(--pending);
+  }
+  .insp__value--fault {
+    color: var(--fault);
+  }
+  .insp__value--record {
+    color: var(--record);
+  }
+  .insp__value--isolation {
+    color: var(--isolation);
+  }
+
+  /* A live row follows the measurement's state, like every other readout. */
+  :global(:root[data-liveness='down']) .insp__value:has([data-live-value]) {
+    color: var(--fault);
+  }
+
+  :global(:root[data-liveness='live']) .insp__value:has([data-live-value]) {
+    color: var(--signal);
+  }
+
+  .insp__action {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: calc(8 * var(--u, 1px));
+    /* SC 2.5.8: a standalone control clears 24px without moving the layout. */
+    min-height: 24px;
+    padding: calc(7 * var(--u, 1px)) calc(13 * var(--u, 1px));
+    border: 1px solid var(--plate-edge, #2b3345);
+    border-radius: calc(3 * var(--u, 1px));
+    font-family: var(--font-mono);
+    font-size: calc(11 * var(--u, 1px));
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--text);
+  }
+
+  .insp__action:hover {
+    border-color: var(--signal);
+    color: var(--signal);
+  }
+</style>

@@ -1,0 +1,209 @@
+---
+/**
+ * A SOURCES → HUB → DESTINATIONS FLOW — reference 09's EVIDENCE FLOW.
+ *
+ * The reference runs seven sources (Systems, APIs, Services, Users, Devices,
+ * Tests, Jobs) into a database glyph and out to seven destinations (Archive,
+ * Analytics, Reports, Alerts, Learning, Compliance, Audit), under a FLOW HEALTH
+ * 99.98% bar.
+ *
+ * Most of that is fiction — there is no analytics pipeline, no alerting, no
+ * compliance feed, and no flow-health metric. But the SHAPE is true of
+ * something real and more interesting: this site's provenance chain. Every
+ * published claim traces from a source document, through a typed content
+ * collection, to the pages and machine artifacts that render it. That is
+ * literally sources → hub → destinations, it is the site's central promise, and
+ * until now it was stated in prose and never drawn.
+ *
+ * So the diagram ships with the real chain in it.
+ *
+ * DRAWN IN SVG, ONE VIEWBOX
+ * Curves are cubic béziers computed here, not a layout of positioned divs, so
+ * the diagram scales as one object and the lines actually meet the nodes. The
+ * labels are real text in the SVG rather than an image, so they are selectable
+ * and translate.
+ */
+export interface Node {
+  label: string;
+  tone?: 'signal' | 'pending' | 'isolation' | 'record' | 'fault' | 'structure' | 'ember';
+}
+
+interface Props {
+  sources: Node[];
+  destinations: Node[];
+  /** The label inside the hub. */
+  hub: string;
+  sourcesTitle?: string;
+  destinationsTitle?: string;
+  class?: string;
+}
+
+const {
+  sources,
+  destinations,
+  hub,
+  sourcesTitle = 'Sources',
+  destinationsTitle = 'Destinations',
+  class: className,
+} = Astro.props;
+
+/* One coordinate space for the whole diagram. */
+const W = 340;
+const H = 200;
+const HUB_X = W / 2;
+const HUB_Y = H / 2;
+const HUB_R = 17;
+const LEFT_X = 92;
+const RIGHT_X = W - 92;
+
+const spread = (n: number, i: number) => {
+  if (n === 1) return H / 2;
+  const top = 18;
+  const bottom = H - 18;
+  return top + ((bottom - top) / (n - 1)) * i;
+};
+
+const curve = (x1: number, y1: number, x2: number, y2: number) => {
+  const mx = (x1 + x2) / 2;
+  return `M${x1} ${y1.toFixed(1)} C${mx} ${y1.toFixed(1)} ${mx} ${y2.toFixed(1)} ${x2} ${y2.toFixed(1)}`;
+};
+---
+
+<figure class:list={['flow', className]}>
+  <div class="flow__heads">
+    <span>{sourcesTitle}</span>
+    <span>{destinationsTitle}</span>
+  </div>
+
+  <svg
+    viewBox={`0 0 ${W} ${H}`}
+    role="img"
+    aria-label={`${sourcesTitle} flowing through ${hub} to ${destinationsTitle}`}
+  >
+    {
+      sources.map((s, i) => (
+        <path
+          d={curve(LEFT_X, spread(sources.length, i), HUB_X - HUB_R, HUB_Y)}
+          fill="none"
+          stroke={`var(--${s.tone ?? 'record'})`}
+          stroke-width="1"
+          opacity="0.5"
+          vector-effect="non-scaling-stroke"
+        />
+      ))
+    }
+    {
+      destinations.map((d, i) => (
+        <path
+          d={curve(HUB_X + HUB_R, HUB_Y, RIGHT_X, spread(destinations.length, i))}
+          fill="none"
+          stroke={`var(--${d.tone ?? 'isolation'})`}
+          stroke-width="1"
+          opacity="0.5"
+          vector-effect="non-scaling-stroke"
+        />
+      ))
+    }
+
+    {/* Source nodes: dot on the rail, label to its left. */}
+    {
+      sources.map((s, i) => (
+        <>
+          <circle
+            cx={LEFT_X}
+            cy={spread(sources.length, i)}
+            r="2.6"
+            fill={`var(--${s.tone ?? 'record'})`}
+          />
+          <text
+            class="flow__label"
+            x={LEFT_X - 8}
+            y={spread(sources.length, i)}
+            text-anchor="end"
+            dominant-baseline="middle"
+          >
+            {s.label}
+          </text>
+        </>
+      ))
+    }
+    {
+      destinations.map((d, i) => (
+        <>
+          <circle
+            cx={RIGHT_X}
+            cy={spread(destinations.length, i)}
+            r="2.6"
+            fill={`var(--${d.tone ?? 'isolation'})`}
+          />
+          <text
+            class="flow__label"
+            x={RIGHT_X + 8}
+            y={spread(destinations.length, i)}
+            text-anchor="start"
+            dominant-baseline="middle"
+          >
+            {d.label}
+          </text>
+        </>
+      ))
+    }
+
+    {/* The hub. */}
+    <rect
+      x={HUB_X - HUB_R}
+      y={HUB_Y - HUB_R}
+      width={HUB_R * 2}
+      height={HUB_R * 2}
+      rx="5"
+      fill="var(--bg-inset, #05070c)"
+      stroke="var(--record)"
+      stroke-width="1"
+      vector-effect="non-scaling-stroke"></rect>
+    <text class="flow__hub" x={HUB_X} y={HUB_Y} text-anchor="middle" dominant-baseline="middle">
+      {hub}
+    </text>
+  </svg>
+</figure>
+
+<style>
+  .flow {
+    margin: 0;
+  }
+
+  .flow__heads {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: calc(8 * var(--u, 1px));
+    font-family: var(--font-mono);
+    font-size: calc(10 * var(--u, 1px));
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .flow svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  /*
+   * SVG text does not inherit the page's font stack the way HTML does, so the
+   * family is stated. Size is in user units and scales with the viewBox, which
+   * is what keeps the labels in proportion to the curves at any width.
+   */
+  .flow__label {
+    font-family: var(--font-sans);
+    font-size: 8px;
+    fill: var(--text-muted);
+  }
+
+  .flow__hub {
+    font-family: var(--font-mono);
+    font-size: 7px;
+    letter-spacing: 0.06em;
+    fill: var(--text);
+  }
+</style>

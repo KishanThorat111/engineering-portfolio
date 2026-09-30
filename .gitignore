@@ -36,3 +36,7 @@ services/api/test-output.log
 # identical bytes is a step that silently does not happen. The benchmark alone is
 # ~30MB of test output and is a measurement, not a deliverable.
 build/
+
+# Scratch render scripts used during verification runs. They drive a real
+# browser for the render checks and are never part of the build.
+_*.mjs

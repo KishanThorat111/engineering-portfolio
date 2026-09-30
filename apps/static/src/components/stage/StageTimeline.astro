@@ -1,0 +1,179 @@
+---
+/**
+ * A STAGE TIMELINE — reference 09's EVIDENCE TIMELINE.
+ *
+ * The reference draws six stages — COLLECT, NORMALIZE, CORRELATE, ANALYZE,
+ * ARCHIVE, VERIFY — each with a timestamp to the second, under an invented
+ * evidence id.
+ *
+ * There is no evidence pipeline with those stages. What this repository does
+ * have is a real verification chain that runs on every push and whose stages
+ * are named, ordered and independently checkable: the CI gates. A reader can
+ * open the workflow file and see them, and can watch them run. That is a truer
+ * "how this is verified" than a fabricated ETL.
+ *
+ * So the component is the reference's, and the stages are the ones that
+ * actually execute. `state` per stage is honest about what is known: a gate
+ * that passed in the last run is `done`, the chain as a whole is `done` only
+ * when every stage is.
+ *
+ * NO TIMESTAMPS ARE INVENTED. The reference puts a clock time under every
+ * stage. This has none, because the build does not record per-gate times in a
+ * form the page can read. A stage shows its name and its state, and the caption
+ * says where the record actually lives.
+ */
+export interface Stage {
+  name: string;
+  /** What that stage actually checks. One short line. */
+  detail?: string;
+  state?: 'done' | 'pending' | 'failed' | 'idle';
+}
+
+interface Props {
+  stages: Stage[];
+  /** Small line under the rail — an id, a source, a scope. */
+  caption?: string;
+  /** Right-aligned summary, e.g. "9 of 9 passing". */
+  summary?: string;
+  class?: string;
+}
+
+const { stages, caption, summary, class: className } = Astro.props;
+---
+
+<div class:list={['tl', className]}>
+  <ol class="tl__rail">
+    {
+      stages.map((s) => (
+        <li class:list={['tl__stage', `tl__stage--${s.state ?? 'idle'}`]}>
+          <span class="tl__dot" aria-hidden="true" />
+          <span class="tl__name">{s.name}</span>
+          {s.detail && <span class="tl__detail">{s.detail}</span>}
+        </li>
+      ))
+    }
+  </ol>
+
+  {
+    (caption || summary) && (
+      <p class="tl__foot">
+        {caption && <span class="tl__caption">{caption}</span>}
+        {summary && <span class="tl__summary">{summary}</span>}
+      </p>
+    )
+  }
+</div>
+
+<style>
+  .tl {
+    display: block;
+  }
+
+  .tl__rail {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tl__stage {
+    position: relative;
+    flex: 1 1 0;
+    padding-top: calc(20 * var(--u, 1px));
+    text-align: center;
+    min-width: 0;
+  }
+
+  /*
+   * The connector is drawn between stages rather than through them, so the line
+   * reads as the path and the dot reads as the stop — which is how a pipeline
+   * is drawn on paper and why it is legible at a glance.
+   */
+  .tl__stage::before {
+    content: '';
+    position: absolute;
+    top: calc(5 * var(--u, 1px));
+    left: -50%;
+    width: 100%;
+    border-top: 1px solid var(--plate-edge, #2b3345);
+  }
+
+  .tl__stage:first-child::before {
+    display: none;
+  }
+
+  .tl__dot {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(11 * var(--u, 1px));
+    height: calc(11 * var(--u, 1px));
+    min-width: 7px;
+    min-height: 7px;
+    border-radius: 50%;
+    background: var(--bg-raised, #121722);
+    border: 1px solid var(--plate-edge, #2b3345);
+  }
+
+  /* Nothing glows without a reading behind it. Idle is dark and unlit. */
+  .tl__stage--done .tl__dot {
+    background: var(--signal);
+    border-color: var(--signal);
+    box-shadow: 0 0 calc(9 * var(--u, 1px)) var(--signal);
+  }
+
+  .tl__stage--pending .tl__dot {
+    background: var(--pending);
+    border-color: var(--pending);
+  }
+
+  .tl__stage--failed .tl__dot {
+    background: var(--fault);
+    border-color: var(--fault);
+  }
+
+  .tl__name {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: calc(12 * var(--u, 1px));
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tl__detail {
+    display: block;
+    margin-top: calc(4 * var(--u, 1px));
+    font-size: calc(11 * var(--u, 1px));
+    line-height: 1.35;
+    color: var(--text-faint);
+  }
+
+  .tl__foot {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: calc(14 * var(--u, 1px));
+    margin: calc(16 * var(--u, 1px)) 0 0;
+    padding-top: calc(12 * var(--u, 1px));
+    border-top: 1px solid var(--plate-edge, #2b3345);
+  }
+
+  .tl__caption {
+    font-size: calc(12 * var(--u, 1px));
+    line-height: 1.5;
+    color: var(--text-faint);
+  }
+
+  .tl__summary {
+    font-family: var(--font-mono);
+    font-size: calc(12 * var(--u, 1px));
+    letter-spacing: 0.08em;
+    color: var(--signal);
+    white-space: nowrap;
+  }
+</style>
