@@ -27,15 +27,15 @@
   },
   "03-dissection": {
     "avif": {
-      "768": "03-dissection-768.90eff3ec.avif",
-      "1280": "03-dissection-1280.45cb3db8.avif",
-      "1920": "03-dissection-1920.1093592b.avif",
-      "2528": "03-dissection-2528.f8ed3cd4.avif"
+      "768": "03-dissection-768.9c69ebdd.avif",
+      "1280": "03-dissection-1280.5b8565c8.avif",
+      "1920": "03-dissection-1920.18cbff60.avif",
+      "2528": "03-dissection-2528.aaf66439.avif"
     },
     "webp": {
-      "768": "03-dissection-768.121f1b09.webp",
-      "1280": "03-dissection-1280.ca06886c.webp",
-      "1920": "03-dissection-1920.4510456f.webp"
+      "768": "03-dissection-768.54586d3b.webp",
+      "1280": "03-dissection-1280.8c6be6b0.webp",
+      "1920": "03-dissection-1920.52f8c887.webp"
     }
   },
   "04-data": {

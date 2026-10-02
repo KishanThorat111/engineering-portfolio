@@ -350,9 +350,15 @@ async function main() {
    * Applied before the width ladder, so no rung of any format carries a
    * readable version. Verified by rendering, not by arithmetic.
    */
-  const DEPTH_BLUR = {
-    '03-dissection': { sigma: 18, sharpUntil: 0.4, blurredFrom: 0.54 },
-  };
+  /*
+   * Retired for 03 (Oct 2026). A graduated blur over the whole lower half did
+   * hide every garbled string — and with it the best part of the plate: the
+   * persistence and infrastructure tiers, sharp and legible, which is what the
+   * station's lower labels point at. The six garbled chips are now defocused
+   * individually below (REGION_BLUR), so the rest of the frame is crisp again.
+   * The mechanism stays for any future plate that genuinely needs it.
+   */
+  const DEPTH_BLUR = {};
 
   /*
    * A DEFOCUSED SCREEN, AND WHY 04 NEEDS ONE.
@@ -375,6 +381,25 @@ async function main() {
    */
   const REGION_BLUR = {
     '04-data': { sigma: 16, feather: 16, rects: [{ x: 40, y: 830, w: 320, h: 275 }] },
+    /*
+     * 03's six chips of AI lettering ("OVRUE", "EVERT EFASUAR", "OOSI PRVKLINE",
+     * "OPLGOR SERVICES", "TWIDIEL", "OORBNONRAT"), located on the master with a
+     * percentage grid and verified by rendering. Each chip reads as a frosted
+     * tile; the legible ones around them (CACHE, POSTGRESQL, REDIS, STORAGE,
+     * NETWORK, MONITORING) stay sharp.
+     */
+    '03-dissection': {
+      sigma: 9,
+      feather: 9,
+      rects: [
+        { x: 1056, y: 972, w: 178, h: 84 },
+        { x: 1230, y: 926, w: 210, h: 90 },
+        { x: 1542, y: 860, w: 242, h: 104 },
+        { x: 1566, y: 1008, w: 238, h: 108 },
+        { x: 1654, y: 1226, w: 196, h: 94 },
+        { x: 1766, y: 1178, w: 210, h: 108 },
+      ],
+    },
   };
 
   /** Build the blur overlay for one plate, or null if it needs none. */
