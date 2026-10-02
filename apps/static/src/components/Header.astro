@@ -34,11 +34,37 @@ const navLinks = [
   { label: 'CV', href: '/cv' },
   { label: 'Live', href: '/live/' },
 ];
+
+/*
+ * The page you are on is marked in markup as well as in colour:
+ * `aria-current="page"` is what a screen reader announces, and the CSS rule
+ * hangs off that same attribute, so the visible marker and the announced one
+ * cannot disagree. A case study under /systems/ marks Systems.
+ */
+const trim = (path: string) => path.replace(/\/+$/, '') || '/';
+const here = trim(Astro.url.pathname);
+const isCurrent = (href: string) => {
+  const target = trim(href);
+  return here === target || here.startsWith(`${target}/`);
+};
 ---
 
 <header class="site-header">
-  <div class="container header-inner">
-    <a class="brand" href="/">{SITE.name}</a>
+  <div class="header-inner">
+    {
+      /*
+        THE WORDMARK. A monogram tile outlined in the brand ramp, then the name.
+        The tile and the full stop are decorative and hidden from assistive
+        technology, so the link's accessible name is exactly the visible name
+        and WCAG's label-in-name holds.
+      */
+    }
+    <a class="brand" href="/">
+      <span class="brand__mark" aria-hidden="true">KT</span>
+      <span class="brand__name"
+        >{SITE.name}<span class="brand__dot" aria-hidden="true">.</span></span
+      >
+    </a>
 
     <button
       type="button"
@@ -68,12 +94,16 @@ const navLinks = [
         {
           navLinks.map((link) => (
             <li>
-              <a href={link.href}>{link.label}</a>
+              <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>
+                {link.label}
+              </a>
             </li>
           ))
         }
-        <li>
-          <a class="contact-cta" href={`mailto:${SITE.email}`}>Contact</a>
+        <li class="site-nav__cta">
+          <a class="contact-cta" href={`mailto:${SITE.email}`}>
+            Contact <span class="contact-cta__arrow" aria-hidden="true">→</span>
+          </a>
         </li>
       </ul>
     </nav>
@@ -81,92 +111,231 @@ const navLinks = [
 </header>
 
 <style>
+  /*
+   * THE HEADER, IN THE HOME PAGE'S OWN LANGUAGE.
+   *
+   * It was a flat bar with grey sans links and a filled green button — the one
+   * part of the site still speaking the generic dark-template dialect the home
+   * page had moved away from, with a green that meant "running in production"
+   * on a link that is nothing of the kind.
+   *
+   * Now: pinned to the top on a frosted, translucent ground so the artwork
+   * reads through it as you scroll; links in the monospaced capitals the home
+   * page uses for its eyebrows; the current page marked by a hairline in the
+   * brand ramp; and Contact as a ramp-outlined pill — the same gesture as the
+   * home page's primary call to action, at header scale.
+   */
   .site-header {
-    border-block-end: var(--border-width) solid var(--border);
-    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: rgb(10 14 21 / 0.84);
+    backdrop-filter: blur(18px) saturate(150%);
+    border-block-end: 1px solid rgb(255 255 255 / 0.06);
   }
 
+  /* No backdrop blur means no translucency: the ground goes solid so the links
+     never lose contrast over a bright plate scrolling beneath. */
+  @supports not (backdrop-filter: blur(1px)) {
+    .site-header {
+      background: var(--bg);
+    }
+  }
+
+  /* The ramp as a hairline under the bar, fading out at both ends. */
+  .site-header::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: -1px;
+    height: 1px;
+    background: var(--brand-ramp);
+    opacity: 0.45;
+    mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+    pointer-events: none;
+  }
+
+  /*
+   * Full width, with the home stage's own 4.8% margin, so the wordmark sits
+   * exactly above the headline's left edge instead of 186px inside it. The
+   * reading column on inner pages stays at its measure; a bar wider than the
+   * text it heads is the normal shape of a site header.
+   */
   .header-inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-4);
-    min-height: 3.5rem;
+    min-height: 4rem;
     position: relative;
+    padding-inline: clamp(1rem, 4.8vw, 7rem);
   }
 
+  /* ── Wordmark ──────────────────────────────────────────────────── */
   .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
     color: var(--text);
-    font-weight: var(--weight-semibold);
-    font-size: var(--text-md);
     text-decoration: none;
   }
 
+  .brand__mark {
+    display: inline-grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid transparent;
+    border-radius: 0.6rem;
+    background:
+      linear-gradient(rgb(12 14 24), rgb(12 14 24)) padding-box,
+      var(--brand-ramp) border-box;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--text);
+    transition: box-shadow var(--duration-micro) var(--ease-out);
+  }
+
+  .brand:hover .brand__mark {
+    box-shadow: 0 0 18px rgb(139 108 246 / 0.35);
+  }
+
+  .brand__name {
+    font-size: 1.05rem;
+    font-weight: var(--weight-semibold);
+    letter-spacing: -0.01em;
+  }
+
+  .brand__dot {
+    color: var(--hue-violet);
+  }
+
+  /* ── Menu toggle ───────────────────────────────────────────────── */
   .nav-toggle {
     display: none;
-    background: none;
-    border: var(--border-width) solid var(--border);
-    border-radius: var(--radius);
+    background: rgb(255 255 255 / 0.03);
+    border: 1px solid rgb(255 255 255 / 0.1);
+    border-radius: 0.6rem;
     color: var(--text);
     padding: var(--space-2);
     cursor: pointer;
   }
 
+  /* ── Links ─────────────────────────────────────────────────────── */
   .site-nav ul {
     list-style: none;
     display: flex;
     align-items: center;
-    gap: var(--space-6);
+    gap: 2rem;
     margin: 0;
     padding: 0;
   }
 
   /*
-   * WCAG 2.2 AA, SC 2.5.8 Target Size (Minimum).
-   *
-   * These are the site's primary navigation and they sat on a 17px line box —
-   * under the 24px minimum on every page, at every width. They are standalone
-   * controls in a list, not links inside a sentence, so the criterion's inline
-   * exception does not apply to them.
-   *
-   * The target is grown with padding and the padding undone with an equal
-   * negative margin, so the hit area clears 24px and the header does not move
-   * by a pixel. `.contact-cta` already clears it through its own button
-   * padding and is excluded so its filled background does not grow.
+   * WCAG 2.2 AA, SC 2.5.8 Target Size (Minimum). These are standalone controls
+   * in a list, not links in a sentence, so the inline exception does not apply.
+   * The hit area is grown with padding and the padding undone with an equal
+   * negative margin, so it clears 24px and the bar does not move.
    */
   .site-nav a:not(.contact-cta) {
-    /* inline-flex + min-width so short labels like "CV" also clear 24px wide. */
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-width: 24px;
-    padding-block: 4px;
-    margin-block: -4px;
-  }
-
-  .site-nav a {
+    padding-block: 8px;
+    margin-block: -8px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
     color: var(--text-muted);
     text-decoration: none;
-    font-size: var(--text-sm);
     transition: color var(--duration-micro) var(--ease-out);
   }
 
-  .site-nav a:hover {
+  .site-nav a:not(.contact-cta):hover {
     color: var(--text);
   }
 
-  .contact-cta {
-    display: inline-block;
-    background: var(--accent);
-    color: var(--bg) !important;
-    font-weight: var(--weight-medium);
-    border-radius: var(--radius);
-    padding: var(--space-2) var(--space-4);
+  /* The ramp underline: draws in on hover, stays drawn on the current page. */
+  .site-nav a:not(.contact-cta)::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 2px;
+    height: 1px;
+    background: var(--brand-ramp);
+    transform: scaleX(0);
+    transform-origin: left;
     transition: transform var(--duration-micro) var(--ease-out);
+  }
+
+  .site-nav a:not(.contact-cta):hover::after {
+    transform: scaleX(1);
+  }
+
+  .site-nav a[aria-current='page'] {
+    color: var(--text);
+  }
+
+  .site-nav a[aria-current='page']::after {
+    height: 2px;
+    transform: scaleX(1);
+  }
+
+  /* ── Contact ───────────────────────────────────────────────────── */
+  .contact-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.55rem 1.15rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background:
+      linear-gradient(rgb(12 14 24), rgb(12 14 24)) padding-box,
+      var(--brand-ramp) border-box;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    letter-spacing: 0.02em;
+    color: var(--text);
+    text-decoration: none;
+    transition: box-shadow var(--duration-micro) var(--ease-out);
+  }
+
+  .contact-cta:hover {
+    background:
+      linear-gradient(rgb(24 20 40), rgb(24 20 40)) padding-box,
+      var(--brand-ramp) border-box;
+    box-shadow: 0 0 22px rgb(139 108 246 / 0.32);
+  }
+
+  .contact-cta__arrow {
+    transition: transform var(--duration-micro) var(--ease-out);
+  }
+
+  .contact-cta:hover .contact-cta__arrow {
+    transform: translateX(3px);
   }
 
   .contact-cta:active {
     transform: scale(0.98);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-nav a::after,
+    .contact-cta,
+    .contact-cta__arrow,
+    .brand__mark {
+      transition: none;
+    }
+
+    .contact-cta:hover .contact-cta__arrow,
+    .contact-cta:active {
+      transform: none;
+    }
   }
 
   .visually-hidden {
@@ -178,7 +347,14 @@ const navLinks = [
     white-space: nowrap;
   }
 
-  @media (max-width: 767px) {
+  /*
+   * NARROW: a frosted panel under the bar.
+   *
+   * 900px rather than 768: six monospaced capitals plus the pill need about
+   * 820px, and a bar that wraps its links onto a second line is worse than a
+   * menu button.
+   */
+  @media (max-width: 899px) {
     .nav-toggle {
       display: inline-flex;
     }
@@ -188,8 +364,15 @@ const navLinks = [
       position: absolute;
       inset-inline: 0;
       inset-block-start: 100%;
+      /*
+       * Solid, not frosted. The bar's own backdrop-filter makes it the backdrop
+       * root for everything inside it, so a blur on this panel cannot reach the
+       * page underneath — and the first build let the heading below show
+       * through the open menu. An open menu is read, not glanced at; it gets a
+       * ground that hides the page completely.
+       */
       background: var(--bg);
-      border-block-end: var(--border-width) solid var(--border);
+      border-block-end: 1px solid rgb(255 255 255 / 0.06);
       padding: var(--space-4);
       z-index: 50;
     }
@@ -201,29 +384,42 @@ const navLinks = [
     .site-nav ul {
       flex-direction: column;
       align-items: stretch;
-      gap: var(--space-2);
+      gap: var(--space-1);
     }
 
-    .site-nav a {
-      display: block;
+    .site-nav a:not(.contact-cta) {
+      display: flex;
+      justify-content: flex-start;
       padding: var(--space-3);
-      font-size: var(--text-base);
-      border-radius: var(--radius);
+      margin: 0;
+      font-size: 0.8rem;
+      border-radius: 0.6rem;
     }
 
-    .site-nav a:hover {
-      background: var(--bg-raised);
+    .site-nav a:not(.contact-cta)::after {
+      inset-inline: var(--space-3) auto;
+      width: 2.5rem;
+      inset-block-end: 6px;
+    }
+
+    .site-nav a:not(.contact-cta):hover {
+      background: rgb(255 255 255 / 0.04);
+    }
+
+    .site-nav__cta {
+      margin-block-start: var(--space-3);
     }
 
     .contact-cta {
-      text-align: center;
-      margin-block-start: var(--space-2);
+      justify-content: center;
+      width: 100%;
+      padding-block: 0.8rem;
     }
   }
 </style>
 
 <script>
-  // Mobile nav disclosure — the only client JS on the site in Phase 1.
+  // Mobile nav disclosure.
   const header = document.querySelector<HTMLElement>('.site-header');
   const toggle = document.querySelector<HTMLButtonElement>('[data-nav-toggle]');
 
@@ -245,6 +441,6 @@ const navLinks = [
     });
 
     // A resize past the breakpoint must not leave the panel stuck open.
-    matchMedia('(min-width: 768px)').addEventListener('change', () => setOpen(false));
+    matchMedia('(min-width: 900px)').addEventListener('change', () => setOpen(false));
   }
 </script>

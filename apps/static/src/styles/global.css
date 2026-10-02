@@ -17,6 +17,9 @@
 html {
   color-scheme: dark;
   scroll-behavior: smooth;
+  /* The header is pinned, so an in-page jump has to land below it rather
+     than underneath it. 4rem bar plus a little air. */
+  scroll-padding-top: 4.75rem;
 }
 
 body {
