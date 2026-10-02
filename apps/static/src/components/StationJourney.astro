@@ -1629,15 +1629,37 @@ const MAP = [
   }
 
   /*
-   * The references run a cyan-to-orange gradient through their emphasis word.
-   * Cyan is locked to mean a tenancy boundary and nothing else (§12.1), so a
-   * decorative gradient through it would be the loosening CLAUDE.md forbids.
-   * Emphasis is flat signal green — one register entry, used for the one thing
-   * it means.
+   * The emphasised word carries the brand ramp, exactly as station 01's does.
+   *
+   * It was the "live" register colour, which was a status colour used as
+   * decoration: "works.", "request", "Prove." are not things running in
+   * production. The ramp is the site speaking as itself, it starts at blue and
+   * never passes through cyan (locked to tenancy boundaries), and every stop
+   * clears 5:1 on the ground. Forced-colours mode restores the system colour,
+   * because a clipped background would otherwise take the word with it.
    */
   .claim em {
     font-style: normal;
-    color: var(--signal);
+    color: var(--hue-violet);
+  }
+
+  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    .claim em {
+      background-image: var(--brand-ramp);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .claim em {
+      background: none;
+      -webkit-text-fill-color: CanvasText;
+      color: CanvasText;
+    }
   }
 
   .lede {

@@ -39,7 +39,7 @@ const RAISED = '#12161F';
 const BORDER = '#232936';
 const TEXT = '#E8EAF0';
 const MUTED = '#9AA3B2';
-const ACCENT = '#4ADE80';
+const ACCENT = '#4C86FF';
 
 function card(entry: OgCard) {
   return {

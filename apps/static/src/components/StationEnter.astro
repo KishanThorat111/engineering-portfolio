@@ -432,12 +432,12 @@ const HOPS: Hop[] = [
    */
   .enter__claim em {
     font-style: normal;
-    color: #8b6cf6;
+    color: var(--hue-violet);
   }
 
   @supports ((-webkit-background-clip: text) or (background-clip: text)) {
     .enter__claim em {
-      background-image: linear-gradient(90deg, #4c86ff 0%, #8b6cf6 32%, #c86bbd 66%, #f2875c 100%);
+      background-image: var(--brand-ramp);
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -580,11 +580,14 @@ const HOPS: Hop[] = [
     color: var(--text);
   }
 
+  /* Hover: the outline brightens to the full ramp and the label goes white —
+     the control lights up rather than changing colour family. */
   .enter__cta--primary:hover {
-    color: var(--signal);
+    color: #fff;
     background:
-      linear-gradient(rgb(8 14 14 / 0.94), rgb(8 14 14 / 0.94)) padding-box,
-      linear-gradient(var(--signal), var(--signal)) border-box;
+      linear-gradient(rgb(14 14 26 / 0.94), rgb(14 14 26 / 0.94)) padding-box,
+      var(--brand-ramp) border-box;
+    box-shadow: 0 0 calc(28 * var(--u)) rgb(139 108 246 / 0.28);
   }
 
   .enter__ctaNote {

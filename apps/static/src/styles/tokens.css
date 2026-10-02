@@ -58,8 +58,18 @@
   --text-faint: #768095;
 
   /* --- The register: colour means state, and only state --------------- */
-  /** Running in production, now. Never used for anything that is not. */
-  --signal: #4ade80;
+  /**
+   * Running in production, now. Never used for anything that is not.
+   *
+   * BLUE, NOT GREEN, on the owner's instruction (Oct 2026). The MEANING is
+   * unchanged — this is still the one colour that says "live" — only the hue
+   * moved, to the first stop of the home page's own gradient so the register
+   * and the artwork speak one palette. It was chosen against every other entry:
+   * a saturated blue sits clear of `--structure` (a desaturated grey-blue) and
+   * of `--isolation` (cyan, whose meaning stays locked), and it clears 4.5:1 on
+   * the ground, the inset, the raised surface and the plate scrim.
+   */
+  --signal: #4c86ff;
   /** Built and not yet live. */
   --pending: #fbbf24;
   /** A tenancy boundary. Locked meaning (§12.1) — never decorative. */
@@ -78,6 +88,27 @@
   --accent: var(--signal);
   --accent-warm: var(--pending);
   --accent-danger: var(--fault);
+
+  /*
+   * THE BRAND RAMP — the home page's headline gradient, as tokens.
+   *
+   * Not a register entry and never a state: it is the site's signature, used
+   * where the site is speaking as itself — the headline's emphasis, the
+   * primary call to action's outline, the wordmark, the active navigation rule.
+   * It starts at blue and never passes through cyan, which belongs to tenancy
+   * boundaries alone. Every stop clears 5:1 on the ground.
+   */
+  --hue-blue: #4c86ff;
+  --hue-violet: #8b6cf6;
+  --hue-rose: #c86bbd;
+  --hue-ember: #f2875c;
+  --brand-ramp: linear-gradient(
+    90deg,
+    var(--hue-blue) 0%,
+    var(--hue-violet) 32%,
+    var(--hue-rose) 66%,
+    var(--hue-ember) 100%
+  );
 
   /* --- Typography ----------------------------------------------------- */
   --font-sans:
