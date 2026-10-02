@@ -118,7 +118,7 @@ const { hops, request, class: className } = Astro.props;
   .trace__hop {
     position: relative;
     flex: 1 1 0;
-    padding-top: calc(20 * var(--u));
+    padding-top: calc(32 * var(--u));
     text-align: center;
   }
 
@@ -130,13 +130,27 @@ const { hops, request, class: className } = Astro.props;
   .trace__hop::before {
     content: '';
     position: absolute;
-    top: calc(5 * var(--u));
-    left: -50%;
-    width: 100%;
-    border-top: 1px solid var(--plate-edge);
+    top: calc(8 * var(--u));
+    left: calc(-50% + 14 * var(--u));
+    width: calc(100% - 28 * var(--u));
+    border-top: 1px solid color-mix(in srgb, var(--text-faint) 70%, transparent);
   }
 
-  .trace__hop:first-child::before {
+  /* The arrowhead the reference draws on every leg: the path has a direction. */
+  .trace__hop::after {
+    content: '';
+    position: absolute;
+    top: calc(5 * var(--u));
+    left: calc(50% - 20 * var(--u));
+    width: calc(6 * var(--u));
+    height: calc(6 * var(--u));
+    border-top: 1px solid color-mix(in srgb, var(--text-faint) 80%, transparent);
+    border-right: 1px solid color-mix(in srgb, var(--text-faint) 80%, transparent);
+    transform: rotate(45deg);
+  }
+
+  .trace__hop:first-child::before,
+  .trace__hop:first-child::after {
     display: none;
   }
 
@@ -145,16 +159,30 @@ const { hops, request, class: className } = Astro.props;
     top: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: calc(11 * var(--u));
-    height: calc(11 * var(--u));
+    width: calc(16 * var(--u));
+    height: calc(16 * var(--u));
     border-radius: 50%;
     /*
-      Idle is dark and unlit, and that is the glow rule: nothing emits light
-      unless it is carrying a real measurement. These light up together, once,
-      when a round trip actually completes.
+      Each stop carries its own colour as a RING, as the reference's do. It is
+      dark inside and gives off no light, and that is the glow rule: nothing
+      emits light unless it is carrying a real measurement. They fill and glow
+      together, once, when a round trip actually completes.
     */
     background: var(--bg-raised);
-    border: 1px solid var(--plate-edge);
+    border: 2px solid color-mix(in srgb, var(--dot, var(--structure)) 70%, var(--plate-edge));
+  }
+
+  .trace__dot--structure {
+    --dot: var(--structure);
+  }
+  .trace__dot--signal {
+    --dot: var(--signal);
+  }
+  .trace__dot--isolation {
+    --dot: var(--isolation);
+  }
+  .trace__dot--record {
+    --dot: var(--record);
   }
 
   [data-trace][data-state='live'] .trace__dot--structure {
@@ -177,32 +205,34 @@ const { hops, request, class: className } = Astro.props;
     box-shadow: 0 0 calc(10 * var(--u)) var(--record);
   }
 
+  /* Down: the rings dim. What failed is stated in words beside them. */
   [data-trace][data-state='down'] .trace__dot {
-    border-color: color-mix(in srgb, var(--fault) 45%, var(--plate-edge));
+    border-color: color-mix(in srgb, var(--dot, var(--structure)) 40%, var(--plate-edge));
   }
 
   .trace__name {
     display: block;
-    font-family: var(--font-mono);
-    font-size: calc(14 * var(--u));
-    font-weight: 600;
-    letter-spacing: 0.1em;
+    font-family: var(--font-sans);
+    font-size: calc(18 * var(--u));
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     color: var(--text);
   }
 
   .trace__detail {
     display: block;
-    margin-top: calc(4 * var(--u));
+    margin-top: calc(5 * var(--u));
     font-family: var(--font-sans);
-    font-size: calc(13 * var(--u));
-    color: var(--text-faint);
+    font-size: calc(14 * var(--u));
+    color: var(--text-muted);
   }
 
   .trace__caption {
-    margin: calc(20 * var(--u)) 0 0;
+    margin: calc(22 * var(--u)) 0 0;
     font-family: var(--font-sans);
-    font-size: calc(13 * var(--u));
+    font-size: calc(14 * var(--u));
     line-height: 1.55;
-    color: var(--text-faint);
+    color: var(--text-muted);
   }
 </style>

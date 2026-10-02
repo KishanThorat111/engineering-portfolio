@@ -203,9 +203,9 @@ const {
   .cal__label {
     margin: 0;
     font-family: var(--font-sans);
-    font-size: calc(19 * var(--u));
-    font-weight: 600;
-    letter-spacing: 0.04em;
+    font-size: calc(21 * var(--u));
+    font-weight: 500;
+    letter-spacing: 0.03em;
     text-transform: uppercase;
     color: var(--text);
     text-shadow:
@@ -218,9 +218,11 @@ const {
   .cal__line {
     margin: calc(6 * var(--u)) 0 0;
     font-family: var(--font-sans);
-    font-size: calc(17 * var(--u));
+    font-size: calc(18.5 * var(--u));
     line-height: 1.45;
-    color: var(--text-muted);
+    /* Brighter than muted: the reference's sub-lines are a light grey, a
+       step below the label rather than three. */
+    color: color-mix(in srgb, var(--text) 68%, var(--text-muted));
     text-shadow:
       0 0 calc(2 * var(--u)) rgb(3 5 10 / 0.95),
       0 0 calc(7 * var(--u)) rgb(3 5 10 / 0.9),

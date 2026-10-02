@@ -390,7 +390,7 @@ const HOPS: Hop[] = [
     font-family: var(--font-mono);
     font-size: calc(22 * var(--u));
     line-height: 1.6;
-    letter-spacing: 0.13em;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
     color: color-mix(in srgb, var(--text) 86%, transparent);
   }
@@ -398,9 +398,9 @@ const HOPS: Hop[] = [
   .enter__claim {
     margin: 0;
     font-size: calc(86 * var(--u));
-    font-weight: 500;
+    font-weight: 600;
     line-height: 0.98;
-    letter-spacing: -0.028em;
+    letter-spacing: -0.032em;
     color: var(--text);
   }
 
@@ -415,9 +415,43 @@ const HOPS: Hop[] = [
    * emphasis is carried by the one register entry that IS true of this line —
    * these systems are running — so it is signal green, flat.
    */
+  /*
+   * THE REFERENCE'S GRADIENT, WITHOUT CYAN.
+   *
+   * The owner asked for this frame's colour to match reference 01 exactly, and
+   * reference 01 sets its last line in a blue-violet-rose-ember ramp. The one
+   * colour on this site that may never be decorative is cyan, which means a
+   * tenancy boundary and nothing else — so the ramp starts at blue rather than
+   * cyan, as the reference's own first letter does, and never passes through
+   * it. Every stop clears 4.5:1 on the page background; display type needs 3.
+   *
+   * `box-decoration-break: clone` gives each wrapped line its own full ramp, so
+   * "production" and "systems." both run blue to ember, as the reference's
+   * single line does. In forced-colours mode a clipped background vanishes and
+   * would take the text with it, so the system colour is restored there.
+   */
   .enter__claim em {
     font-style: normal;
-    color: var(--signal);
+    color: #8b6cf6;
+  }
+
+  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    .enter__claim em {
+      background-image: linear-gradient(90deg, #4c86ff 0%, #8b6cf6 32%, #c86bbd 66%, #f2875c 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .enter__claim em {
+      background: none;
+      -webkit-text-fill-color: CanvasText;
+      color: CanvasText;
+    }
   }
 
   .enter__lede {
@@ -425,7 +459,8 @@ const HOPS: Hop[] = [
     font-size: calc(23 * var(--u));
     font-weight: 300;
     line-height: 1.5;
-    color: color-mix(in srgb, var(--text) 78%, var(--text-muted));
+    /* The reference's paragraph is a cooler, quieter grey than its headline. */
+    color: color-mix(in srgb, var(--text) 52%, var(--text-muted));
     text-shadow: 0 calc(1 * var(--u)) calc(8 * var(--u)) rgb(0 0 0 / 0.9);
   }
 
@@ -522,12 +557,22 @@ const HOPS: Hop[] = [
    * what ships. Green arrives on hover, which is the moment the control is
    * genuinely about to do something.
    */
+  /* The reference's outline warms from blue on the left to ember on the
+     right — the headline's ramp, drawn as a hairline and far quieter. */
   .enter__cta--primary {
     gap: calc(40 * var(--u));
     padding: calc(22 * var(--u)) calc(40 * var(--u));
-    border-color: color-mix(in srgb, var(--text) 62%, transparent);
+    border-color: transparent;
     border-radius: calc(10 * var(--u));
-    background: rgb(5 7 12 / 0.45);
+    background:
+      linear-gradient(rgb(8 10 17 / 0.94), rgb(8 10 17 / 0.94)) padding-box,
+      linear-gradient(
+          90deg,
+          rgb(124 146 255 / 0.75),
+          rgb(176 132 220 / 0.6) 55%,
+          rgb(242 135 92 / 0.75)
+        )
+        border-box;
     font-family: var(--font-sans);
     font-size: calc(24 * var(--u));
     font-weight: 400;
@@ -536,9 +581,10 @@ const HOPS: Hop[] = [
   }
 
   .enter__cta--primary:hover {
-    border-color: var(--signal);
     color: var(--signal);
-    background: color-mix(in srgb, var(--signal) 10%, rgb(5 7 12 / 0.6));
+    background:
+      linear-gradient(rgb(8 14 14 / 0.94), rgb(8 14 14 / 0.94)) padding-box,
+      linear-gradient(var(--signal), var(--signal)) border-box;
   }
 
   .enter__ctaNote {
@@ -604,16 +650,14 @@ const HOPS: Hop[] = [
     box-shadow: 0 0 calc(12 * var(--u)) var(--signal);
   }
 
-  :global(:root[data-liveness='live']) .enter__state {
-    color: var(--signal);
-  }
-
+  /*
+   * The words stay white in every state and the DOT carries it, as in the
+   * reference's "● SYSTEM ONLINE". Nothing honest is lost: the sentence itself
+   * reads "not answering" when that is the truth, and the dot is red.
+   */
   :global(:root[data-liveness='down']) .enter__state-dot {
     background: var(--fault);
-  }
-
-  :global(:root[data-liveness='down']) .enter__state {
-    color: var(--fault);
+    box-shadow: 0 0 calc(10 * var(--u)) var(--fault);
   }
 
   .enter__stats {
@@ -664,16 +708,11 @@ const HOPS: Hop[] = [
    * than reporting one. Unmeasured is muted, answering is signal, not answering
    * is fault; the two counted facts stay text-coloured whatever the network does.
    */
+  /* Figures are white, as the reference's are. An unmeasured slot is a dash
+     and a refused one says "no answer" in words; neither needs a colour to
+     be read correctly. */
   .enter__stat--live {
-    color: var(--text-faint);
-  }
-
-  :global(:root[data-liveness='live']) .enter__stat--live {
-    color: var(--signal);
-  }
-
-  :global(:root[data-liveness='down']) .enter__stat--live {
-    color: var(--fault);
+    color: var(--text);
   }
 
   /* "no answer" is words, not a figure, so it is set at the label's scale
