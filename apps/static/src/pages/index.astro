@@ -44,7 +44,6 @@
 import '../styles/stations.css';
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import StationNav from '../components/StationNav.astro';
 import LiveEstatePanel from '../components/LiveEstatePanel.astro';
 import SystemField from '../components/SystemField.astro';
 import StationEnter from '../components/StationEnter.astro';
@@ -88,17 +87,25 @@ const ordinal = (index: number) => String(index + 1).padStart(2, '0');
 <BaseLayout title={title} description={SITE.subline}>
   {
     /*
-      The station rail, handed to the layout's nav slot. Every other route
-      supplies nothing and gets the layout's fallback, which is the site's
-      ordinary `Header` — the one it had before the world existed.
+      NO NAV SLOT, DELIBERATELY — the home page takes the site's own header.
 
-      It is passed rather than flagged so that the layout never imports this
-      component: an import alone was enough to put its 26 scoped rules into the
-      stylesheet every page downloads.
+      It used to hand the layout a station rail: a ten-stop index of the frames
+      below it, with a liveness pill where the site's navigation should be. That
+      made the home page the one route on the site a visitor could not navigate
+      FROM. The rail named the ten scenes of this page and nothing else — no
+      Systems, no Engineering, no CV, no Contact — so arriving at the front door
+      left you with a table of contents for one room.
+
+      Supplying nothing takes the layout's fallback, which is the ordinary
+      `Header` every other route has always used, and with it the footer the
+      page already carried. The layout still never imports the rail; the slot
+      being empty is what selects the default.
+
+      The station index is not lost. Each stage keeps its own anchor, the live
+      plane keeps its call to action, and station 10 draws the whole journey as
+      a map.
     */
   }
-  <StationNav slot="nav" current="enter" />
-
   {
     /* ── OPENING ─────────────────────────────────────────────────────────
       Asymmetric and full-bleed. The claim takes the display tier and the

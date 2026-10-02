@@ -214,8 +214,20 @@ const {
       display: block;
       position: relative;
       z-index: 2;
-      padding: clamp(4rem, 12vw, 7rem) var(--gutter, 1.25rem) clamp(3rem, 9vw, 5rem);
+      /*
+       * The same inline padding as the site header's container, so the text
+       * lines up under the wordmark. It used --gutter, the 72px desktop margin
+       * the station rail used to occupy — on a 390px phone that spent over a
+       * third of the width on empty margin once the rail was gone.
+       */
+      padding: clamp(3rem, 10vw, 6rem) var(--space-4) clamp(3rem, 9vw, 5rem);
       width: 100%;
+    }
+  }
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    .stage__mobile {
+      padding-inline: var(--space-6);
     }
   }
 </style>
