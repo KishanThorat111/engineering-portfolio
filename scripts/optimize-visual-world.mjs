@@ -354,26 +354,66 @@ async function main() {
     '03-dissection': { sigma: 18, sharpUntil: 0.4, blurredFrom: 0.54 },
   };
 
-  /** Build the graduated-blur overlay for one plate, or null if it needs none. */
+  /*
+   * A DEFOCUSED SCREEN, AND WHY 04 NEEDS ONE.
+   *
+   * `04-data` has a laptop at the far left whose screen shows a UI with a
+   * photorealistic generated face in a profile avatar, beside sidebar lettering
+   * that is AI nonsense ("Eassuauda", "Bldesult"). While the plates were shown
+   * at a ~20% crop and 55% opacity this sat at the very edge of the frame and
+   * was easy to miss. Shown whole and at full strength — which is how the plates
+   * are now displayed — it is plainly a face.
+   *
+   * The ruling is the one 07 and 08 already received: no generated person in
+   * the artwork, because on a personal portfolio it reads as a photograph of the
+   * subject. A crop is not available here, because the laptop is what station
+   * 04's "Browser" label points at. So only the screen is defocused, through a
+   * mask whose edges are themselves blurred: what remains is a lit laptop with
+   * an out-of-focus display, which is a normal photographic reading of a small
+   * screen at the edge of a shot. Coordinates are in master pixels and were
+   * located by rendering the region, not estimated.
+   */
+  const REGION_BLUR = {
+    '04-data': { sigma: 16, feather: 16, rects: [{ x: 40, y: 830, w: 320, h: 275 }] },
+  };
+
+  /** Build the blur overlay for one plate, or null if it needs none. */
   async function depthOverlay(stem, path) {
     const cfg = DEPTH_BLUR[stem];
-    if (!cfg) return null;
+    const region = REGION_BLUR[stem];
+    if (!cfg && !region) return null;
     const meta = await sharp(path).metadata();
     const w = meta.width ?? 0;
     const h = meta.height ?? 0;
     if (!w || !h) return null;
 
-    const gradient = Buffer.from(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">` +
-        `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">` +
-        `<stop offset="${cfg.sharpUntil}" stop-color="#000000"/>` +
-        `<stop offset="${cfg.blurredFrom}" stop-color="#ffffff"/>` +
-        `<stop offset="1" stop-color="#ffffff"/>` +
-        `</linearGradient></defs><rect width="${w}" height="${h}" fill="url(#g)"/></svg>`,
-    );
+    const gradient = cfg
+      ? Buffer.from(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">` +
+            `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">` +
+            `<stop offset="${cfg.sharpUntil}" stop-color="#000000"/>` +
+            `<stop offset="${cfg.blurredFrom}" stop-color="#ffffff"/>` +
+            `<stop offset="1" stop-color="#ffffff"/>` +
+            `</linearGradient></defs><rect width="${w}" height="${h}" fill="url(#g)"/></svg>`,
+        )
+      : Buffer.from(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">` +
+            `<defs><filter id="f" x="-20%" y="-20%" width="140%" height="140%">` +
+            `<feGaussianBlur stdDeviation="${region.feather}"/></filter></defs>` +
+            `<rect width="${w}" height="${h}" fill="#000000"/>` +
+            `<g filter="url(#f)">` +
+            region.rects
+              .map(
+                (r) =>
+                  `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="#ffffff"/>`,
+              )
+              .join('') +
+            `</g></svg>`,
+        );
+    const sigma = cfg ? cfg.sigma : region.sigma;
 
     const alpha = await sharp(gradient).resize(w, h).greyscale().raw().toBuffer();
-    const blurred = await sharp(path).blur(cfg.sigma).ensureAlpha().raw().toBuffer();
+    const blurred = await sharp(path).blur(sigma).ensureAlpha().raw().toBuffer();
     /* The gradient becomes the blurred copy's alpha, so it fades in rather than
        appearing at a hard edge. */
     for (let i = 0; i < w * h; i += 1) blurred[i * 4 + 3] = alpha[i];
