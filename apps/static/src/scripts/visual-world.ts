@@ -80,10 +80,19 @@ export function initVisualWorld(): void {
       const d = layer.depth;
 
       if (layer.plate) {
-        layer.plate.style.setProperty('--vw-plate-y', `${(progress * 34 * d).toFixed(2)}px`);
-        // A whisper of scale as a station centres, so arriving feels like
-        // approaching rather than like sliding.
-        const scale = 1.04 - Math.min(Math.abs(progress), 1) * 0.03;
+        /*
+         * 9px, down from 34.
+         *
+         * The plate is now shown whole, inside a 2% bleed, so the drift has to
+         * fit in that margin or it exposes the edge of the image. The depth
+         * effect survives: the atmosphere still moves at 62 and the grid at 96,
+         * and parallax is the DIFFERENCE between layers, not the size of any
+         * one of them. The plate was always meant to be the slowest thing in
+         * the frame.
+         */
+        layer.plate.style.setProperty('--vw-plate-y', `${(progress * 9 * d).toFixed(2)}px`);
+        // Scale only ever grows from 1, so it can never uncover an edge.
+        const scale = 1.02 - Math.min(Math.abs(progress), 1) * 0.02;
         layer.plate.style.setProperty('--vw-plate-scale', scale.toFixed(4));
       }
       layer.atmosphere?.style.setProperty('--vw-atmos-y', `${(progress * 62 * d).toFixed(2)}px`);

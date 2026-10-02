@@ -159,35 +159,63 @@ const nextHasPlate = next ? plateExists(next.id) : false;
     background: var(--bg);
   }
 
+  /*
+   * THE PLATE IS SHOWN WHOLE, AT ITS OWN STRENGTH.
+   *
+   * It was doing neither. `min-height: 116%` inside a box whose ratio already
+   * MATCHES the plate's own 2528:1685 meant `cover` threw away 16% of the
+   * image, and the parallax scale took it past 20% — on station 01 that cut the
+   * top off the tower and the base off the city, so the subject of the frame
+   * was the one part of it nobody could see. The oversize existed only so
+   * parallax drift could not expose an edge, which is a 2% problem that had
+   * been solved with a 20% crop.
+   *
+   * It now bleeds 2%, and the drift was reduced to fit inside that. The ratios
+   * are identical, so `cover` at 104% is an exact fit with a 2% margin all
+   * round: the whole composition is in frame at every width.
+   *
+   * And it ran at `opacity: 0.55`. The references are lit artwork — deep blacks
+   * with saturated violet, ember and cyan light in them — and 55% of that over
+   * a graphite ground is a flat grey wash, which is exactly what it looked
+   * like. The `plate` prop existed to control this and was never read; the
+   * hardcoded 0.55 overrode it on every station. The prop is honoured now and
+   * the plates run at the strength the stations ask for.
+   *
+   * Legibility is bought locally, under each block of text, by the blocks
+   * themselves — the column floor, the callout backdrop, the panel scrims — not
+   * by dimming the artwork globally. That was always the stated design; the
+   * dimming was left over from before it.
+   */
   .vw__plate {
     position: absolute;
-    /* Oversized so parallax translation never exposes an edge. */
-    inset: -8% -4%;
-    width: auto;
-    height: auto;
-    min-width: 108%;
-    min-height: 116%;
+    inset: -2%;
+    width: 104%;
+    height: 104%;
     object-fit: cover;
-    object-position: center 40%;
-    /* Held back so interface type always wins. The plates are cinematic and
-       bright in places; the interface is the content. */
-    opacity: 0.55;
+    object-position: center center;
+    opacity: var(--plate-strength, 1);
     will-change: transform;
     transform: translate3d(0, var(--vw-plate-y, 0), 0) scale(var(--vw-plate-scale, 1));
   }
 
+  /*
+   * Halved. These washes were tinting a plate already at 55% and the two
+   * together are what turned saturated artwork into a flat violet haze. With
+   * the plate at full strength the atmosphere only has to seat it against the
+   * page, not colour it.
+   */
   .vw__atmosphere {
     position: absolute;
     inset: -10%;
     background:
       radial-gradient(
         60% 50% at 72% 30%,
-        color-mix(in srgb, var(--record) 12%, transparent),
+        color-mix(in srgb, var(--record) 6%, transparent),
         transparent 70%
       ),
       radial-gradient(
         50% 45% at 20% 70%,
-        color-mix(in srgb, var(--isolation) 7%, transparent),
+        color-mix(in srgb, var(--isolation) 3%, transparent),
         transparent 72%
       );
     will-change: transform;
@@ -219,17 +247,29 @@ const nextHasPlate = next ? plateExists(next.id) : false;
     transform: translate3d(0, var(--vw-grid-y, 0), 0);
   }
 
+  /*
+   * THE SCRIM SEATS THE PLATE IN THE PAGE. IT NO LONGER PAINTS OVER IT.
+   *
+   * It used to lay solid `--bg` across the left third of every frame and fade
+   * the top and bottom quarters, which is a second dimming on top of the plate
+   * opacity and the atmosphere — three separate washes, none of which knew
+   * about the others.
+   *
+   * The left wash is gone: the text column carries its own floor now, shaped to
+   * the text rather than to a third of the frame. What is left is a short fade
+   * at the top and bottom edges so one stage dissolves into the next instead of
+   * ending on a seam.
+   */
   .vw__scrim {
     position: absolute;
     inset: 0;
-    background:
-      linear-gradient(
-        to right,
-        var(--bg) 0%,
-        color-mix(in srgb, var(--bg) 62%, transparent) 34%,
-        transparent 62%
-      ),
-      linear-gradient(to bottom, var(--bg) 0%, transparent 22%, transparent 74%, var(--bg) 100%);
+    background: linear-gradient(
+      to bottom,
+      var(--bg) 0%,
+      transparent 11%,
+      transparent 89%,
+      var(--bg) 100%
+    );
   }
 
   /*
@@ -252,18 +292,18 @@ const nextHasPlate = next ? plateExists(next.id) : false;
    * is about; biasing the position keeps it in view.
    */
   @media (max-width: 1024px) {
+    /*
+     * The narrow composition is the one place a crop is unavoidable: a 3:2
+     * cinematic frame cannot be shown whole in a tall phone viewport without
+     * becoming a letterboxed strip. So here, and only here, the plate holds its
+     * subject and lets the sides go.
+     */
     .vw__plate {
+      inset: 0;
+      width: 100%;
+      height: 100%;
       object-position: 62% 38%;
-      /*
-       * 0.62, up from 0.42.
-       *
-       * The narrow composition is where the world was least visible, which is
-       * backwards: it is the width most visitors arrive at, and the plate was
-       * faded to the point where the station read as a dark page with some text
-       * on it. Legibility is bought back below rather than by hiding the
-       * artwork.
-       */
-      opacity: 0.62;
+      opacity: calc(var(--plate-strength, 1) * 0.85);
     }
 
     .vw__grid {
