@@ -65,6 +65,12 @@ interface Props {
    * locally, under each text block, by the blocks themselves.
    */
   plate?: number;
+  /**
+   * Shifts the artwork sideways, in percent of the frame's width, within the
+   * plate's 2% bleed (so never more than 2). Used where the artwork's own
+   * pointer lines have to land under HTML labels at the reference's positions.
+   */
+  plateX?: number;
   /** Adds the fine technical grid over the plate. */
   grid?: boolean;
   /** Parallax depth; 0 disables drift for this station. */
@@ -80,6 +86,7 @@ const {
   id,
   priority = 'lazy',
   plate = 1,
+  plateX = 0,
   grid = true,
   depth = 1,
   labelledby,
@@ -93,7 +100,7 @@ const {
   id={anchor ?? id}
   aria-labelledby={labelledby}
   data-station={id}
-  style={`--plate-strength:${plate}`}
+  style={`--plate-strength:${plate}; --plate-x:${(Math.max(-2, Math.min(2, plateX)) / 1.04).toFixed(3)}%`}
 >
   <VisualWorld id={id} priority={priority} depth={depth} grid={grid} />
 

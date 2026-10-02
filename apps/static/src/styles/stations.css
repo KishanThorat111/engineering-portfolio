@@ -458,3 +458,27 @@
     transition: none;
   }
 }
+
+/*
+ * THE OPENING FRAME RUNS UP BEHIND THE HEADER.
+ *
+ * In reference 01 the artwork reaches the very top of the page and the
+ * navigation floats over it, so the eyebrow sits level with the first callout
+ * and nothing separates the bar from the scene. With the header in flow the
+ * whole frame started 64px lower, and that band read as dead space above
+ * "Engineering complexity".
+ *
+ * The first stage is pulled up by exactly the bar's height and runs beneath
+ * the frosted header. The plate's own top fade is what lies under the bar, so
+ * the header's ground is unchanged; everything inside the frame keeps its
+ * position relative to the artwork, because they move together.
+ *
+ * Desktop composition only. Below 1025px the stacked composition starts its
+ * text near the top of the frame, and pulling it up would put words under the
+ * bar.
+ */
+@media (min-width: 1025px) {
+  .stage.enter {
+    margin-top: -4rem;
+  }
+}

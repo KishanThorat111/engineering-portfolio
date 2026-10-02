@@ -195,7 +195,11 @@ const nextHasPlate = next ? plateExists(next.id) : false;
     object-position: center center;
     opacity: var(--plate-strength, 1);
     will-change: transform;
-    transform: translate3d(0, var(--vw-plate-y, 0), 0) scale(var(--vw-plate-scale, 1));
+    /* --plate-x is a placement, not motion: it is set per station so the
+       artwork's own pointer lines land under its labels. Divided by 1.04 at
+       the source, because a translate percentage is of this 104% box. */
+    transform: translate3d(var(--plate-x, 0%), var(--vw-plate-y, 0), 0)
+      scale(var(--vw-plate-scale, 1));
   }
 
   /*
@@ -278,10 +282,17 @@ const nextHasPlate = next ? plateExists(next.id) : false;
    * stops, which is exactly what the preference asks for.
    */
   @media (prefers-reduced-motion: reduce) {
-    .vw__plate,
     .vw__atmosphere,
     .vw__grid {
       transform: none !important;
+      will-change: auto;
+    }
+
+    /* The sideways placement is not motion and survives; without it the
+       labels would miss their pointers for exactly the readers who asked for
+       a calmer page. */
+    .vw__plate {
+      transform: translate3d(var(--plate-x, 0%), 0, 0) !important;
       will-change: auto;
     }
   }
@@ -302,6 +313,9 @@ const nextHasPlate = next ? plateExists(next.id) : false;
       inset: 0;
       width: 100%;
       height: 100%;
+      /* No bleed here, so no sideways placement either: it would expose the
+         plate's edge. The narrow composition has no labels on the art. */
+      --plate-x: 0%;
       object-position: 62% 38%;
       opacity: calc(var(--plate-strength, 1) * 0.85);
     }
