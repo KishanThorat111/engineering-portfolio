@@ -262,7 +262,8 @@ const nextHasPlate = next ? plateExists(next.id) : false;
    * The left wash is gone: the text column carries its own floor now, shaped to
    * the text rather than to a third of the frame. What is left is a short fade
    * at the top and bottom edges so one stage dissolves into the next instead of
-   * ending on a seam.
+   * ending on a seam — 6% each, not 11%: two 11% fades back to back put a
+   * band of near-black some 230px tall between consecutive stations.
    */
   .vw__scrim {
     position: absolute;
@@ -270,8 +271,8 @@ const nextHasPlate = next ? plateExists(next.id) : false;
     background: linear-gradient(
       to bottom,
       var(--bg) 0%,
-      transparent 11%,
-      transparent 89%,
+      transparent 6%,
+      transparent 94%,
       var(--bg) 100%
     );
   }

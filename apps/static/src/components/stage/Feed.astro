@@ -180,11 +180,34 @@ const rows = entries.slice(0, limit);
     border-top: 1px solid var(--plate-edge, #2b3345);
   }
 
+  /*
+   * `minmax(0, 1fr)`, and the source and status allowed to wrap.
+   *
+   * Both were nowrap, so the row's minimum width was the system's name plus
+   * its status side by side — "Hospital housekeeping operations" and
+   * "IN PRODUCTION — HOSPITAL" — about 424px. On a 390px phone that forced
+   * station 02's whole narrow column to 456px, and the stage's own clipping
+   * hid the overflow: the page reported no sideways scroll while cutting 50px
+   * off the right of every line. A claim is allowed to take two lines; it is
+   * not allowed to lose its last words.
+   */
   .feed--wrap .feed__row {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: baseline;
+    column-gap: calc(12 * var(--u, 1px));
     row-gap: calc(5 * var(--u, 1px));
     padding: calc(10 * var(--u, 1px)) 0;
+  }
+
+  .feed--wrap .feed__stamp,
+  .feed--wrap .feed__meta {
+    white-space: normal;
+    min-width: 0;
+  }
+
+  .feed--wrap .feed__meta {
+    text-align: right;
+    max-width: 17ch;
   }
 
   .feed--wrap .feed__text {

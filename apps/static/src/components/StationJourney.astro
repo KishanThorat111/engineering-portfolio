@@ -250,6 +250,79 @@ const ROUTES: Entry[] = [
   },
 ];
 
+/*
+ * STATION 02'S STACK LABELS, DERIVED RATHER THAN WRITTEN.
+ *
+ * Reference 02 rings its core and its islands with small labels — WORKFLOWS,
+ * STAFF, ROOMS, TICKETS, SUBSCRIPTIONS — most of them invented product
+ * features. The composition is right and the words are not ours to use.
+ *
+ * What the repository does state, for every system, is its stack. So the
+ * labels around the CORE are the items all three systems declare (computed as
+ * the intersection, so a system that drops one removes it here), and the labels
+ * beside each ISLAND are what only that system declares. Nothing on the frame
+ * is typed by hand.
+ */
+const stackOf = (s: CollectionEntry<'systems'>) => [...(s.data.stack ?? [])];
+const STACK_SHARED = systems.length
+  ? stackOf(systems[0]).filter((item) => systems.every((s) => stackOf(s).includes(item)))
+  : [];
+const stackOwn = (s: CollectionEntry<'systems'>) =>
+  stackOf(s).filter((item) => !STACK_SHARED.includes(item));
+
+/*
+ * Where each system's card and own labels hang, measured off the rendered plate
+ * with a percentage grid: the hospital island spans x 34-55% / y 10-33%, the
+ * menu island x 63-84% / y 14-34%, the electrical island x 63-85% / y 53-74%,
+ * and the core ring is centred at x 58.5% / y 42%. Cards go BESIDE islands.
+ */
+const ISLAND: Record<
+  string,
+  { hue: string; card: [number, number, number]; chips: [number, number][] }
+> = {
+  'hospital-operations': {
+    hue: 'blue',
+    card: [26, 9.5, 8.2],
+    chips: [
+      [42, 6.6],
+      [52.5, 7.6],
+    ],
+  },
+  'menu-platform': {
+    hue: 'ember',
+    card: [86.4, 9.5, 10.6],
+    chips: [
+      [68.5, 9.8],
+      [78.5, 10.6],
+    ],
+  },
+  'electrical-platform': {
+    hue: 'violet',
+    card: [86.4, 59, 10.6],
+    chips: [
+      [58.6, 61.6],
+      [59.6, 66.4],
+    ],
+  },
+};
+
+/* The shared stack's places around the core: two on each side of the ring. */
+const CORE_CHIPS: [number, number][] = [
+  [44.2, 38.4],
+  [43.6, 44.6],
+  [72.4, 38.4],
+  [72, 47],
+];
+
+/* The five patterns, as name/value rows for the bottom panel. */
+const PATTERN_ROWS = [
+  { label: 'Tenancy', value: 'Multi-tenant from the first migration' },
+  { label: 'Shape', value: 'A modular monolith, not services' },
+  { label: 'Isolation', value: 'Row-level security in the database' },
+  { label: 'Record', value: 'An audit row for every write' },
+  { label: 'Limit', value: 'The worst behaviour written down' },
+];
+
 const PATTERNS: TLStage[] = [
   { name: 'Tenancy', detail: 'multi-tenant from the first migration', state: 'done' },
   { name: 'Shape', detail: 'a modular monolith, not services', state: 'done' },
@@ -456,108 +529,141 @@ const MAP = [
 
 {/* ══ 02 SYSTEMS ═══════════════════════════════════════════════════ */}
 <Stage id="systems" depth={1.1} plate={0.95} labelledby="st-systems">
-  <div class="col col--wide">
+  {
+    /*
+      THE LEFT COLUMN, as reference 02 draws it: eyebrow, claim, lede, the call
+      to action, and the dissection list under its own heading. It is narrower
+      than it was so the first system card can sit between it and the hospital
+      island, which is where the reference hangs that card.
+    */
+  }
+  <div class="col sys__col">
     <p class="eyebrow">02 / Systems</p>
     <h2 class="claim" id="st-systems">
       <span>Explore the</span>
       <span><em>systems</em> I build.</span>
     </h2>
     <p class="lede">
-      Production systems built to solve real problems. Each one below discloses the thing it does
-      worst, before you read anything else about it.
+      Production systems built to solve real problems. Each one discloses the thing it does worst,
+      before you read anything else about it.
     </p>
-    <a class="cta" href="/systems">Open the register <span aria-hidden="true">→</span></a>
+    <a class="cta" href="/systems">Explore the systems <span aria-hidden="true">→</span></a>
 
     {
       /*
         THE SAME SIX PARTS APPEAR ON STATION 03, AND MUST NOT LOOK THE SAME.
-        Here the reader is being shown the structure itself — what opening any
-        one of these systems gets them — so no part is marked. On 03 the same
-        component marks the part that frame is actually showing.
+        Here the reader is shown the structure itself — what opening any of
+        these systems gets them — so no part is marked. On 03 the same component
+        marks the part that frame is actually showing.
       */
     }
-    <DissectionIndex
-      parts={DISSECTION}
-      caption="Every system below opens onto these six parts, in this order."
-    />
+    <p class="sys__dxHead">System dissection <span aria-hidden="true">●</span></p>
+    <DissectionIndex parts={DISSECTION} class="sys__dx" />
   </div>
 
-  {/* The three systems, over the plate, where the reference hangs its cards. */}
   {
-    systems.slice(0, 3).map((system, i) => (
-      <Panel
-        x={[37, 68, 68][i] ?? 37}
-        y={[9, 9, 55][i] ?? 9}
-        w={22}
-        title={`0${i + 1}`}
-        note={STATUS_LABELS[system.data.status].label}
-        status={TONE[system.data.status]}
-      >
-        <p class={`sys__title sys__title--${TONE[system.data.status] ?? 'plain'}`}>
-          {system.data.title}
-        </p>
-        <p class="sys__line">{system.data.problem}</p>
-      </Panel>
+    /*
+      THE THREE SYSTEM CARDS, BESIDE THEIR ISLANDS.
+
+      They were laid ON the islands — each card covered the very building it
+      described, and the frame's three subjects were hidden behind three boxes.
+      Reference 02 hangs each card beside its island, in empty space, and that
+      is where they are now. Each title takes its island's light (blue, ember,
+      violet); the status beneath it takes its register colour, because that
+      line is a state and the title is a name.
+    */
+  }
+  {
+    systems.slice(0, 3).map((system, i) => {
+      const place = ISLAND[system.id];
+      const [x, y, w] = place?.card ?? [26, 9.5, 8.2];
+      return (
+        <Panel x={x} y={y} w={w} title={`0${i + 1}`} status={TONE[system.data.status]}>
+          <p class:list={['sys__name', `sys__name--${place?.hue ?? 'blue'}`]}>
+            {system.data.title}
+          </p>
+          <p class:list={['sys__state', `sys__state--${TONE[system.data.status] ?? 'plain'}`]}>
+            {STATUS_LABELS[system.data.status].label}
+          </p>
+          <p class="sys__line">{system.data.problem}</p>
+          <a class="sys__more" href={`/systems/${system.id}`}>
+            Case study <span aria-hidden="true">→</span>
+          </a>
+        </Panel>
+      );
+    })
+  }
+
+  {/* Each system's own stack, beside its island. */}
+  {
+    systems.slice(0, 3).flatMap((system) =>
+      stackOwn(system)
+        .slice(0, 2)
+        .map((item, k) => {
+          const at = ISLAND[system.id]?.chips[k];
+          return at ? <Chip x={at[0]} y={at[1]} label={item} quiet /> : null;
+        }),
+    )
+  }
+
+  {/* The stack all three share, around the core. */}
+  {
+    STACK_SHARED.slice(0, CORE_CHIPS.length).map((item, k) => (
+      <Chip x={CORE_CHIPS[k][0]} y={CORE_CHIPS[k][1]} label={item} />
     ))
   }
 
   {
     /*
-    The reference's centre label reads ENGINEERING CORE / "Shared foundations
-    powering all systems". That is a claim about shared infrastructure, and it is
-    not true: these three systems run separately, on separate machines, for
-    separate organisations. What they actually share is one operator and one set
-    of patterns, which is a more specific and more checkable statement, so it is
-    the one that ships.
-  */
-  }
-  <Panel x={33} y={38} w={34} title="What is shared" note="the order, not the machines">
-    <StageTimeline
-      stages={PATTERNS}
-      caption="Not infrastructure — these three run separately, for separate organisations. What is shared is one operator and this order, applied each time."
-    />
-  </Panel>
-
-  {/* Real node names, from the systems' own declared stacks. */}
-  {
-    /*
-      Chips name nodes in the field, so they belong ON the field. The first
-      positions put three of them at x=28–31, inside the left text column, where
-      they read as stray labels floating over the headline rather than as names
-      attached to anything. Moved onto the plate and kept clear of the three
-      system panels and the estate readout.
+      THE CORE'S LABEL. The reference reads ENGINEERING CORE / "Shared
+      foundations powering all systems", which claims shared infrastructure.
+      These three run on separate machines for separate organisations; what
+      they share is the stack named around the ring and one way of building.
+      Same position and size as the reference's label; the true sentence.
     */
   }
-  <Chip x={45} y={30} label="Multi-tenant" />
-  <Chip x={38} y={52} label="PostgreSQL" />
-  <Chip x={47} y={70} label="Row-level security" />
-  <Chip x={62} y={82} label="Audit records" quiet />
-  <Chip x={90} y={38} label="Object storage" quiet />
-
-  {
-    /*
-      SYSTEMS OVERVIEW, bottom-right, where the reference puts a world map under
-      "3 Primary Systems / 12 Services Online". The three is real. The twelve is
-      not, and there is no map because no region is published — so the panel
-      says which figures were cut and why, in the space the map would have used.
-    */
-  }
-  <Panel x={70} y={72} w={27} title="Estate" note="as of Sep 2026">
-    <div class="ring">
-      <Donut slices={ESTATE_MIX} caption="platforms" size={112} />
-      <Legend rows={ESTATE_MIX} />
-    </div>
-    <p class="note">
-      No service, region or tenant count is published. Those figures are not measured anywhere a
-      reader could check, so they are not printed anywhere a reader could believe them.
+  <div class="sys__core">
+    <p class="sys__coreHead">Same foundations</p>
+    <p class="sys__coreLine">
+      Separate machines. One stack and one order of building, applied to each.
     </p>
-  </Panel>
+  </div>
 
-  <Panel x={4.8} y={50} w={31} title="What each one discloses" status="fault">
+  {/* ── The bottom row: three panels, as in the reference ──────────── */}
+  <Panel x={15} y={62.5} w={31} title="What each one discloses" status="fault">
     <Feed entries={DISCLOSED} wrap />
     <p class="note">
       Printed in full, in the words the case study uses. A limitation shortened to fit a panel is a
-      limitation softened, which is the failure this whole register exists to avoid.
+      limitation softened.
+    </p>
+  </Panel>
+
+  {
+    /*
+      Where the reference runs a request trace. Station 04 owns the one trace
+      this site can honestly draw, so this slot carries what the three systems
+      genuinely share — the order each one was built in.
+    */
+  }
+  <Panel x={47.5} y={79} w={23.5} title="What is shared" note="the order, not the machines">
+    <Inspector rows={PATTERN_ROWS} />
+  </Panel>
+
+  {
+    /*
+      SYSTEMS OVERVIEW. The reference prints "3 Primary Systems / 12 Services
+      Online" over a world map. The three is real; the twelve is not, and no
+      region is published, so there is no map.
+    */
+  }
+  <Panel x={72} y={79} w={25} title="Estate" note="as of Sep 2026">
+    <div class="ring">
+      <Donut slices={ESTATE_MIX} caption="platforms" size={104} />
+      <Legend rows={ESTATE_MIX} />
+    </div>
+    <p class="note">
+      No service, region or tenant count is published, because none is measured anywhere a reader
+      could check.
     </p>
   </Panel>
 
@@ -1670,26 +1776,190 @@ const MAP = [
     text-shadow: 0 calc(1 * var(--u)) calc(10 * var(--u)) rgb(0 0 0 / 0.9);
   }
 
+  /*
+   * EVERY STATION'S CALL TO ACTION IS STATION 01'S, AT STATION SCALE.
+   *
+   * It was a square, mono, grey-outlined box — a different button from the one
+   * on the opening frame, which the references draw as a rounded outline that
+   * warms from blue to ember with the label in sans capitals. One button, one
+   * shape, everywhere the site asks the reader to go somewhere.
+   */
   .cta {
     display: inline-flex;
     align-items: center;
-    gap: calc(12 * var(--u));
-    margin-top: calc(30 * var(--u));
-    padding: calc(15 * var(--u)) calc(24 * var(--u));
-    border: 1px solid var(--text-muted);
-    border-radius: calc(3 * var(--u));
-    background: var(--plate-scrim);
-    font-family: var(--font-mono);
-    font-size: calc(15 * var(--u));
-    letter-spacing: 0.12em;
+    gap: calc(30 * var(--u));
+    margin-top: calc(34 * var(--u));
+    padding: calc(18 * var(--u)) calc(32 * var(--u));
+    border: 1px solid transparent;
+    border-radius: calc(10 * var(--u));
+    background:
+      linear-gradient(rgb(8 10 17 / 0.94), rgb(8 10 17 / 0.94)) padding-box,
+      linear-gradient(
+          90deg,
+          rgb(124 146 255 / 0.75),
+          rgb(176 132 220 / 0.6) 55%,
+          rgb(242 135 92 / 0.75)
+        )
+        border-box;
+    font-family: var(--font-sans);
+    font-size: calc(19 * var(--u));
+    font-weight: 400;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     text-decoration: none;
+    white-space: nowrap;
     color: var(--text);
+    transition: box-shadow var(--duration-micro) var(--ease-out);
   }
 
   .cta:hover {
-    border-color: var(--signal);
+    background:
+      linear-gradient(rgb(14 14 26 / 0.94), rgb(14 14 26 / 0.94)) padding-box,
+      var(--brand-ramp) border-box;
+    box-shadow: 0 0 calc(24 * var(--u)) rgb(139 108 246 / 0.28);
+  }
+
+  /* ── 02's composition ──────────────────────────────────────────── */
+
+  /* Narrower than the default column, so the first card fits between the
+     claim and the hospital island, as reference 02 places it. */
+  .sys__col {
+    width: 19.8%;
+  }
+
+  /* The reference's lede is two short lines under the claim. */
+  .sys__col .lede {
+    max-width: calc(480 * var(--u));
+  }
+
+  .sys__dxHead {
+    display: flex;
+    align-items: center;
+    gap: calc(12 * var(--u));
+    margin: calc(54 * var(--u)) 0 calc(14 * var(--u));
+    font-family: var(--font-mono);
+    font-size: calc(16 * var(--u));
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--hue-blue);
+  }
+
+  .sys__dxHead span {
+    font-size: calc(8 * var(--u));
+  }
+
+  /* The six parts at the reference's scale: a column of type, not a footnote. */
+  .col :global(.sys__dx) {
+    margin-top: 0;
+    max-width: calc(300 * var(--u));
+  }
+
+  .col :global(.sys__dx .dx__row) {
+    padding-block: calc(11 * var(--u));
+  }
+
+  .col :global(.sys__dx .dx__num) {
+    font-size: calc(15 * var(--u));
+    text-decoration: underline;
+    text-underline-offset: calc(5 * var(--u));
+    text-decoration-color: color-mix(in srgb, var(--text-faint) 70%, transparent);
+  }
+
+  .col :global(.sys__dx .dx__label) {
+    font-family: var(--font-mono);
+    font-size: calc(16 * var(--u));
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* The cards. Name in the island's light; state in its register colour. */
+  .sys__name {
+    margin: calc(4 * var(--u)) 0 calc(10 * var(--u));
+    font-size: calc(21 * var(--u));
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+  }
+
+  .sys__name--blue {
+    color: var(--hue-blue);
+  }
+  .sys__name--ember {
+    color: var(--hue-ember);
+  }
+  .sys__name--violet {
+    color: var(--hue-violet);
+  }
+
+  .sys__state {
+    margin: 0 0 calc(12 * var(--u));
+    font-family: var(--font-mono);
+    font-size: calc(13 * var(--u));
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .sys__state--signal {
     color: var(--signal);
+  }
+  .sys__state--pending {
+    color: var(--pending);
+  }
+  .sys__state--plain,
+  .sys__state--fault {
+    color: var(--text-muted);
+  }
+
+  /* SC 2.5.8: a standalone link, so it clears 24px on its own. */
+  .sys__more {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(8 * var(--u));
+    min-height: 24px;
+    margin-top: calc(10 * var(--u));
+    font-family: var(--font-mono);
+    font-size: calc(13 * var(--u));
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--text-faint);
+  }
+
+  .sys__more:hover {
+    text-decoration-color: var(--hue-violet);
+  }
+
+  /* The core's label: under the ring, centred, the reference's size. */
+  .sys__core {
+    position: absolute;
+    left: 58.5%;
+    top: 51.5%;
+    width: 11%;
+    transform: translateX(-50%);
+    padding: calc(12 * var(--u)) calc(16 * var(--u));
+    border: 1px solid var(--plate-edge);
+    border-radius: calc(8 * var(--u));
+    background: var(--plate-scrim);
+    text-align: center;
+  }
+
+  .sys__coreHead {
+    margin: 0 0 calc(6 * var(--u));
+    font-size: calc(18 * var(--u));
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .sys__coreLine {
+    margin: 0;
+    font-size: calc(14 * var(--u));
+    line-height: 1.45;
+    color: var(--text-muted);
   }
 
   /* The three parts of a lesson, spaced so each reads as its own statement. */

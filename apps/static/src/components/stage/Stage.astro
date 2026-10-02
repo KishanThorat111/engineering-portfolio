@@ -229,6 +229,13 @@ const {
        */
       padding: clamp(3rem, 10vw, 6rem) var(--space-4) clamp(3rem, 9vw, 5rem);
       width: 100%;
+      /*
+       * A grid item's minimum width defaults to its content's, so one
+       * unbreakable line anywhere in a station could widen this whole column
+       * past the screen — and the stage clips, so the page never reported it.
+       * Zero lets the column hold the viewport and makes its contents wrap.
+       */
+      min-width: 0;
     }
   }
 
