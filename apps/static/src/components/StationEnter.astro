@@ -39,7 +39,6 @@
 import Stage from './stage/Stage.astro';
 import Callout from './stage/Callout.astro';
 import Panel from './stage/Panel.astro';
-import MetricCard from './stage/MetricCard.astro';
 import Feed, { type Entry } from './stage/Feed.astro';
 import TraceRail, { type Hop } from './stage/TraceRail.astro';
 import { SITE, STATUS_CHIPS } from '../config/site';
@@ -230,19 +229,19 @@ const HOPS: Hop[] = [
 
   {
     /*
-      THE INSTRUMENT PANEL.
+      THE READOUT, DRAWN THE WAY REFERENCE 01 DRAWS IT.
 
-      This corner held a status line, a four-column strip and a note, and below
-      it the frame simply stopped — the dead lower-left the rebuild is for. The
-      reference fills the same region with a labelled state, a dense metric row
-      and a scroll affordance, and it is the densest part of its composition.
+      A status line with its dot, then one row of four readings separated by
+      hairlines, standing on the artwork with no panel around it. It was a
+      bordered 2x2 card grid with trend lines and a footnote — a component that
+      made sense as a dashboard and read as a box parked in the corner of a
+      cinematic frame, which the reference never is.
 
-      It is now a real panel: four metric cards each with their own trend, a
-      state line bound to the one measurement the page makes, and the honest
-      statement that replaces the reference's uptime figure. The cards sit in a
-      2x2 grid rather than the reference's single row because this column is a
-      quarter of the frame rather than a third, and four figures across 25% would
-      each be four characters wide.
+      The four readings are the true ones, not the reference's. Round trip and
+      control plane are bound to the single measurement the page makes and show
+      their unmeasured state until it lands; demonstrations and isolation layers
+      are counted facts. Each unit is a sibling of its reading, never a child,
+      because the liveness script fills a reading by replacing its text.
     */
   }
   <div class="enter__readout">
@@ -251,17 +250,26 @@ const HOPS: Hop[] = [
       <span data-live-value="state-line">Control plane — not yet measured</span>
     </p>
 
-    <div class="enter__metrics">
-      <MetricCard label="Round trip" live="rtt" unit="ms" />
-      <MetricCard label="Control plane" live="state" flat />
-      <MetricCard label="Demonstrations" value="5" qualifier="CI-asserted" flat />
-      <MetricCard label="Isolation layers" value="2" qualifier="org scope + RLS" flat />
-    </div>
-
-    <p class="enter__note">
-      No uptime or throughput figure is published anywhere on this site. None is measured, and the
-      trends above are drawn empty because no series is kept.
-    </p>
+    <dl class="enter__stats">
+      <div>
+        <dt>Round trip</dt>
+        <dd class="enter__stat--live">
+          <span data-live-value="rtt">—</span><span class="unit">ms</span>
+        </dd>
+      </div>
+      <div>
+        <dt>Control plane</dt>
+        <dd class="enter__stat--live"><span data-live-value="state">—</span></dd>
+      </div>
+      <div>
+        <dt>Demonstrations</dt>
+        <dd>5</dd>
+      </div>
+      <div>
+        <dt>Isolation layers</dt>
+        <dd>2</dd>
+      </div>
+    </dl>
   </div>
 
   {/* ── The two callout margins ─────────────────────────────────── */}
@@ -302,9 +310,8 @@ const HOPS: Hop[] = [
       region by creating a collision.
 
       The feed is a real component and it belongs on 09, where reference 09
-      actually draws RECENT ADDITIONS. The dead region here is closed by the
-      instrument panel being genuinely dense instead, which is what the
-      reference does.
+      actually draws RECENT ADDITIONS. This corner carries what the reference
+      puts there: a state line and one row of readings.
     */
   }
 
@@ -373,18 +380,19 @@ const HOPS: Hop[] = [
   .enter__col {
     position: absolute;
     left: 4.8%;
-    top: 12.5%;
-    width: 25%;
+    top: 11.5%;
+    width: 26.5%;
   }
 
+  /* Reference 01: larger, brighter, wider-tracked than a caption. */
   .enter__eyebrow {
-    margin: 0 0 calc(34 * var(--u));
+    margin: 0 0 calc(40 * var(--u));
     font-family: var(--font-mono);
-    font-size: calc(18 * var(--u));
-    line-height: 1.55;
-    letter-spacing: 0.16em;
+    font-size: calc(22 * var(--u));
+    line-height: 1.6;
+    letter-spacing: 0.13em;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: color-mix(in srgb, var(--text) 86%, transparent);
   }
 
   .enter__claim {
@@ -413,10 +421,11 @@ const HOPS: Hop[] = [
   }
 
   .enter__lede {
-    margin: calc(22 * var(--u)) 0 0;
-    font-size: calc(20 * var(--u));
-    line-height: 1.6;
-    color: var(--text-muted);
+    margin: calc(30 * var(--u)) 0 0;
+    font-size: calc(23 * var(--u));
+    font-weight: 300;
+    line-height: 1.5;
+    color: color-mix(in srgb, var(--text) 78%, var(--text-muted));
     text-shadow: 0 calc(1 * var(--u)) calc(8 * var(--u)) rgb(0 0 0 / 0.9);
   }
 
@@ -429,16 +438,21 @@ const HOPS: Hop[] = [
     list-style: none;
   }
 
+  /*
+   * The four status chips are locked and gate-asserted, so they stay; the
+   * reference has nothing in this position, so they are drawn as quietly as
+   * they can be while still reading as the fixed facts they are — a hairline
+   * outline on the artwork, no filled box.
+   */
   .enter__chips li {
     padding: calc(7 * var(--u)) calc(13 * var(--u));
-    border: 1px solid var(--plate-edge);
-    border-radius: calc(4 * var(--u));
-    background: var(--plate-scrim);
+    border: 1px solid color-mix(in srgb, var(--text-faint) 70%, transparent);
+    border-radius: calc(6 * var(--u));
     font-family: var(--font-mono);
     font-size: calc(14 * var(--u));
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--text);
+    color: var(--text-muted);
   }
 
   /*
@@ -462,10 +476,13 @@ const HOPS: Hop[] = [
     margin-top: calc(24 * var(--u));
   }
 
+  /*
+   * Own row, so the two quiet links wrap beneath it — but sized to its label
+   * the way the reference's is, not stretched across the column.
+   */
   .enter__actions .enter__cta--primary {
-    /* Own row: the two quiet links wrap beneath it. */
-    flex: 0 0 100%;
-    justify-content: space-between;
+    flex: 0 0 auto;
+    margin-right: 100%;
   }
 
   .enter__cta {
@@ -495,13 +512,33 @@ const HOPS: Hop[] = [
    * than a filled background so it still reads as an instrument rather than a
    * marketing button, which is the register §3.2 binds this site to.
    */
+  /*
+   * REFERENCE 01'S BUTTON: neutral, rounded, generous, hugging its label.
+   *
+   * It was signal-green and full-width. Green on this site is a register — it
+   * means "running in production, right now" — and a navigation control is
+   * not a reading, so painting it green was borrowing a state it does not
+   * have. The reference draws a pale outline with white type, and that is now
+   * what ships. Green arrives on hover, which is the moment the control is
+   * genuinely about to do something.
+   */
   .enter__cta--primary {
-    border-color: var(--signal);
-    color: var(--signal);
+    gap: calc(40 * var(--u));
+    padding: calc(22 * var(--u)) calc(40 * var(--u));
+    border-color: color-mix(in srgb, var(--text) 62%, transparent);
+    border-radius: calc(10 * var(--u));
+    background: rgb(5 7 12 / 0.45);
+    font-family: var(--font-sans);
+    font-size: calc(24 * var(--u));
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    color: var(--text);
   }
 
   .enter__cta--primary:hover {
-    background: color-mix(in srgb, var(--signal) 14%, var(--plate-scrim));
+    border-color: var(--signal);
+    color: var(--signal);
+    background: color-mix(in srgb, var(--signal) 10%, rgb(5 7 12 / 0.6));
   }
 
   .enter__ctaNote {
@@ -522,92 +559,31 @@ const HOPS: Hop[] = [
     text-decoration-color: var(--text-faint);
   }
 
-  /* ── The readout block ─────────────────────────────────────────── */
+  /* ── The readout ───────────────────────────────────────────────── */
   /*
-   * 73.5%, not 69%. At 69% the status line sat on top of the two controls above
-   * it — the left column is taller than the reference's because the locked
-   * claim is four lines where the reference's invented one is three, and the
-   * locked sub-line is three lines where the reference's is two. The reference
-   * position was measured correctly and then applied to a column carrying more
-   * text; the composition moves rather than the words.
-   */
-  /*
-   * 79%, not 73.5%.
-   *
-   * The left column grew when the live-system CTA took its own row and gained a
-   * line of explanation beneath it, and the readout — positioned against the
-   * reference frame, whose column is shorter — was overlapped by 33px at 1440.
-   * Measured, not eyeballed. The reference position was right for the
-   * reference's column; this one carries more, so the block beneath it moves
-   * rather than the words being cut to fit.
+   * No panel: the reference stands this on the artwork, and the plate is dark
+   * in this corner, so it needs no box to be read. A hairline down the left
+   * edge carries the eye from the status dot into the row, as the reference's
+   * does.
    */
   .enter__readout {
     position: absolute;
     left: 4.8%;
-    top: 74%;
-    width: 29%;
-    padding: calc(20 * var(--u)) calc(22 * var(--u)) calc(22 * var(--u));
-    border: 1px solid var(--plate-edge);
-    border-radius: calc(10 * var(--u));
-    background: var(--plate-scrim);
-    backdrop-filter: blur(calc(14 * var(--u)));
-  }
-
-  /*
-   * 2x2 rather than the reference's 1x4. This column is a quarter of the frame
-   * where the reference's is a third, and four figures across 25% would each be
-   * about four characters wide — a strip of abbreviations, not a readout.
-   */
-  /*
-   * THE READING CARRIES THE COLOUR, NOT THE MARKUP.
-   *
-   * These two cards were built with `tone="signal"`, which painted "no answer"
-   * green while the control plane was down — a failure state rendered in the
-   * colour that means running in production. Colour is a register on this site
-   * and it means one thing; a card that hard-codes it is asserting a state
-   * rather than reporting one.
-   *
-   * The tone now follows `data-liveness`, which the single measurement sets.
-   * Unmeasured is muted, answering is signal, not answering is fault, and the
-   * markup states none of the three.
-   */
-  .enter__metrics :global(.mc__value) {
-    color: var(--text-faint);
-  }
-
-  :global(:root[data-liveness='live']) .enter__metrics :global(.mc__value) {
-    color: var(--signal);
-  }
-
-  :global(:root[data-liveness='down']) .enter__metrics :global(.mc__value) {
-    color: var(--fault);
-  }
-
-  /* The two counted cards are facts, not readings — they stay text-coloured. */
-  .enter__metrics > :global(.mc:nth-child(n + 3) .mc__value),
-  :global(:root[data-liveness]) .enter__metrics > :global(.mc:nth-child(n + 3) .mc__value) {
-    color: var(--text);
-  }
-
-  .enter__metrics {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: calc(13 * var(--u)) calc(20 * var(--u));
-    margin-top: calc(13 * var(--u));
-    padding-top: calc(13 * var(--u));
-    border-top: 1px solid var(--plate-edge);
+    /* Measured: at 73% the column above cleared it by 0–4px at every width. */
+    top: 76%;
+    width: 30%;
   }
 
   .enter__state {
     display: flex;
     align-items: center;
-    gap: calc(10 * var(--u));
-    margin: 0 0 calc(18 * var(--u));
+    gap: calc(14 * var(--u));
+    margin: 0 0 calc(24 * var(--u));
     font-family: var(--font-mono);
-    font-size: calc(16 * var(--u));
-    letter-spacing: 0.13em;
+    font-size: calc(19 * var(--u));
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: var(--text);
   }
 
   /*
@@ -616,8 +592,9 @@ const HOPS: Hop[] = [
    * together or not at all.
    */
   .enter__state-dot {
-    width: calc(9 * var(--u));
-    height: calc(9 * var(--u));
+    flex: none;
+    width: calc(10 * var(--u));
+    height: calc(10 * var(--u));
     border-radius: 50%;
     background: var(--text-faint);
   }
@@ -639,40 +616,111 @@ const HOPS: Hop[] = [
     color: var(--fault);
   }
 
-  .enter__note {
-    margin: calc(18 * var(--u)) 0 0;
-    font-size: calc(14 * var(--u));
-    line-height: 1.5;
-    color: var(--text-faint);
-    text-shadow: 0 calc(1 * var(--u)) calc(6 * var(--u)) rgb(0 0 0 / 0.9);
+  .enter__stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0 0 0 calc(4 * var(--u));
+    padding-left: calc(30 * var(--u));
+    border-left: 1px solid color-mix(in srgb, var(--text-faint) 55%, transparent);
+  }
+
+  .enter__stats > div {
+    display: flex;
+    flex-direction: column;
+    gap: calc(14 * var(--u));
+    padding: calc(4 * var(--u)) calc(18 * var(--u)) calc(4 * var(--u)) 0;
+    margin-right: calc(18 * var(--u));
+    border-right: 1px solid color-mix(in srgb, var(--text-faint) 55%, transparent);
+    min-width: 0;
+  }
+
+  .enter__stats > div:last-child {
+    border-right: 0;
+    margin-right: 0;
+  }
+
+  .enter__stats dt {
+    font-family: var(--font-mono);
+    font-size: calc(15 * var(--u));
+    line-height: 1.35;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .enter__stats dd {
+    margin: 0;
+    font-size: calc(34 * var(--u));
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    white-space: nowrap;
   }
 
   /*
-   * Moved out of the left column. The instrument panel grew to close the dead
-   * region and now runs to 93% of the frame, so the cue sat on its bottom edge.
-   * It moves under the callouts, left of the trace panel, where the frame is
-   * genuinely empty.
+   * THE READING CARRIES THE COLOUR, NOT THE MARKUP.
+   *
+   * A failure state rendered green would be a register asserting a state rather
+   * than reporting one. Unmeasured is muted, answering is signal, not answering
+   * is fault; the two counted facts stay text-coloured whatever the network does.
    */
-  .enter__scroll {
-    position: absolute;
-    left: 34%;
-    top: 93%;
-    display: flex;
-    align-items: center;
-    gap: calc(16 * var(--u));
-    margin: 0;
-    font-family: var(--font-mono);
-    font-size: calc(15 * var(--u));
-    letter-spacing: 0.24em;
-    text-transform: uppercase;
+  .enter__stat--live {
     color: var(--text-faint);
   }
 
+  :global(:root[data-liveness='live']) .enter__stat--live {
+    color: var(--signal);
+  }
+
+  :global(:root[data-liveness='down']) .enter__stat--live {
+    color: var(--fault);
+  }
+
+  /* "no answer" is words, not a figure, so it is set at the label's scale
+     rather than the number's, as the reference's figures never are. */
+  :global(:root[data-liveness='down']) .enter__stats dd:has([data-live-value='state']) {
+    font-size: calc(26 * var(--u));
+  }
+
+  /*
+   * The reference's position: bottom-left, under the readout. It had been moved
+   * out to 34% because a tall instrument panel occupied this corner; the panel
+   * is gone and the cue goes back where the reference draws it.
+   */
+  .enter__scroll {
+    position: absolute;
+    left: 2.7%;
+    top: 90.5%;
+    display: flex;
+    align-items: center;
+    gap: calc(30 * var(--u));
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: calc(19 * var(--u));
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
   .enter__scroll-icon {
-    width: calc(18 * var(--u));
-    height: calc(29 * var(--u));
-    border: 1px solid var(--text-faint);
-    border-radius: calc(10 * var(--u));
+    width: calc(36 * var(--u));
+    height: calc(64 * var(--u));
+    border: 2px solid var(--text-muted);
+    border-radius: calc(18 * var(--u));
+    position: relative;
+  }
+
+  /* The wheel. */
+  .enter__scroll-icon::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: calc(12 * var(--u));
+    width: 2px;
+    height: calc(10 * var(--u));
+    transform: translateX(-50%);
+    border-radius: 1px;
+    background: var(--text-muted);
   }
 
   /* ── The mobile composition ────────────────────────────────────── */

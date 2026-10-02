@@ -1566,13 +1566,36 @@ const MAP = [
     left: 4.8%;
     top: 13%;
     width: 26%;
-    padding: calc(28 * var(--u)) calc(40 * var(--u));
-    margin: calc(-28 * var(--u)) calc(-40 * var(--u));
+    /* Keeps the floor's negative z-index inside this column, behind its own
+       text and in front of the plate. */
+    isolation: isolate;
+  }
+
+  /*
+   * THE FLOOR CANNOT HAVE AN EDGE, BY CONSTRUCTION.
+   *
+   * The first version painted the gradient as the column's own background, with
+   * an ellipse larger than the box. The box clipped it while the gradient was
+   * still at half opacity, so once the plates ran at full strength it showed as
+   * a dark rectangle with hard sides behind every station heading.
+   *
+   * Now it is a separate layer much larger than the text, and the gradient is
+   * sized `closest-side`: it reaches zero at the nearest edge of its own box,
+   * so there is no point on any edge where it is still visible. The text sits
+   * in the dense middle; the edges are mathematically transparent.
+   */
+  .col::before {
+    content: '';
+    position: absolute;
+    inset: -22% -30%;
+    z-index: -1;
+    pointer-events: none;
     background: radial-gradient(
-      145% 105% at 30% 38%,
-      rgb(8 11 17 / 0.9) 0%,
-      rgb(8 11 17 / 0.74) 48%,
-      rgb(8 11 17 / 0) 88%
+      closest-side,
+      rgb(8 11 17 / 0.84) 0%,
+      rgb(8 11 17 / 0.66) 52%,
+      rgb(8 11 17 / 0.28) 80%,
+      rgb(8 11 17 / 0) 100%
     );
   }
 
@@ -1586,7 +1609,9 @@ const MAP = [
     font-size: calc(17 * var(--u));
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--text-faint);
+    /* Muted, not faint: at full plate strength the faint tone measured 4.31:1
+       on station 08 and 4.49:1 on 09, under AA. */
+    color: var(--text-muted);
   }
 
   .claim {

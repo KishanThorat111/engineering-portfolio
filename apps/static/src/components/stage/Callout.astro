@@ -134,110 +134,97 @@ const {
   }
 
   /*
-   * A LOCAL SCRIM, BECAUSE THE TEXT SHADOW WAS NOT ENOUGH.
+   * NO BOX. THE LABEL SITS ON THE ARTWORK, THE WAY THE REFERENCE DRAWS IT.
    *
-   * Measured rather than assumed: with the glyphs made transparent and the true
-   * background sampled underneath each label, callouts over the brighter parts
-   * of the plates came out at 2.69, 2.80, 2.99, 3.05, 3.11 and 3.63 to 1. WCAG
-   * 2.2 AA wants 4.5. The token-pair gate cannot see any of this — it checks
-   * token against token, and this is token against artwork.
+   * The previous version darkened a rectangle behind each label with
+   * `backdrop-filter`, feathered at the edges. Measured contrast was fine. It
+   * also put a dark tab behind every one of the eleven labels on station 01,
+   * and once the plate was restored to full strength those tabs were the most
+   * visible thing on the right of the frame — a row of black patches over the
+   * artwork the labels are there to explain. The reference has none.
    *
-   * The comment this replaces was right that a scrim BOX around each of sixty
-   * labels would bury the plate the callouts exist to explain. So this is not a
-   * box: `backdrop-filter: brightness()` pulls down whatever is actually behind
-   * the text and nothing else, the plate still reads through it, and there is
-   * no drawn edge anywhere. The text shadow stays as the fallback for engines
-   * without backdrop-filter, which is where this started.
+   * What legibility actually needs is the pixels immediately AROUND each glyph
+   * to be dark, not a rectangle. That is what a layered halo does: a tight core
+   * shadow for the stroke edges, a mid glow for the counters and gaps, and a
+   * wide faint one to pull down the field between lines. It follows the shape
+   * of the letters, so there is no edge to see.
+   *
+   * The contrast is re-measured with the halo IN PLACE and only the glyph fill
+   * removed, because the halo is the background the text is read against.
+   * Measuring with the shadow stripped would be testing a design that no longer
+   * ships.
    */
   .cal__text {
     /* Clears the dot. */
     padding-inline-start: calc(18 * var(--u));
-    /*
-     * The fade zone. The scrim is masked away across exactly this much padding,
-     * so it reaches zero before it reaches any glyph and there is never a hard
-     * edge anywhere on the frame.
-     */
-    padding-block: calc(20 * var(--u));
-    padding-inline-end: calc(26 * var(--u));
-    /* Undone, so adding the scrim moves nothing. */
-    margin-block: calc(-20 * var(--u));
-    margin-inline-end: calc(-26 * var(--u));
-    backdrop-filter: brightness(0.44) blur(calc(6 * var(--u)));
-    /*
-     * A first attempt used the same filter with no mask, and it read as a
-     * hard-edged black rectangle around every label — precisely the "scrim box
-     * around every one of sixty labels" this component's own note warned would
-     * bury the plate. The filter is right; an unfeathered box is not. The mask
-     * feathers it out through the padding on all four sides, so what remains is
-     * a local darkening of the artwork rather than a panel drawn on top of it.
-     */
-    mask-image:
-      linear-gradient(
-        to right,
-        transparent 0,
-        #000 calc(14 * var(--u)),
-        #000 calc(100% - 26 * var(--u)),
-        transparent 100%
-      ),
-      linear-gradient(
-        to bottom,
-        transparent 0,
-        #000 calc(20 * var(--u)),
-        #000 calc(100% - 20 * var(--u)),
-        transparent 100%
-      );
-    mask-composite: intersect;
-    -webkit-mask-composite: source-in;
+    position: relative;
+    isolation: isolate;
   }
 
-  /* Mirrored: a right-hand callout's text runs to its right edge, so the
-     horizontal fade has to run the other way. */
   .cal--right .cal__text {
-    padding-inline-start: calc(26 * var(--u));
+    padding-inline-start: 0;
     padding-inline-end: calc(18 * var(--u));
-    margin-inline-start: calc(-26 * var(--u));
-    margin-inline-end: 0;
     text-align: right;
-    mask-image:
-      linear-gradient(
-        to left,
-        transparent 0,
-        #000 calc(14 * var(--u)),
-        #000 calc(100% - 26 * var(--u)),
-        transparent 100%
-      ),
-      linear-gradient(
-        to bottom,
-        transparent 0,
-        #000 calc(20 * var(--u)),
-        #000 calc(100% - 20 * var(--u)),
-        transparent 100%
-      );
   }
 
+  /*
+   * A POOL OF SHADOW, NOT A BOX.
+   *
+   * The halo handles most placements on its own. It cannot handle a neon edge
+   * running straight through a line of text — measured at 1.76:1 where station
+   * 04's Browser label crosses the laptop's lit frame — because the halo only
+   * reaches as far as each glyph's own shadow radius and the gaps between words
+   * stay bright.
+   *
+   * So each label also sits in a pool: a dark ellipse blurred by more than its
+   * own size. A blurred ellipse has no edge to find, which is the whole
+   * difference from the box this replaced — that one was a rectangle feathered
+   * over twelve pixels, and its sides were plainly visible. On dark artwork the
+   * pool is indistinguishable from the plate; on a bright edge it reads as the
+   * kind of local shadow a lit object would cast.
+   */
+  .cal__text::before {
+    content: '';
+    position: absolute;
+    inset: calc(-10 * var(--u)) calc(-16 * var(--u));
+    z-index: -1;
+    pointer-events: none;
+    border-radius: 50%;
+    background: rgb(3 5 10 / 0.72);
+    filter: blur(calc(22 * var(--u)));
+  }
+
+  /*
+   * Set the way the references set them: a medium-weight sans in capitals,
+   * lightly tracked, a size up from the lines beneath it. It was mono at 0.1em,
+   * which reads as a code annotation; the references read as a labelled
+   * diagram, and the difference is mostly the face.
+   */
   .cal__label {
     margin: 0;
-    font-family: var(--font-mono);
-    font-size: calc(17 * var(--u));
+    font-family: var(--font-sans);
+    font-size: calc(19 * var(--u));
     font-weight: 600;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--text);
-    /*
-      The only text shadow on the site, and it is doing legibility work rather
-      than style work: a callout label sits directly on artwork whose luminance
-      it cannot control, and the alternative is a scrim box around every one of
-      sixty labels, which would bury the plate the callouts exist to explain.
-    */
-    text-shadow: 0 calc(1 * var(--u)) calc(6 * var(--u)) rgb(0 0 0 / 0.95);
+    text-shadow:
+      0 0 calc(2 * var(--u)) rgb(3 5 10 / 0.95),
+      0 0 calc(7 * var(--u)) rgb(3 5 10 / 0.9),
+      0 0 calc(16 * var(--u)) rgb(3 5 10 / 0.75),
+      0 0 calc(30 * var(--u)) rgb(3 5 10 / 0.55);
   }
 
   .cal__line {
-    margin: calc(5 * var(--u)) 0 0;
+    margin: calc(6 * var(--u)) 0 0;
     font-family: var(--font-sans);
-    font-size: calc(15 * var(--u));
+    font-size: calc(17 * var(--u));
     line-height: 1.45;
     color: var(--text-muted);
-    text-shadow: 0 calc(1 * var(--u)) calc(6 * var(--u)) rgb(0 0 0 / 0.95);
+    text-shadow:
+      0 0 calc(2 * var(--u)) rgb(3 5 10 / 0.95),
+      0 0 calc(7 * var(--u)) rgb(3 5 10 / 0.9),
+      0 0 calc(16 * var(--u)) rgb(3 5 10 / 0.75),
+      0 0 calc(30 * var(--u)) rgb(3 5 10 / 0.55);
   }
 </style>
