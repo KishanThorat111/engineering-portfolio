@@ -56,6 +56,12 @@ interface Props {
   tone?: 'structure' | 'signal' | 'isolation' | 'record' | 'pending' | 'fault';
   /** Width of the text block, in percent of the stage. */
   w?: number;
+  /**
+   * Draws a hairline under the label running the full width of the block to
+   * the dot — reference 03's treatment, where each layer's name sits on a rule
+   * that leads into the slab it names.
+   */
+  rule?: boolean;
 }
 
 const {
@@ -67,11 +73,12 @@ const {
   lead = 0,
   tone = 'structure',
   w = 15,
+  rule = false,
 } = Astro.props;
 ---
 
 <div
-  class:list={['cal', `cal--${side}`]}
+  class:list={['cal', `cal--${side}`, rule && 'cal--rule']}
   style={`--x:${x}%; --y:${y}%; --lead:${lead}%; --w:${w}%; --tone:var(--${tone})`}
 >
   <span class="cal__dot" aria-hidden="true"></span>
@@ -213,6 +220,13 @@ const {
       0 0 calc(7 * var(--u)) rgb(3 5 10 / 0.9),
       0 0 calc(16 * var(--u)) rgb(3 5 10 / 0.75),
       0 0 calc(30 * var(--u)) rgb(3 5 10 / 0.55);
+  }
+
+  .cal--rule .cal__label {
+    display: block;
+    padding-bottom: calc(8 * var(--u));
+    margin-bottom: calc(4 * var(--u));
+    border-bottom: 1px solid color-mix(in srgb, var(--structure) 42%, transparent);
   }
 
   .cal__line {

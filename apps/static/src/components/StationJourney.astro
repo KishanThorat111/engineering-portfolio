@@ -332,13 +332,59 @@ const PATTERNS: TLStage[] = [
 ];
 
 /** The layer stack of the flagship. Real architecture, from its own case study. */
+/*
+ * STATION 03'S LAYER LABELS, ON THE SLABS THEY NAME.
+ *
+ * Measured off the rendered plate with a percentage grid (Oct 2026), once the
+ * whole stack was visible again. `x` is where the slab's own edge is: upper
+ * layers are named from the LEFT margin, their rule running into the slab's
+ * left edge; the two lowest tiers are wider than the frame's left column
+ * allows, so they are named from their RIGHT edge, reading outward. That
+ * zig-zag is also what keeps the left of the frame free for the decisions.
+ */
 const LAYERS = [
-  { y: 13.5, label: 'Client', lines: ['Web and mobile browsers', 'QR entry, no account needed'] },
-  { y: 24.5, label: 'Edge', lines: ['Caddy, TLS termination', 'Security boundary'] },
-  { y: 35.5, label: 'API', lines: ['Fastify routes', 'Auth, rate limit, routing'] },
-  { y: 46.5, label: 'Services', lines: ['Feature modules', 'One process, one database'] },
-  { y: 57.5, label: 'Data', lines: ['PostgreSQL', 'Tenant-scoped by policy'] },
-  { y: 68.5, label: 'Observability', lines: ['OpenTelemetry', 'Spans, logs, audit records'] },
+  {
+    x: 35.4,
+    y: 11.2,
+    side: 'right',
+    label: 'Client',
+    lines: ['Web and mobile browsers', 'QR entry, no account needed'],
+  },
+  {
+    x: 35.4,
+    y: 21.4,
+    side: 'right',
+    label: 'Edge',
+    lines: ['Caddy, TLS termination', 'Security boundary'],
+  },
+  {
+    x: 36.4,
+    y: 31.6,
+    side: 'right',
+    label: 'API',
+    lines: ['Fastify routes', 'Auth, rate limit, routing'],
+  },
+  {
+    x: 32.6,
+    y: 43.4,
+    side: 'right',
+    label: 'Services',
+    lines: ['Feature modules', 'One process, one database'],
+  },
+  {
+    x: 74.6,
+    y: 63.2,
+    side: 'left',
+    label: 'Data',
+    lines: ['PostgreSQL', 'Tenant-scoped by policy'],
+  },
+  {
+    x: 82.8,
+    y: 76.4,
+    side: 'left',
+    label: 'Observability',
+    lines: ['OpenTelemetry', 'Spans, logs, audit records'],
+  },
 ] as const;
 
 /*
@@ -381,22 +427,34 @@ const FLAGSHIP_STATS: Stat[] = [
   { label: 'Layers', value: String(LAYERS.length) },
 ];
 
-/** Reference 04's stage labels, carrying architecture rather than timings. */
+/*
+ * Reference 04's stage labels, one above each object in the artwork, numbered
+ * in the order a request meets them. Positions measured off the rendered plate
+ * with a percentage grid (Oct 2026): laptop screen x 15-24, the box marked API
+ * GATEWAY x 27-35, the lock x 37-45, the service cabinet x 50-65, the cache
+ * x 66-73, the database x 77-85.
+ *
+ * The words are the demo plane's own architecture as the rest of the site
+ * states it (station 01's estate): Caddy at the edge, Redis 7 for rate limits
+ * and presence, PostgreSQL with row-level security. No timing on any stage,
+ * because none is measured.
+ */
 const STAGES = [
-  /*
-   * Moved down from y:30. The left column's lede runs to x:30.8% and this
-   * callout's text block started at x:20%, so the two overlapped — the callout
-   * sat on top of "One request crosses" and "before a response reaches". It was
-   * always an overlap; giving callouts a legibility scrim is what made it
-   * visible. The laptop it names runs well down the frame, so the label still
-   * points at its subject.
-   */
-  { x: 20, y: 41, label: 'Browser', lines: ['A request leaves'] },
-  { x: 35, y: 22, label: 'Edge', lines: ['TLS, WAF'] },
-  { x: 50, y: 30, label: 'Gateway', lines: ['Auth, rate limit'] },
-  { x: 64, y: 22, label: 'Service', lines: ['Business logic'] },
-  { x: 78, y: 30, label: 'Data', lines: ['Row-level security'] },
+  { x: 15.6, y: 33.6, label: '01 · Browser', lines: ['A request leaves'] },
+  { x: 26.4, y: 26.2, label: '02 · Gateway', lines: ['Caddy, TLS termination'] },
+  { x: 37.2, y: 21.4, label: '03 · Auth / policy', lines: ['Verify, then scope', 'to the tenant'] },
+  { x: 51, y: 15.4, label: '04 · Service', lines: ['Fastify, business logic'] },
+  { x: 66, y: 17.4, label: '05 · Cache', lines: ['Redis 7, rate limits'] },
+  { x: 86, y: 45.6, label: '06 · Data', lines: ['PostgreSQL', 'Row-level security'] },
 ] as const;
+
+/* The trace inspector's rows: what the one measured request is, and what it found. */
+const TRACE_ROWS = [
+  { label: 'Request', value: 'GET /health', mono: true },
+  { label: 'Path', value: 'Browser → Edge → Tunnel → Caddy → Fastify' },
+  { label: 'Control plane', live: 'state' as const },
+  { label: 'Round trip, ms', live: 'rtt' as const, mono: true },
+];
 
 const TRACE_HOPS: Hop[] = [
   { name: 'Browser', detail: 'your device', tone: 'structure' },
@@ -695,8 +753,14 @@ const MAP = [
 
 {/* ══ 03 DISSECTION ════════════════════════════════════════════════ */}
 <Stage id="dissection" anchor="dissection" depth={1} plate={0.95} labelledby="st-dissect">
-  <div class="col">
-    <p class="eyebrow">System / {flagship?.data.title}</p>
+  {
+    /*
+      The eyebrow breaks after the slash, as reference 03's does: on one line it
+      ran into the Client label at the top of the stack.
+    */
+  }
+  <div class="col dx3__col">
+    <p class="eyebrow">System /<br />{flagship?.data.title}</p>
     <h2 class="claim" id="st-dissect">
       <span>How the system</span>
       <span>actually <em>works</em>.</span>
@@ -707,35 +771,56 @@ const MAP = [
   {
     LAYERS.map((layer) => (
       <Callout
-        x={30}
+        x={layer.x}
         y={layer.y}
-        side="left"
+        side={layer.side}
         label={layer.label}
         lines={[...layer.lines]}
-        lead={8}
-        w={13}
+        lead={0}
+        w={layer.side === 'right' ? 10.4 : 9}
+        rule
       />
     ))
   }
 
+  {/* Under the three tenant cards the plate draws leaving the services tier. */}
   <Callout
-    x={97}
-    y={22}
-    side="right"
+    x={72.6}
+    y={40.6}
+    side="left"
     label="Tenant isolation"
     lines={['Server-derived org scope', 'plus row-level security']}
-    lead={5}
     tone="isolation"
-    w={15}
+    w={11}
   />
 
-  <Panel x={76} y={40} w={21} title="System" status="signal">
-    <dl class="facts">
+  {
+    /*
+      THE SIDEBAR reference 03 specifies, in one panel on the right: the
+      numbered index with this frame marked, the system's metadata, quick
+      stats, and the link to the full documentation. It was split across two
+      panels, one of them lying on the stack.
+    */
+  }
+  <Panel x={85.4} y={7} w={12.4} title="System dissection" dense>
+    <DissectionIndex parts={DISSECTION} active="02" dense />
+    <dl class="dx3__facts">
+      <div><dt>System</dt><dd>{flagship?.data.title}</dd></div>
       <div><dt>Type</dt><dd>Multi-tenant platform</dd></div>
-      <div><dt>Status</dt><dd>In production</dd></div>
+      <div><dt>Status</dt><dd class="dx3__live">In production</dd></div>
       <div><dt>Deployment</dt><dd>Docker Compose, one VM</dd></div>
       <div><dt>Isolation</dt><dd>Two layers, independent</dd></div>
     </dl>
+    {
+      /* Rows, not a three-column strip: three figures across a panel this
+        narrow ran past its right edge. */
+    }
+    <Inspector
+      rows={FLAGSHIP_STATS.map((st) => ({ label: st.label, value: String(st.value), mono: true }))}
+    />
+    <a class="panelLink" href={`/systems/${flagship?.id}`}>
+      Read all six parts <span aria-hidden="true">→</span>
+    </a>
     <p class="note">
       The reference names a region and a Kubernetes cluster here. This system runs on neither, and
       its region is not published.
@@ -744,39 +829,18 @@ const MAP = [
 
   {
     /*
-      THE SIDEBAR reference 03 specifies: numbered index, system metadata,
-      quick stats, and a link to the documentation. The metadata sits in the
-      System panel opposite; the other three are here.
-    */
-  }
-  <Panel x={4.8} y={50} w={24} title="Dissection" dense>
-    <DissectionIndex
-      parts={DISSECTION}
-      active="02"
-      dense
-      caption="This frame is part 02. The other five are on the case study."
-    />
-    <StatRow items={FLAGSHIP_STATS} />
-    <a class="panelLink" href={`/systems/${flagship?.id}`}>
-      Read all six parts <span aria-hidden="true">→</span>
-    </a>
-  </Panel>
-
-  {
-    /*
-      THE BAND ALONG THE BOTTOM. The lede ends "Understand the decisions." and
-      the frame showed none of them; these are the four this system actually
-      has, each printed with what it cost.
+      THE DECISIONS, in the empty left of the frame below the claim — the lede
+      ends "Understand the decisions." Each is printed with what it cost.
     */
   }
   <Panel
-    x={33}
-    y={76}
-    w={64}
+    x={4.8}
+    y={54}
+    w={25}
     title="The decisions behind it"
     note={`${FLAGSHIP_DECISIONS.length} records`}
   >
-    <Feed entries={FLAGSHIP_DECISIONS} wrap cols={2} />
+    <Feed entries={FLAGSHIP_DECISIONS} wrap />
   </Panel>
 
   <div slot="mobile" class="m">
@@ -801,7 +865,7 @@ const MAP = [
 
 {/* ══ 04 DATA ══════════════════════════════════════════════════════ */}
 <Stage id="data" anchor="data" depth={1.05} plate={0.95} labelledby="st-data">
-  <div class="col">
+  <div class="col rq__col">
     <p class="eyebrow">04 / Request trace</p>
     <h2 class="claim" id="st-data">
       <span>Follow a <em>request</em></span>
@@ -814,21 +878,62 @@ const MAP = [
   </div>
 
   {
+    /*
+      THE TIMING STRIP, in the band the reference uses for TOTAL TIME 58ms and a
+      millisecond figure on every hop. The total is real and measured in the
+      reader's browser; the per-hop figures do not exist, so the strip says so
+      in the slot where they would have been.
+    */
+  }
+  <Panel x={33} y={3.6} w={40} dense>
+    <dl class="rq__strip">
+      <div>
+        <dt>Round trip</dt>
+        <dd class="rq__live">
+          <span data-live-value="rtt">—</span><span class="unit">ms</span>
+        </dd>
+      </div>
+      <div>
+        <dt>Control plane</dt>
+        <dd class="rq__live rq__word"><span data-live-value="state">—</span></dd>
+      </div>
+      <div>
+        <dt>Stages</dt>
+        <dd>6</dd>
+      </div>
+      <div>
+        <dt>Timed per stage</dt>
+        <dd class="rq__word">none</dd>
+      </div>
+    </dl>
+    <p class="note rq__stripNote">
+      One number is measured — the round trip your own browser just made. The reference prints a
+      figure on every hop; invented splits would look more detailed and mean less.
+    </p>
+  </Panel>
+
+  {
     STAGES.map((s) => (
-      <Callout x={s.x} y={s.y} side="left" label={s.label} lines={[...s.lines]} lead={0} w={11} />
+      <Callout x={s.x} y={s.y} side="left" label={s.label} lines={[...s.lines]} lead={0} w={10.5} />
     ))
   }
 
-  <Panel x={38} y={72} w={57} title="Live request trace" note="measured in your browser">
+  {/* ── The floor: what the reference puts under the path ─────────── */}
+  <div class="rq__go">
+    <p class="rq__goHead">See it run against a real tenant.</p>
+    <p class="rq__goLine">
+      The live plane provisions you a tenant in a real multi-tenant system and traces your own
+      requests through it. A demonstration, labelled as one.
+    </p>
+    <a class="cta" href="/live/">Enter the live plane <span aria-hidden="true">→</span></a>
+  </div>
+
+  <Panel x={22.5} y={77} w={54} title="Live request trace" note="measured in your browser">
     <TraceRail hops={TRACE_HOPS} request="GET /health" />
   </Panel>
 
-  <Panel x={4.8} y={58} w={24} title="Why no per-hop timings" dense>
-    <p>
-      The reference labels every hop with a millisecond figure. This site measures one number — the
-      round trip your own browser just made — and publishes that. Seven invented splits would look
-      more detailed and mean less.
-    </p>
+  <Panel x={78.5} y={71} w={18.7} title="Trace inspector" note="this page's request">
+    <Inspector rows={TRACE_ROWS} />
   </Panel>
 
   <div slot="mobile" class="m">
@@ -1817,6 +1922,152 @@ const MAP = [
       linear-gradient(rgb(14 14 26 / 0.94), rgb(14 14 26 / 0.94)) padding-box,
       var(--brand-ramp) border-box;
     box-shadow: 0 0 calc(24 * var(--u)) rgb(139 108 246 / 0.28);
+  }
+
+  /* ── 04's composition ──────────────────────────────────────────── */
+
+  /* The reference's TOTAL TIME strip: figures large, in one row. */
+  .rq__strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0;
+  }
+
+  .rq__strip > div {
+    display: flex;
+    flex-direction: column;
+    gap: calc(8 * var(--u));
+    padding: calc(2 * var(--u)) calc(16 * var(--u));
+    border-left: 1px solid var(--plate-edge);
+    min-width: 0;
+  }
+
+  .rq__strip > div:first-child {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .rq__strip dt {
+    font-family: var(--font-mono);
+    font-size: calc(13 * var(--u));
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .rq__strip dd {
+    margin: 0;
+    font-size: calc(34 * var(--u));
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  /* Words, not figures: set a size down, as station 01's "no answer" is. */
+  .rq__strip .rq__word {
+    font-size: calc(26 * var(--u));
+    line-height: calc(37 * var(--u));
+  }
+
+  .rq__stripNote {
+    margin-top: calc(14 * var(--u));
+    padding-top: calc(12 * var(--u));
+    border-top: 1px solid var(--plate-edge);
+  }
+
+  /* Up, as the reference sets it: the top band was empty above the claim. */
+  .rq__col {
+    top: 8%;
+  }
+
+  /* Sits on the plate's brightest pipe (measured 2.13:1 bare), so it gets the
+     same edgeless floor the headline column has. */
+  .rq__go {
+    position: absolute;
+    left: 4.8%;
+    top: 75%;
+    width: 15.5%;
+    isolation: isolate;
+  }
+
+  .rq__go::before {
+    content: '';
+    position: absolute;
+    inset: -30% -40%;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(
+      closest-side,
+      rgb(6 9 14 / 0.92) 0%,
+      rgb(6 9 14 / 0.8) 55%,
+      rgb(6 9 14 / 0.35) 82%,
+      rgb(6 9 14 / 0) 100%
+    );
+  }
+
+  .rq__goHead {
+    margin: 0 0 calc(12 * var(--u));
+    font-size: calc(30 * var(--u));
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    color: var(--text);
+  }
+
+  .rq__goLine {
+    margin: 0;
+    font-size: calc(16 * var(--u));
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  .rq__go .cta {
+    margin-top: calc(22 * var(--u));
+    padding: calc(14 * var(--u)) calc(22 * var(--u));
+    font-size: calc(15 * var(--u));
+    gap: calc(18 * var(--u));
+  }
+
+  /* ── 03's composition ──────────────────────────────────────────── */
+
+  /* Narrow enough that the upper layer labels sit between it and the stack. */
+  .dx3__col {
+    width: 19.5%;
+  }
+
+  .dx3__facts {
+    margin: calc(14 * var(--u)) 0 calc(4 * var(--u));
+    padding-top: calc(12 * var(--u));
+    border-top: 1px solid var(--plate-edge);
+    display: grid;
+    gap: calc(9 * var(--u));
+  }
+
+  .dx3__facts div {
+    display: flex;
+    flex-direction: column;
+    gap: calc(2 * var(--u));
+  }
+
+  .dx3__facts dt {
+    font-family: var(--font-mono);
+    font-size: calc(11 * var(--u));
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .dx3__facts dd {
+    margin: 0;
+    font-size: calc(14 * var(--u));
+    line-height: 1.35;
+    color: var(--text);
+  }
+
+  .dx3__live {
+    color: var(--signal) !important;
   }
 
   /* ── 02's composition ──────────────────────────────────────────── */
