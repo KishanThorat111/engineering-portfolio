@@ -963,7 +963,7 @@ const MAP = [
 
 {/* ══ 05 LAB ═══════════════════════════════════════════════════════ */}
 <Stage id="lab" anchor="lab" depth={1.1} plate={0.95} labelledby="st-lab">
-  <div class="col">
+  <div class="col lab__col">
     <p class="eyebrow">05 / Lab</p>
     <h2 class="claim" id="st-lab">
       <span>Not everything ships.</span>
@@ -979,20 +979,64 @@ const MAP = [
 
   {
     /*
-      EACH LESSON, IN ALL THREE PARTS.
+      THE LAYOUT IS REFERENCE 05's, MEASURED AGAINST THE PLATE.
 
-      The collection records what happened, what it cost, and what rule changed
-      because of it — and this frame published only the first. The claim the
-      station makes is "Everything teaches", and the teaching is the third
-      field. A lesson shown without its cost is an anecdote; shown without what
-      changed it is an apology. Both ship, and the cost carries the fault rule
-      because a cost is what the choice actually took.
+      The two lesson panels were laid across the middle of the frame and hid the
+      lab core — the subject of the artwork. Reference 05 keeps the centre clear
+      and hangs everything round the edge: a question list and a telemetry panel
+      down the left, an active-experiment column on the right, a lifecycle at the
+      bottom right, and a wide selector band along the bottom. Each of those
+      slots now carries the true thing that fits it.
+    */
+  }
+
+  {/* Left: the reference's "What happens if?" — here, why each one happened. */}
+  <Panel x={4.8} y={44} w={18} title="Why they happened" note="the fourth field">
+    <Feed entries={LESSON_CAUSES} wrap />
+  </Panel>
+
+  {
+    /*
+      Right: the reference's ACTIVE EXPERIMENT / LAB TELEMETRY slot. It prints
+      FPS 119, GPU 60%, PARTICLES 15.4M and a running timer; none of those
+      exist here, so the panel shows what is counted and marks the rest as not
+      measured — the designed empty state, not a blank corner.
+    */
+  }
+  <Panel x={81} y={6} w={16.5} title="What is measured here">
+    <Inspector
+      rows={[
+        { label: 'Lessons', value: String(counts.lessons), mono: true },
+        { label: 'Decisions', value: String(counts.decisions), mono: true },
+        { label: 'Frame rate', value: 'not measured' },
+        { label: 'Particle count', value: 'not measured' },
+        { label: 'Experiment timer', value: 'none running' },
+      ]}
+    />
+    <p class="note">
+      None of the reference's telemetry exists here, so none of it ships. What ships instead is
+      every lesson in full, including the part that cost something.
+    </p>
+  </Panel>
+
+  {
+    /*
+      Bottom: the reference's experiment selector band, carrying the two
+      lessons — each in three of its four fields, verbatim. The fourth, why it
+      happened, is the panel on the left.
     */
   }
   {
     lessons.slice(0, 2).map((lesson, i) => (
-      <Panel x={38} y={i === 0 ? 8 : 52} w={36} title={`Lesson 0${i + 1}`} status="fault">
-        <p class="sys__title sys__title--fault">{lesson.data.title}</p>
+      <Panel
+        x={i === 0 ? 4.8 : 38.8}
+        y={74}
+        w={33}
+        title={`Lesson 0${i + 1}`}
+        status="fault"
+        class="lab__card"
+      >
+        <p class="lab__title">{lesson.data.title}</p>
         <div class="lesson">
           <Note label="What happened">
             <p>{lesson.data.whatHappened}</p>
@@ -1013,31 +1057,17 @@ const MAP = [
     ))
   }
 
-  {
-    /*
-      Moved out of the bottom-right corner, where it sat alone against a frame
-      that was otherwise empty from the call to action downwards. The reference
-      puts an experiment selector, a controls cluster and a telemetry stream in
-      this column; none of those experiments exist and no telemetry is kept, so
-      the column says what IS counted and names what was cut.
-    */
-  }
-  <Panel x={4.8} y={48} w={28} title="What is measured here">
-    <StatRow
-      items={[
-        { label: 'Lessons', value: String(counts.lessons) },
-        { label: 'Decisions', value: String(counts.decisions) },
+  {/* Bottom right: the reference's EXPERIMENT LIFE CYCLE — the real one. */}
+  <Panel x={74.8} y={74} w={22.7} title="How a lesson is written" note="every one">
+    <StageTimeline
+      stages={[
+        { name: 'Happened', detail: 'what it was', state: 'done' },
+        { name: 'Why', detail: 'the cause', state: 'done' },
+        { name: 'Cost', detail: 'what it took', state: 'done' },
+        { name: 'Changed', detail: 'the new rule', state: 'done' },
       ]}
+      caption="Four fields, all published. A lesson missing its cost is an anecdote."
     />
-    <p class="note">
-      The reference puts frame rates, particle counts and a running experiment timer in this frame.
-      None of them exist here, so none of them ship. What is published instead is every lesson in
-      full, including the part that cost something.
-    </p>
-  </Panel>
-
-  <Panel x={4.8} y={64} w={28} title="Why they happened" note="the fourth field">
-    <Feed entries={LESSON_CAUSES} wrap />
   </Panel>
 
   <div slot="mobile" class="m">
@@ -1063,7 +1093,7 @@ const MAP = [
 
 {/* ══ 06 LIVE ══════════════════════════════════════════════════════ */}
 <Stage id="live" depth={1} plate={0.95} labelledby="st-live">
-  <div class="col">
+  <div class="col live__col">
     <p class="eyebrow">06 / Live</p>
     <h2 class="claim" id="st-live">
       <span>The control</span>
@@ -1078,92 +1108,144 @@ const MAP = [
 
   {
     /*
-    THE GLOBE, RESOLVED IN THE OPEN.
+      THE CONTROL PLANE, IN THE SCREEN THE ARTWORK DRAWS FOR IT.
 
-    Reference 06's earth is covered in city lights across every continent — a
-    picture of a global footprint that does not exist. The 3D scene refused to
-    render it for exactly that reason and shipped a bare graticule instead
-    (PHASE_LOG, 04–10, 22 Aug 2026). The static plate is a finished render and
-    cannot be un-lit without looking broken, so the two surfaces would otherwise
-    disagree about the same fact — which is the disagreement rule 10 exists to
-    prevent, arriving through a channel no gate watches.
-
-    The resolution is the same ruling applied to a different medium: the claim is
-    withdrawn in text, on the artwork, where the artwork makes it. One marker, on
-    the one real location, and a panel that says plainly what the lit continents
-    are. An honest caption on an illustration is not a workaround; it is what a
-    caption is for.
-  */
+      The plate has an empty dark screen inside the ring — reference 06 writes
+      CONTROL PLANE and its services there. It sat blank. It now names what the
+      demo plane actually runs, as station 01's estate states it. Measured: the
+      screen spans x 42–58%, y 28–44%.
+    */
   }
-  <Panel x={62} y={11} w={26} title="About this map" status="fault">
-    <p>
-      The lit continents in this artwork are illustration. This system runs in one region, on one
-      virtual machine. No global footprint, no multi-region deployment and no edge fleet is claimed
-      anywhere on this site.
-    </p>
-    <p class="note">
-      The only measured point on this map is your own round trip, below — and it is measured from
-      wherever you are, not from anywhere shown here.
-    </p>
-  </Panel>
+  <div class="live__core">
+    <p class="live__coreHead">Control plane</p>
+    <ul class="live__coreList">
+      <li>Caddy · reverse proxy</li>
+      <li>Fastify · API and worker</li>
+      <li>PostgreSQL 17 · RLS forced</li>
+      <li>Redis 7 · rate limits</li>
+      <li>OpenTelemetry · spans</li>
+    </ul>
+  </div>
 
-  <Panel x={62} y={44} w={26} title="Live metrics" note="derived, never asserted">
-    <StatRow items={LIVE_STATS} />
-    <p class="note">
-      The reference reads ALL SYSTEMS OPERATIONAL here. That banner is derived on this site, and
-      when the plane is down it is the first thing that says so.
-    </p>
-  </Panel>
-
-  <Panel x={33} y={58} w={26} title="What it hosts" note="five, CI-asserted">
-    <ol class="demos">
-      <li><span>Tenant isolation</span><span>the break-out attempt</span></li>
-      <li><span>Idempotent payments</span><span>a double-fired activation</span></li>
-      <li><span>Fraud evidence</span><span>a duplicate photograph</span></li>
-      <li><span>AI cost control</span><span>a query answered without a model</span></li>
-      <li><span>Rate limiting</span><span>two layers, both named</span></li>
-    </ol>
-  </Panel>
-
-  <Panel x={4.8} y={62} w={24} title="The demo plane" status="isolation">
-    <p>
-      A demonstration, labelled a demonstration. It provisions you a real tenant in a real
-      multi-tenant system, invites you to attack it, and shows you the layer that stopped you.
-    </p>
-    <p class="note">It is not a production system and never claims to be.</p>
-  </Panel>
+  {/* The six modules on the deck, named as the six parts of the demo plane. */}
+  {
+    [
+      [26.6, 'Cloudflare'],
+      [34.6, 'Tunnel'],
+      [43.1, 'Caddy'],
+      [51.4, 'Fastify'],
+      [59.9, 'PostgreSQL'],
+      [68.3, 'Redis'],
+    ].map(([x, label]) => <Chip x={x as number} y={75.2} label={label as string} quiet />)
+  }
 
   {
     /*
-      THE OBSERVABILITY FEED, IN THE STATE IT IS ACTUALLY IN.
+      THE THREE PLATFORMS, IN THE THREE PANELS THE DECK DRAWS.
 
-      Reference 06 rings the frame with event streams and activity feeds. This
-      site has one source of live events and it is the control plane, so when
-      the plane is not answering there are no events — and the honest rendering
-      of that is a feed that says so in its own designed empty state, not a
-      corner left blank and not a list of plausible-looking rows.
-
-      The entries that DO ship are the five demonstrations' names, because those
-      are asserted by CI rather than by a running socket, and they are true
-      whether or not the plane answers.
+      Reference 06 fills them with request rates, latencies and 99.98%
+      uptimes. Those are not published for any of these systems, so each panel
+      states its real status and says the live signal is not published — the
+      same rule the live surface follows (§15).
     */
   }
-  <Panel x={4.8} y={40} w={24} title="Event stream" note="from the control plane">
+  {
+    systems.slice(0, 3).map((system, i) => {
+      const at = (
+        [
+          [20.6, 13.4],
+          [38.4, 18.4],
+          [60.9, 15.8],
+        ] as const
+      )[i] ?? [20.6, 13.4];
+      return (
+        <Panel
+          x={at[0]}
+          y={53.4}
+          w={at[1]}
+          title={`0${i + 1}`}
+          status={TONE[system.data.status]}
+          dense
+        >
+          <p class:list={['live__sys', `live__sys--${TONE[system.data.status] ?? 'plain'}`]}>
+            {system.data.title}
+          </p>
+          <p class:list={['sys__state', `sys__state--${TONE[system.data.status] ?? 'plain'}`]}>
+            {STATUS_LABELS[system.data.status].label}
+          </p>
+          <p class="live__sysNote">Live signal not published</p>
+        </Panel>
+      );
+    })
+  }
+
+  {/* Left, under the claim: the reference's request trace and tenant panels. */}
+  <Panel x={4.8} y={47} w={14.6} title="Event stream" note="control plane">
     <Feed
       entries={[]}
-      emptyNote="No events. This feed fills from the control plane's own record, and the plane is not answering, so there is nothing to show. It stays empty rather than replaying an older session."
+      emptyNote="No events. This feed fills from the control plane's own record; the plane is not answering, so it stays empty rather than replaying an older session."
     />
   </Panel>
 
+  <Panel x={4.8} y={66} w={14.6} title="The demo plane" status="isolation">
+    <p>
+      A real tenant in a real multi-tenant system, yours to attack, with the layer that stopped you
+      shown.
+    </p>
+    <p class="note">A demonstration, labelled one. Never a production system.</p>
+  </Panel>
+
+  {/* Right column: live metrics, the map's caption, and what the plane hosts. */}
+  <Panel x={80.5} y={5} w={17} title="Live metrics" note="derived">
+    <dl class="rq__strip rq__strip--3">
+      <div>
+        <dt>Round trip</dt>
+        <dd><span data-live-value="rtt">—</span><span class="unit">ms</span></dd>
+      </div>
+      <div>
+        <dt>Plane</dt>
+        <dd class="rq__word"><span data-live-value="state">—</span></dd>
+      </div>
+      <div>
+        <dt>Demos</dt>
+        <dd>5</dd>
+      </div>
+    </dl>
+  </Panel>
+
   {
     /*
-      THE BOTTOM STATUS BAR — reference 06 §9, and the place honesty principle
-      12 is discharged. The reference asserts ALL SYSTEMS OPERATIONAL across
-      this rail. Every field here is derived from the one measurement the page
-      makes, and the state it SHIPS in is "not yet checked".
+      THE GLOBE, RESOLVED IN THE OPEN. Reference 06's earth is lit across every
+      continent — a global footprint that does not exist. The plate cannot be
+      un-lit, so the claim is withdrawn in text, on the artwork, where the
+      artwork makes it.
     */
   }
-  <Panel x={4.8} y={84} w={91} dense>
+  <Panel x={80.5} y={25} w={17} title="About this map" status="fault">
+    <p>
+      The lit continents are illustration. This system runs in one region, on one virtual machine.
+      No global footprint or edge fleet is claimed.
+    </p>
+  </Panel>
+
+  <Panel x={80.5} y={46} w={17} title="What it hosts" note="five, CI-asserted">
+    <ol class="demos">
+      <li><span>Tenant isolation</span><span>break-out attempt</span></li>
+      <li><span>Idempotent payments</span><span>double-fired activation</span></li>
+      <li><span>Fraud evidence</span><span>duplicate photograph</span></li>
+      <li><span>AI cost control</span><span>no model needed</span></li>
+      <li><span>Rate limiting</span><span>two layers</span></li>
+    </ol>
+  </Panel>
+
+  {
+    /*
+      THE BOTTOM STATUS BAR — reference 06 §9, where honesty principle 12 is
+      discharged. Every field is derived from the one measurement the page makes,
+      and the state it ships in is "not yet checked".
+    */
+  }
+  <Panel x={4.8} y={86.5} w={92.7} dense>
     <StatusBar
       fields={[
         { label: 'Round trip', live: 'rtt', unit: 'ms' },
@@ -1171,7 +1253,7 @@ const MAP = [
         { label: 'Region', value: 'one' },
         { label: 'Machines', value: 'one' },
       ]}
-      note="Measured in your browser when this page loaded, against this site's own control plane. It is not a fleet-wide status and there is no fleet; nothing here is cached from an earlier visit."
+      note="Measured in your browser when this page loaded, against this site's own control plane. Not a fleet-wide status — there is no fleet — and nothing is cached from an earlier visit."
     />
   </Panel>
 
@@ -1924,6 +2006,84 @@ const MAP = [
     box-shadow: 0 0 calc(24 * var(--u)) rgb(139 108 246 / 0.28);
   }
 
+  /* ── 05's composition ──────────────────────────────────────────── */
+
+  .lab__col {
+    top: 8%;
+    width: 22%;
+  }
+
+  .lab__title {
+    margin: 0 0 calc(10 * var(--u));
+    font-size: calc(19 * var(--u));
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--hue-ember);
+  }
+
+  /* Two short sections side by side in the wide bottom cards, as the
+     reference's selector band is a row rather than a stack. */
+  .lab__card :global(.lesson) {
+    gap: calc(10 * var(--u));
+  }
+
+  /* ── 06's composition ──────────────────────────────────────────── */
+
+  .live__col {
+    top: 8%;
+    width: 17%;
+  }
+
+  .live__core {
+    position: absolute;
+    left: 42.6%;
+    top: 28.6%;
+    width: 14.8%;
+    padding: calc(14 * var(--u)) calc(18 * var(--u));
+    border: 1px solid color-mix(in srgb, var(--hue-blue) 45%, transparent);
+    border-radius: calc(8 * var(--u));
+    background: rgb(6 9 16 / 0.86);
+    box-shadow: 0 0 calc(30 * var(--u)) rgb(76 134 255 / 0.18);
+    text-align: center;
+  }
+
+  .live__coreHead {
+    margin: 0 0 calc(10 * var(--u));
+    font-family: var(--font-mono);
+    font-size: calc(20 * var(--u));
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--hue-blue);
+  }
+
+  .live__coreList {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: calc(6 * var(--u));
+    font-size: calc(15 * var(--u));
+    line-height: 1.3;
+    color: var(--text);
+  }
+
+  .live__sys {
+    margin: calc(2 * var(--u)) 0 calc(6 * var(--u));
+    font-size: calc(19 * var(--u));
+    font-weight: 500;
+    line-height: 1.25;
+    color: var(--text);
+  }
+
+  .live__sysNote {
+    margin: calc(6 * var(--u)) 0 0;
+    font-family: var(--font-mono);
+    font-size: calc(12 * var(--u));
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
   /* ── 04's composition ──────────────────────────────────────────── */
 
   /* The reference's TOTAL TIME strip: figures large, in one row. */
@@ -1931,6 +2091,20 @@ const MAP = [
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     margin: 0;
+  }
+
+  /* The state cell carries words ("no answer"), so it gets the room; equal
+     thirds ran it into the next figure. */
+  .rq__strip--3 {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.5fr) minmax(0, 0.7fr);
+  }
+
+  .rq__strip--3 .rq__word {
+    font-size: calc(22 * var(--u));
+  }
+
+  .rq__strip--3 > div {
+    padding-inline: calc(12 * var(--u));
   }
 
   .rq__strip > div {
