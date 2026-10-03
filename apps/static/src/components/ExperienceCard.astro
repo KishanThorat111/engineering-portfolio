@@ -21,6 +21,12 @@ interface Props {
   note?: string;
   /** See SectionHeader: a prop named `as` breaks prop typing in this toolchain. */
   level?: 'h2' | 'h3' | 'h4';
+  /**
+   * The timeline form (/experience): the period is printed beside the card by
+   * the page, so the card does not repeat it, and on a wide card the bullets
+   * become two columns of tiles so a long role scans rather than reads.
+   */
+  timeline?: boolean;
 }
 
 const {
@@ -32,18 +38,25 @@ const {
   confidential = false,
   note,
   level: Tag = 'h3',
+  timeline = false,
 } = Astro.props;
 
 const CONFIDENTIAL: Status = 'CONFIDENTIAL';
 ---
 
-<article class="experience-card">
+<article class:list={['experience-card', timeline && 'experience-card--timeline']}>
   <div class="head">
     <div>
       <Tag>{role}</Tag>
       <p class="org">{organisation}</p>
     </div>
-    <p class="period">{from} – {to}</p>
+    {
+      !timeline && (
+        <p class="period">
+          {from} – {to}
+        </p>
+      )
+    }
   </div>
 
   {
@@ -152,6 +165,31 @@ const CONFIDENTIAL: Status = 'CONFIDENTIAL';
     height: 2px;
     border-radius: 1px;
     background: var(--brand-ramp);
+  }
+
+  /* The timeline form: two columns of tiles once the card is wide enough. */
+  .experience-card--timeline {
+    container-type: inline-size;
+  }
+
+  @container (min-width: 640px) {
+    .experience-card--timeline .bullets {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+
+    .experience-card--timeline .bullets li {
+      padding: var(--space-4) var(--space-4) var(--space-4) var(--space-8);
+      border: var(--border-width) solid var(--glass-edge);
+      border-radius: 12px;
+      background: rgb(5 7 12 / 0.45);
+    }
+
+    .experience-card--timeline .bullets li::before {
+      inset-inline-start: var(--space-4);
+      inset-block-start: calc(var(--space-4) + 0.7em);
+    }
   }
 
   .note {

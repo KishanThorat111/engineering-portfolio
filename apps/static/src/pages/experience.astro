@@ -7,15 +7,33 @@
  * as someone who can be trusted with a boundary. The same engagement described
  * vaguely with no explanation reads as a gap.
  *
- * IN THE HOME PAGE'S LANGUAGE (Oct 2026). The inner pages' hero opens it; the
- * roles hang off one rail in the brand ramp, newest first, so the page reads
- * as a timeline rather than a stack of boxes. Every word is unchanged.
+ * THE PAGE AS A TIMELINE (Oct 2026, owner direction).
+ *
+ * It was one narrow column: an opening, two long cards, two paragraphs, three
+ * small cards — on a wide screen most of the width was empty margin, and the
+ * first screen said nothing but the headline. Now:
+ *
+ *   - a career line across the foot of the opening: the three stages of the
+ *     career in order, each a link to its section, so the whole arc is on the
+ *     first screen;
+ *   - the roles as a timeline — the period set large on the left, held in
+ *     view while the role is read, and the role's bullets as tiles;
+ *   - "What transferred" beside the home page's last frame, the path through
+ *     the city, labelled with the same three stages;
+ *   - a way on at the end.
+ *
+ * Every word is unchanged. The stages are read from the collection and from
+ * CV_EARLIER_CAREER rather than retyped, and the build fails if the CV line
+ * stops reading the way the parse expects — so the career line cannot drift
+ * from the CV it summarises.
  */
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from '../components/PageHero.astro';
 import SectionHeader from '../components/SectionHeader.astro';
 import ExperienceCard from '../components/ExperienceCard.astro';
+import PlateImage from '../components/PlateImage.astro';
+import Button from '../components/Button.astro';
 import { SITE } from '../config/site';
 import { CV_EARLIER_CAREER } from '../config/cv';
 import { MORE_SYSTEMS } from '../config/more-systems';
@@ -23,6 +41,54 @@ import { MORE_SYSTEMS } from '../config/more-systems';
 const roles = (await getCollection('experience')).sort((a, b) => a.data.order - b.data.order);
 const description =
   'Enterprise AI workflow automation for a UK client, freelance full-stack delivery, and the earlier career that shaped how I operate systems.';
+
+const earlier = CV_EARLIER_CAREER.match(
+  /\((\d{4})[–-](\d{4})\): operations supervision \(([^)]+)\) and teaching \(([^)]+)\)/,
+);
+if (!earlier) {
+  throw new Error(
+    'experience: CV_EARLIER_CAREER no longer reads "(YYYY–YYYY): operations supervision (…) and ' +
+      'teaching (…)". Update this parse to the new wording — never retype the facts here.',
+  );
+}
+const [, earlyFrom, earlyTo, earlyOps, earlyTeach] = earlier;
+
+/** The career in order, oldest first: where it started, then each role. */
+const journey = [
+  {
+    when: `${earlyFrom} – ${earlyTo}`,
+    what: 'Operations supervision and teaching',
+    where: `${earlyOps} · ${earlyTeach}`,
+    href: '#before',
+    now: false,
+  },
+  ...[...roles].reverse().map((role) => ({
+    when: `${role.data.from} – ${role.data.to}`,
+    what: role.data.role,
+    where: role.data.organisation,
+    href: `#role-${role.id}`,
+    now: role.data.to === 'Present',
+  })),
+];
+
+/*
+ * The same three stages on the path plate 10 draws through the city, from its
+ * lit start at the foot of the frame to the cube it ends in. Positions are
+ * points on the plate, measured off a 10% grid. The card shows the plate with
+ * `cover` held at 60% across; at the card's aspect a, the plate is drawn
+ * k = 1.5 / a card-widths wide, so plate point p lands at k·p − (k − 1)·0.6
+ * across and p down. The CSS does that arithmetic, so the card can change
+ * shape (4:3, square on a phone) and the stages stay on the path.
+ */
+const PATH = [
+  { px: 0.45, py: 0.84, side: 'r' },
+  { px: 0.63, py: 0.55, side: 'l' },
+  { px: 0.735, py: 0.25, side: 'l' },
+] as const;
+const pathTags = journey.map((stage, i) => {
+  const at = PATH[i] ?? PATH[PATH.length - 1]!;
+  return { ...stage, side: at.side, px: at.px, py: at.py };
+});
 ---
 
 <BaseLayout title={`Experience — ${SITE.name}`} description={description}>
@@ -35,13 +101,40 @@ const description =
     <p slot="lede">{description}</p>
   </PageHero>
 
-  <section class="band" aria-label="Roles">
-    <div class="container">
-      <ol class="timeline">
+  {/* The whole career, in order, on the first screen. */}
+  <nav class="journey" aria-label="The career, in order">
+    <div class="container-wide">
+      <ol class="journey-line">
         {
-          roles.map((role, index) => (
-            <li data-reveal style={`--reveal-delay: ${Math.min(index * 60, 120)}ms`}>
-              <span class="node" aria-hidden="true" />
+          journey.map((stage) => (
+            <li class:list={['stop', stage.now && 'stop--now']}>
+              <a href={stage.href}>
+                <span class="stop-dot" aria-hidden="true" />
+                <span class="stop-when">{stage.when}</span>
+                <span class="stop-what">{stage.what}</span>
+                <span class="stop-where">{stage.where}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </nav>
+
+  <section class="band" aria-label="Roles">
+    <div class="container-wide">
+      <ol class="roles">
+        {
+          roles.map((role) => (
+            <li class="role" id={`role-${role.id}`} data-reveal>
+              <div class="role-when">
+                <span class="node" aria-hidden="true" />
+                <p class="when">
+                  <span class="when-from">{role.data.from}</span>
+                  <span class="when-to">– {role.data.to}</span>
+                </p>
+                {role.data.to === 'Present' && <p class="current">Current role</p>}
+              </div>
               <ExperienceCard
                 role={role.data.role}
                 organisation={role.data.organisation}
@@ -51,6 +144,7 @@ const description =
                 confidential={role.data.confidential}
                 note={role.data.note}
                 level="h2"
+                timeline
               />
             </li>
           ))
@@ -59,29 +153,59 @@ const description =
     </div>
   </section>
 
-  <section class="band">
-    <div class="container">
-      <SectionHeader
-        index="01"
-        kicker="Before software"
-        title="What transferred"
-        emphasis="transferred"
-      />
-      <div class="before" data-reveal>
-        <p class="before-lead">{CV_EARLIER_CAREER}</p>
-        <p>
-          Both halves of that stuck. Supervising operations is where I learned that a system is not
-          finished when it works, and teaching is where the habit of writing things down came from.
-          The parts of this portfolio a reader is most likely to find unusual — the disclosed
-          limitations, the decision records, the charter — come from those two jobs rather than from
-          any of the software ones.
-        </p>
+  <section class="band" id="before">
+    <div class="container-wide transfer">
+      <div class="transfer-text">
+        <SectionHeader
+          index="01"
+          kicker="Before software"
+          title="What transferred"
+          emphasis="transferred"
+        />
+        <div class="before" data-reveal>
+          <p class="before-lead">{CV_EARLIER_CAREER}</p>
+          <p>
+            Both halves of that stuck. Supervising operations is where I learned that a system is
+            not finished when it works, and teaching is where the habit of writing things down came
+            from. The parts of this portfolio a reader is most likely to find unusual — the
+            disclosed limitations, the decision records, the charter — come from those two jobs
+            rather than from any of the software ones.
+          </p>
+        </div>
+      </div>
+
+      {
+        /* The path through the city from the home page's last frame, with the three stages on it. */
+      }
+      <div class="path-card" data-reveal>
+        <PlateImage
+          id="end"
+          sizes="(min-width: 1000px) 640px, 100vw"
+          focus="60% 50%"
+          class="path-plate"
+        />
+        <div class="path-tags" aria-hidden="true">
+          {
+            pathTags.map((tag) => (
+              <span
+                class:list={['path-tag', `path-tag--${tag.side}`, tag.now && 'path-tag--now']}
+                style={`--px:${tag.px}; --py:${tag.py}`}
+              >
+                <span class="path-dot" />
+                <span class="path-label">
+                  <span class="path-when">{tag.when}</span>
+                  <span class="path-what">{tag.what}</span>
+                </span>
+              </span>
+            ))
+          }
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="band band--last">
-    <div class="container">
+  <section class="band">
+    <div class="container-wide">
       <SectionHeader
         index="02"
         kicker="Also built"
@@ -97,6 +221,9 @@ const description =
           MORE_SYSTEMS.map((system, index) => (
             <li data-reveal style={`--reveal-delay: ${Math.min(index * 60, 120)}ms`}>
               <article class="strip-card">
+                <span class="strip-no" aria-hidden="true">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
                 <h3>{system.title}</h3>
                 {system.community && <p class="community">Community project</p>}
                 <p class="strip-summary">{system.summary}</p>
@@ -112,6 +239,23 @@ const description =
       </ul>
     </div>
   </section>
+
+  <section class="band band--last">
+    <div class="container-wide">
+      <div class="next" data-reveal>
+        <SectionHeader
+          kicker="Next"
+          title="See the systems, or read the CV"
+          emphasis="the systems"
+        />
+        <p class="next-actions">
+          <Button href="/systems">See the systems <span aria-hidden="true">→</span></Button>
+          <Button href="/cv" variant="secondary">Read the CV</Button>
+          <Button href="/cv.pdf" variant="secondary" download>Download the CV</Button>
+        </p>
+      </div>
+    </div>
+  </section>
 </BaseLayout>
 
 <style>
@@ -119,25 +263,177 @@ const description =
     padding-block: var(--space-12);
   }
 
+  @media (min-width: 1000px) {
+    .band {
+      padding-block: var(--space-16);
+    }
+  }
+
   .band--last {
     padding-block-end: var(--space-24);
   }
 
+  /* ── The career line ──────────────────────────────────────────────── */
   /*
-   * THE RAIL. One line in the brand ramp, fading out at its foot, with a node
-   * per role — newest at the top. On a phone the rail stays, closer in.
+   * Three stops on one ramp-coloured rail, oldest on the left. It rises into
+   * the foot of the opening on a wide screen, so the arc of the career is on
+   * the first screen; each stop is a link to its section.
    */
-  .timeline {
+  .journey {
+    position: relative;
+    z-index: 1;
+    margin-block-start: calc(-1 * var(--space-12));
+  }
+
+  .journey-line {
+    position: relative;
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: var(--space-4);
+    list-style: none;
+    background: var(--glass-bg);
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: var(--radius-xl);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 30px 80px -50px rgb(0 0 0 / 0.9);
+  }
+
+  @media (min-width: 860px) {
+    .journey-line {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0;
+      padding: var(--space-6) var(--space-4);
+    }
+
+    /* The rail through the three dots. */
+    .journey-line::before {
+      content: '';
+      position: absolute;
+      /* From the first dot's centre to the third's: each stop is a third of
+         the padded row, its dot one padding plus half a dot in. */
+      inset-inline-start: calc(var(--space-4) + var(--space-6) + 0.35rem);
+      inset-inline-end: calc(100% / 3 + var(--space-4) / 3 - var(--space-6) - 0.35rem);
+      inset-block-start: calc(var(--space-6) + var(--space-4) + 0.3rem);
+      height: 2px;
+      border-radius: 1px;
+      background: linear-gradient(90deg, var(--hue-blue), var(--hue-violet), var(--hue-ember));
+      opacity: 0.6;
+    }
+  }
+
+  /* On a phone the stops stack, joined by the same rail running down. */
+  @media (max-width: 859.98px) {
+    .journey-line::before {
+      content: '';
+      position: absolute;
+      inset-block: calc(var(--space-4) + var(--space-4) + 0.5rem)
+        calc(var(--space-4) + var(--space-4) + 2.6rem);
+      inset-inline-start: calc(var(--space-4) + var(--space-6) + 0.35rem - 1px);
+      width: 2px;
+      border-radius: 1px;
+      background: linear-gradient(var(--hue-blue), var(--hue-violet), var(--hue-ember));
+      opacity: 0.6;
+    }
+
+    .stop-dot {
+      align-self: center;
+    }
+  }
+
+  .stop a {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: var(--space-3);
+    row-gap: var(--space-1);
+    align-items: center;
+    height: 100%;
+    padding: var(--space-4) var(--space-6);
+    border-radius: var(--radius-lg);
+    background-image: none;
+    color: var(--text);
+    transition: background-color var(--duration-transition) var(--ease-out);
+  }
+
+  .stop a:hover {
+    background-color: rgb(255 255 255 / 0.04);
+  }
+
+  .stop-dot {
+    position: relative;
+    z-index: 1;
+    width: 0.7rem;
+    height: 0.7rem;
+    border: 2px solid var(--hue-violet);
+    border-radius: 50%;
+    background: var(--bg);
+  }
+
+  .stop--now .stop-dot {
+    border-color: var(--hue-ember);
+    background: var(--hue-ember);
+    box-shadow: 0 0 0 4px rgb(242 135 92 / 0.18);
+  }
+
+  .stop-when {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .stop-what,
+  .stop-where {
+    grid-column: 2;
+  }
+
+  .stop-what {
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+
+  .stop-where {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+
+  @media (min-width: 860px) {
+    .stop a {
+      grid-template-columns: 1fr;
+      row-gap: var(--space-2);
+      align-items: start;
+    }
+
+    .stop-what,
+    .stop-where {
+      grid-column: 1;
+    }
+
+    .stop-dot {
+      margin-block-end: var(--space-2);
+    }
+  }
+
+  /* ── The roles, as a timeline ─────────────────────────────────────── */
+  .roles {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--space-8);
+    gap: var(--space-12);
     margin: 0;
     padding: 0 0 0 var(--space-8);
     list-style: none;
+    --when: 15rem;
+    --gap: var(--space-12);
   }
 
-  .timeline::before {
+  /* The rail, in the ramp, fading out at its foot. */
+  .roles::before {
     content: '';
     position: absolute;
     inset-block: 0.75rem 0;
@@ -153,23 +449,16 @@ const description =
     opacity: 0.7;
   }
 
-  @media (min-width: 768px) {
-    .timeline {
-      padding-inline-start: var(--space-12);
-    }
-
-    .timeline::before {
-      inset-inline-start: 0.9rem;
-    }
-  }
-
-  .timeline > li {
+  .role {
     position: relative;
+    display: grid;
+    gap: var(--space-4);
+    scroll-margin-top: 5.5rem;
   }
 
   .node {
     position: absolute;
-    inset-block-start: 1.75rem;
+    inset-block-start: 0.35rem;
     inset-inline-start: calc(-1 * var(--space-8) + 0.05rem);
     width: 0.9rem;
     height: 0.9rem;
@@ -179,9 +468,103 @@ const description =
     box-shadow: 0 0 14px rgb(139 108 246 / 0.55);
   }
 
-  @media (min-width: 768px) {
+  .when {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--space-2);
+    margin: 0;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .when-from {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-medium);
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .when-to {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+
+  .current {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-block-start: var(--space-2);
+    padding: 0.3rem 0.7rem;
+    border: var(--border-width) solid rgb(242 135 92 / 0.45);
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .current::before {
+    content: '';
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: var(--hue-ember);
+  }
+
+  /*
+   * Wide: the period in its own column, held in view while the role is read,
+   * the rail in the gutter between it and the card.
+   */
+  @media (min-width: 1000px) {
+    .roles {
+      padding-inline-start: 0;
+    }
+
+    .roles::before {
+      inset-inline-start: calc(var(--when) + var(--gap) / 2 - 1px);
+    }
+
+    .role {
+      grid-template-columns: var(--when) minmax(0, 1fr);
+      gap: var(--gap);
+      align-items: start;
+    }
+
+    .role-when {
+      position: sticky;
+      inset-block-start: 6.5rem;
+      text-align: end;
+    }
+
+    .when {
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .when-from {
+      font-size: var(--text-2xl);
+    }
+
     .node {
-      inset-inline-start: calc(-1 * var(--space-12) + 0.55rem);
+      inset-block-start: 0.85rem;
+      inset-inline-start: calc(var(--when) + var(--gap) / 2 - 0.45rem);
+    }
+  }
+
+  /* ── What transferred ─────────────────────────────────────────────── */
+  .transfer {
+    display: grid;
+    gap: var(--space-12);
+    align-items: center;
+    scroll-margin-top: 5.5rem;
+  }
+
+  @media (min-width: 1000px) {
+    .transfer {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr);
+      gap: var(--space-16);
     }
   }
 
@@ -193,7 +576,6 @@ const description =
     margin-block-start: var(--space-4);
   }
 
-  /* The earlier career, set as the section's lead line. */
   .before-lead {
     padding: var(--space-6);
     background: var(--glass-bg);
@@ -209,6 +591,117 @@ const description =
     color: var(--text-muted);
   }
 
+  /* The path card: the plate at 4:3, and the three stages standing on it. */
+  .path-card {
+    /* k: how many card-widths wide the plate is drawn at this card's aspect. */
+    --k: 1.125;
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 40px 90px -50px rgb(139 108 246 / 0.6);
+    container-type: inline-size;
+  }
+
+  .path-card :global(.path-plate) {
+    position: absolute;
+    inset: 0;
+  }
+
+  .path-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(120% 90% at 50% 45%, transparent 55%, rgb(5 7 12 / 0.5));
+  }
+
+  .path-tags {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* Square on a phone, so the three stages have room above one another. */
+  @media (max-width: 479.98px) {
+    .path-card {
+      --k: 1.5;
+      aspect-ratio: 1 / 1;
+    }
+  }
+
+  .path-tag {
+    --x: calc(var(--px) * var(--k) - (var(--k) - 1) * 0.6);
+    position: absolute;
+    left: calc(var(--x) * 100%);
+    top: calc(var(--py) * 100%);
+  }
+
+  .path-dot {
+    position: absolute;
+    left: -5px;
+    top: -5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow:
+      0 0 0 2px rgb(124 146 255 / 0.55),
+      0 0 14px 3px rgb(139 108 246 / 0.75);
+  }
+
+  .path-tag--now .path-dot {
+    box-shadow:
+      0 0 0 2px rgb(242 135 92 / 0.6),
+      0 0 16px 4px rgb(242 135 92 / 0.65);
+  }
+
+  /* A tag never leaves the picture: it may use the room between its dot and
+     the edge it faces, and wraps inside it on a narrow card. */
+  .path-label {
+    position: absolute;
+    top: 0;
+    translate: 0 -50%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    width: max-content;
+    padding: 0.4rem 0.6rem;
+    white-space: normal;
+    border: var(--border-width) solid rgb(255 255 255 / 0.14);
+    border-radius: 8px;
+    background: rgb(8 10 16 / 0.84);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    font-size: clamp(11.5px, 2.4cqw, 13.5px);
+  }
+
+  .path-tag--r .path-label {
+    left: 14px;
+    max-width: calc((1 - var(--x)) * 100cqw - 24px);
+  }
+
+  .path-tag--l .path-label {
+    right: 14px;
+    max-width: calc(var(--x) * 100cqw - 24px);
+  }
+
+  .path-when {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .path-what {
+    font-weight: var(--weight-medium);
+    color: var(--text);
+  }
+
+  /* ── Also built ───────────────────────────────────────────────────── */
   .strip-note {
     color: var(--text-muted);
     font-size: var(--text-sm);
@@ -234,14 +727,16 @@ const description =
   .strip-card {
     position: relative;
     height: 100%;
-    padding: var(--space-6);
+    padding: var(--space-6) var(--space-6) var(--space-6);
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
     background: var(--glass-bg);
     border: var(--border-width) solid var(--glass-edge);
     border-radius: var(--radius-lg);
-    transition: border-color var(--duration-transition) var(--ease-out);
+    transition:
+      border-color var(--duration-transition) var(--ease-out),
+      box-shadow var(--duration-transition) var(--ease-out);
   }
 
   .strip-card::before {
@@ -256,6 +751,13 @@ const description =
 
   .strip-card:hover {
     border-color: var(--glass-edge-strong);
+    box-shadow: 0 24px 60px -36px rgb(139 108 246 / 0.5);
+  }
+
+  .strip-no {
+    font-family: var(--font-mono);
+    font-size: var(--text-lg);
+    color: var(--hue-violet);
   }
 
   .strip-card h3 {
@@ -293,5 +795,36 @@ const description =
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     color: var(--text-muted);
+  }
+
+  /* ── Next ─────────────────────────────────────────────────────────── */
+  .next {
+    position: relative;
+    overflow: hidden;
+    padding: var(--space-8);
+    background: var(--glass-bg);
+    background-image: radial-gradient(
+      70% 120% at 100% 0%,
+      rgb(139 108 246 / 0.12),
+      transparent 60%
+    );
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: var(--radius-xl);
+  }
+
+  @media (min-width: 768px) {
+    .next {
+      padding: var(--space-12);
+    }
+  }
+
+  .next :global(.section-header) {
+    margin-block-end: var(--space-6);
+  }
+
+  .next-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
   }
 </style>

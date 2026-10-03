@@ -32,7 +32,7 @@ export const PAGE_ART: Readonly<Record<string, readonly StationId[]>> = {
   'systems/hospital-operations': ['dissection', 'systems'],
   'systems/menu-platform': ['data', 'systems'],
   'systems/electrical-platform': ['proof', 'systems'],
-  experience: ['live'],
+  experience: ['live', 'end'],
   engineering: ['think', 'lab'],
   about: ['build', 'think'],
   cv: ['enter'],
