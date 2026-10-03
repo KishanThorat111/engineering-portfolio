@@ -4176,3 +4176,27 @@ deferring off-screen sections with `content-visibility` (no change, and a
 0.009 CLS; reverted); the 768px file on phones and low priority for every
 non-opening picture (kept). Systems at 1.88s and three pages at 1.81s are
 flagged for the owner rather than declared met.
+
+## S12 — Labels on the artwork, on phones · 3 October 2026
+
+The owner asked whether the reference images could be used directly on
+phones and in the inner pages' open space, and left the decision with me.
+**Decided against, and the owner told why:** the references print invented
+metrics as live readings ("SYSTEM ONLINE", "ALL SYSTEMS OPERATIONAL",
+2,487 req/min, 99.99% uptime, 12.4K active tenants, per-system 99.96%),
+dozens of misspellings ("API SATEWAY", "DATA LATER", "IMPRASTRUCTURE",
+"06 / TWINK"), a non-working menu bar, text that is 2–3px tall at phone
+width and invisible to search and screen readers, and weigh 5–7MB each.
+Their own README: "They are not background images. They are visual
+specifications." Rules 1, 4 and 12 of the constitution would each be broken.
+
+What the owner wanted from them — the scene with its parts named on it — is
+built from what is true instead: `Stage` pins on the clean plates in the
+narrow composition, every name one the wide composition already prints.
+Station 01 on a phone now opens on its labelled picture, as reference 01
+does. Details and verification in commit `feat(home): labels pinned…`.
+
+One defect found and fixed during the work: CSS view-timeline animation of
+the pins left them all at opacity 0, because the card's `overflow: hidden`
+makes it the timeline's scroll container and it never scrolls. The reveal
+moved to stage-motion.ts, where every other arrival on the page lives.
