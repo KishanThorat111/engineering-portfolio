@@ -322,10 +322,18 @@ async function main() {
    * A crop is applied BEFORE the width ladder, so every rung is cropped and no
    * uncropped pixel of either figure exists anywhere in the output.
    */
-  const CROPS = {
-    '07-think': { left: 0, top: 430, width: 1260, height: 840 },
-    '08-build': { left: 0, top: 400, width: 1750, height: 1167 },
-  };
+  /*
+   * SUPERSEDED, Oct 2026 — ON THE OWNER'S INSTRUCTION.
+   *
+   * The two crops above were made on the assumption that the figure in 07 and
+   * 08 was a generated stranger who would read as a photograph of the subject.
+   * The owner has since stated that the figure IS him, and asked for it to be
+   * shown. A picture of the subject that the subject has approved as his own
+   * likeness is not a fabricated picture of a real person, so the reason for
+   * the crop is gone and both plates ship whole. The mechanism is kept for any
+   * future plate that genuinely needs a crop.
+   */
+  const CROPS = {};
 
   /*
    * GRADUATED DEPTH-OF-FIELD, AND WHY ONE PLATE NEEDS IT.
