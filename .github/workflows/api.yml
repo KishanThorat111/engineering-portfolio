@@ -75,8 +75,12 @@ jobs:
       - name: Install exact dependencies
         run: npm ci
 
+      # Same gate as ci.yml: full `npm audit --omit=dev --audit-level=high`
+      # strictness, plus checked exceptions re-verified on every run. The one
+      # current exception is in astro's build-time image cache and touches
+      # nothing the API runs. See scripts/audit-check.mjs.
       - name: Dependency audit (production, high+)
-        run: npm audit --omit=dev --audit-level=high
+        run: npm run audit:prod
 
       - name: Typecheck
         run: npm run check --workspace @portfolio/api
