@@ -146,6 +146,7 @@ const nextHasPlate = next ? plateExists(next.id) : false;
       with reduced motion, or on a touch screen they simply never show.
     */
   }
+  <div class="vw__grain"></div>
   <div class="vw__sweep"></div>
   <div class="vw__light"></div>
   <div class="vw__veil"></div>
@@ -307,6 +308,22 @@ const nextHasPlate = next ? plateExists(next.id) : false;
   }
 
   /* ── Light layers ─────────────────────────────────────────────── */
+
+  /*
+   * FILM GRAIN. A fixed, fine noise over the artwork, blended in overlay at a
+   * few per cent: it binds ten separately rendered plates into one stock, and
+   * it is what stops large dark gradients from banding on 8-bit panels. It is
+   * a tiny procedural SVG tile — no image request — and it never moves.
+   */
+  .vw__grain {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.09;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+  }
 
   .vw__sweep {
     position: absolute;

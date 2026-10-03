@@ -73,7 +73,38 @@ function show(list: HTMLElement[]): void {
   });
 }
 
+/**
+ * The chapter rail's "you are here". Navigation state, not motion, so it runs
+ * whatever the motion preference: the station crossing the middle of the
+ * screen is the current one.
+ */
+function trackChapters(): void {
+  const rail = document.querySelector<HTMLElement>('[data-chapters]');
+  if (!rail || !('IntersectionObserver' in window)) return;
+  const links = Array.from(rail.querySelectorAll<HTMLAnchorElement>('[data-chapter]'));
+  const here = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const index = links.findIndex((a) => a.dataset['chapter'] === entry.target.id);
+        if (index < 0) continue;
+        links.forEach((a, i) => {
+          if (i === index) a.setAttribute('aria-current', 'location');
+          else a.removeAttribute('aria-current');
+        });
+        rail.style.setProperty('--done', String(index));
+      }
+    },
+    { rootMargin: '-49% 0px -50% 0px' },
+  );
+  for (const a of links) {
+    const station = document.getElementById(a.dataset['chapter'] ?? '');
+    if (station) here.observe(station);
+  }
+}
+
 export function initStageMotion(): void {
+  trackChapters();
   const root = document.documentElement;
   // The layout's head script sets this only when motion is allowed.
   if (!('revealReady' in root.dataset) || !('IntersectionObserver' in window)) return;
@@ -119,6 +150,8 @@ export function initStageMotion(): void {
     }
     if (wide) {
       for (const el of wideTargets(stage)) el.dataset['rv'] = kind(el);
+      // The whole frame — artwork and overlay together — settles as it arrives.
+      stage.dataset['armed'] = '';
       arrive.observe(stage);
     } else {
       stage.dataset['in'] = '';
@@ -151,7 +184,18 @@ export function initStageMotion(): void {
   let last: PointerEvent | null = null;
   let lit: HTMLElement | null = null;
   let litPanel: HTMLElement | null = null;
+  let pulled: HTMLElement | null = null;
   let queued = false;
+
+  /*
+   * Magnetic calls to action: the button leans a few pixels toward the pointer
+   * while it is over it, and settles back when it leaves. Its own transition
+   * is set inline, so the arrival choreography's staggered delay can never
+   * apply to it.
+   */
+  const release = (el: HTMLElement | null) => {
+    if (el) el.style.translate = '';
+  };
 
   const paint = () => {
     queued = false;
@@ -173,6 +217,20 @@ export function initStageMotion(): void {
       vw.style.setProperty('--vw-sy', `${y.toFixed(0)}px`);
       vw.style.setProperty('--vw-px', ((x / r.width) * 2 - 1).toFixed(3));
       vw.style.setProperty('--vw-py', ((y / r.height) * 2 - 1).toFixed(3));
+    }
+
+    const cta = target?.closest<HTMLElement>('.cta, .enter__cta--primary') ?? null;
+    if (cta !== pulled) {
+      release(pulled);
+      pulled = cta;
+    }
+    if (cta) {
+      const c = cta.getBoundingClientRect();
+      const dx = (e.clientX - (c.left + c.width / 2)) * 0.16;
+      const dy = (e.clientY - (c.top + c.height / 2)) * 0.3;
+      cta.style.transition =
+        'translate 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, background 0.2s ease';
+      cta.style.translate = `${Math.max(-8, Math.min(8, dx)).toFixed(1)}px ${Math.max(-5, Math.min(5, dy)).toFixed(1)}px`;
     }
 
     const panel = target?.closest<HTMLElement>('.pnl') ?? null;
@@ -200,5 +258,7 @@ export function initStageMotion(): void {
   document.addEventListener('pointerleave', () => {
     if (lit) delete lit.dataset['lit'];
     lit = null;
+    release(pulled);
+    pulled = null;
   });
 }

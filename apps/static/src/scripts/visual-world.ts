@@ -38,6 +38,8 @@ type Layer = {
   plate: HTMLElement | null;
   /** The overlay of labels and panels, which must travel with the plate. */
   overlay: HTMLElement | null;
+  /** The headline column, which floats at its own, nearer depth. */
+  column: HTMLElement | null;
   atmosphere: HTMLElement | null;
   grid: HTMLElement | null;
   veil: HTMLElement | null;
@@ -56,6 +58,7 @@ function collect(): Layer[] {
       frame,
       plate: root.querySelector<HTMLElement>('.vw__plate'),
       overlay: frame.querySelector<HTMLElement>('.stage__layer'),
+      column: frame.querySelector<HTMLElement>('.stage__layer > .col, .stage__layer > .enter__col'),
       atmosphere: root.querySelector<HTMLElement>('.vw__atmosphere'),
       grid: root.querySelector<HTMLElement>('.vw__grid'),
       veil: root.querySelector<HTMLElement>('.vw__veil'),
@@ -127,6 +130,14 @@ export function initVisualWorld(): void {
          */
         if (layer.overlay && wide.matches) layer.overlay.style.translate = `0 ${drift}`;
         /*
+         * The headline column is not anchored to anything in the artwork, so
+         * it is free to sit nearer the reader: it moves a little further than
+         * the scene, and the words float in front of the world they describe.
+         */
+        if (layer.column && wide.matches) {
+          layer.column.style.translate = `0 ${(progress * 22 * d).toFixed(2)}px`;
+        }
+        /*
          * NO SCALE. It used to swell the plate by up to 2% as a station
          * centred, which moves every point of the artwork away from the centre
          * — up to ~7px at the edges of the frame — while the labels naming those
@@ -174,6 +185,7 @@ export function initVisualWorld(): void {
       for (const layer of layers) {
         layer.plate?.style.removeProperty('--vw-plate-y');
         layer.overlay?.style.removeProperty('translate');
+        layer.column?.style.removeProperty('translate');
         layer.veil?.style.removeProperty('opacity');
         layer.atmosphere?.style.removeProperty('--vw-atmos-y');
         layer.grid?.style.removeProperty('--vw-grid-y');

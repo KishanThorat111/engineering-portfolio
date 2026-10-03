@@ -48,6 +48,7 @@ import LiveEstatePanel from '../components/LiveEstatePanel.astro';
 import SystemField from '../components/SystemField.astro';
 import StationEnter from '../components/StationEnter.astro';
 import StationJourney from '../components/StationJourney.astro';
+import StationRail from '../components/StationRail.astro';
 import { SITE, STATUS_CHIPS } from '../config/site';
 import { PILLARS } from '../config/pillars';
 import { STATUS_LABELS } from '../schemas/constitution';
@@ -121,6 +122,7 @@ const ordinal = (index: number) => String(index + 1).padStart(2, '0');
     experience={roles}
     counts={stationCounts}
   />
+  <StationRail />
 
   <script>
     /*
