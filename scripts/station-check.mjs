@@ -300,11 +300,84 @@ if (!flat.includes(chips[0])) fail(`locked status chips are absent from the home
  * ABSENT everywhere else, which is strictly more than was checked before.
  */
 const WORLD_MARKERS = [
-  { re: /class="[^"]*station-nav/, what: 'the station rail' },
-  { re: /class="[^"]*vw/, what: 'the plate layer (.vw)' },
-  { re: /class="[^"]*stage/, what: 'the station stage shell' },
-  { re: /\/visual-world\//, what: 'a visual-world plate reference' },
+  { re: /class="[^"]*\bstation-nav\b/, what: 'the station rail' },
+  { re: /class="[^"]*\bvw\b/, what: 'the plate layer (.vw)' },
+  { re: /class="[^"]*\bstage\b/, what: 'the station stage shell' },
 ];
+
+/*
+ * THESE THREE PATTERNS NEVER MATCHED ANYTHING, UNTIL 3 OCT 2026.
+ *
+ * Each was written with its word boundaries as literal backspace bytes (0x08)
+ * rather than the two characters `\b` — so every one of them required a
+ * backspace inside a class attribute, which no HTML contains. The station
+ * rail, the plate layer and the stage shell could have appeared on any page
+ * and this section would have stayed green. Only the plate-path marker beside
+ * them had ever worked. Found while moving that marker (S11); proven by
+ * injecting each element into a built page and watching the gate fail.
+ */
+
+/*
+ * PLATES ON OTHER PAGES: ONLY AS DECLARED (owner direction, 3 Oct 2026 — S11).
+ *
+ * This list used to carry a fourth marker, any `/visual-world/` reference at
+ * all, because until then the artwork belonged to `/` alone. The owner has
+ * since asked for it on the other pages on purpose. The rule is moved to
+ * where the data now puts it, not dropped: config/page-art.ts declares, per
+ * route, exactly which plates that page shows, and every page is held to its
+ * declaration in both directions —
+ *
+ *   - a page that references a plate it does not declare fails (a leak
+ *     through a shared file lands here, on an undeclared page or plate);
+ *   - a page that declares a plate and does not show it fails (a declaration
+ *     cannot rot into a permission nobody is using);
+ *   - a declared route with no built page fails.
+ *
+ * The stage, the plate layer, the rail and the world's tokens stay banned
+ * everywhere but `/`, exactly as before.
+ */
+const artSource = readFileSync(resolve('apps/static/src/config/page-art.ts'), 'utf8');
+const artStart = artSource.indexOf('PAGE_ART');
+const artBlock = artSource.slice(artStart, artSource.indexOf('};', artStart));
+const declared = new Map(
+  [...artBlock.matchAll(/^\s*'?([a-z0-9/-]+)'?:\s*\[([^\]]*)\],?$/gm)].map((m) => [
+    m[1],
+    [...m[2].matchAll(/'([a-z]+)'/g)].map((x) => x[1]),
+  ]),
+);
+if (declared.size === 0) {
+  console.error(
+    'station-check: read no routes out of config/page-art.ts — its shape changed and this gate ' +
+      'can no longer check where plates appear.',
+  );
+  process.exit(1);
+}
+const stemById = new Map(stations.map((s) => [s.id, s.stem]));
+for (const [route, ids] of declared) {
+  for (const id of ids) {
+    if (!stemById.has(id)) fail(`page-art.ts declares an unknown plate "${id}" for /${route}`);
+  }
+}
+
+/** The route key a built file is declared under: `systems/index.html` → `systems`. */
+const routeOf = (rel) => rel.replace(/(^|\/)index\.html$/, '').replace(/\.html$/, '');
+
+/** Plate stems a page's markup references, from their content-hashed file names. */
+const platesIn = (source) =>
+  new Set(
+    [...source.matchAll(/\/visual-world\/([0-9]{2}-[a-z]+)-[0-9]+\.[0-9a-f]+\.(?:avif|webp)/g)].map(
+      (m) => m[1],
+    ),
+  );
+
+/**
+ * Every plate reference must be one `platesIn` can read. Counting all of them
+ * against the readable ones means an unhashed or oddly named reference fails
+ * even on a page whose other references are fine.
+ */
+const unreadablePlateRefs = (source) =>
+  (source.match(/\/visual-world\//g) ?? []).length -
+  (source.match(/\/visual-world\/[0-9]{2}-[a-z]+-[0-9]+\.[0-9a-f]+\.(?:avif|webp)/g) ?? []).length;
 
 /** Every built page, so a route added later is covered without an edit here. */
 function htmlPages(dir) {
@@ -353,6 +426,8 @@ function sheetsFor(page, source) {
 }
 
 let scanned = 0;
+let artPages = 0;
+const seenRoutes = new Set();
 for (const page of pages) {
   if (page === HOME || isLiveSurface(page)) continue;
   const source = readFileSync(page, 'utf8');
@@ -365,6 +440,23 @@ for (const page of pages) {
   for (const marker of WORLD_MARKERS) {
     if (marker.re.test(source)) fail(`${rel} carries ${marker.what} — the world belongs to / only`);
   }
+
+  const route = routeOf(rel);
+  const allowed = new Set((declared.get(route) ?? []).map((id) => stemById.get(id)));
+  const shown = platesIn(source);
+  if (unreadablePlateRefs(source) > 0) {
+    fail(`${rel} references /visual-world/ in a form this gate cannot read — use PlateImage`);
+  }
+  for (const stem of shown) {
+    if (!allowed.has(stem)) {
+      fail(`${rel} shows plate ${stem}, which config/page-art.ts does not declare for /${route}`);
+    }
+  }
+  for (const stem of allowed) {
+    if (!shown.has(stem)) fail(`${rel} declares plate ${stem} in page-art.ts and never shows it`);
+  }
+  if (shown.size > 0) artPages += 1;
+  seenRoutes.add(route);
 
   /*
    * The stylesheet matters as much as the markup. Importing `StationNav` into
@@ -380,6 +472,10 @@ for (const page of pages) {
       }
     }
   }
+}
+
+for (const route of declared.keys()) {
+  if (!seenRoutes.has(route)) fail(`page-art.ts declares /${route}, which is not a built page`);
 }
 
 /* ---- 4. the two surfaces do not borrow each other's weight ---------- */
@@ -450,6 +546,6 @@ if (failed > 0) {
 console.log(
   `station-check: OK — ${stations.length} station/plate mappings verified against built output, ` +
     `the locked claim and ${chips.length} locked status chips, ` +
-    `${scanned} static page(s) free of the world, ` +
+    `${scanned} static page(s) free of the world (${artPages} showing only their declared plates), ` +
     `the 3D bundle confined to /live/, and the route into it intact.`,
 );

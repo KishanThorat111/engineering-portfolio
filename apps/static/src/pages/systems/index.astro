@@ -37,9 +37,10 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PageHero from '../../components/PageHero.astro';
 import Button from '../../components/Button.astro';
+import PlateImage from '../../components/PlateImage.astro';
 import { SITE } from '../../config/site';
 import { STATUS_LABELS } from '../../schemas/constitution';
-import { SYSTEM_HUE } from '../../config/system-hue';
+import { SYSTEM_HUE, SYSTEM_ISLAND } from '../../config/system-hue';
 
 const systems = (await getCollection('systems')).sort((a, b) => a.data.order - b.data.order);
 
@@ -50,7 +51,7 @@ const ordinal = (index: number) => String(index + 1).padStart(2, '0');
   title={`Systems — ${SITE.name}`}
   description="Three multi-tenant platforms, designed, built, and operated end to end: one in daily hospital production, one live with subscription billing, one pre-launch."
 >
-  <PageHero index="01" label="Systems">
+  <PageHero index="01" label="Systems" art={{ plate: 'systems', focus: '60% 42%' }}>
     <Fragment slot="title">Three platforms, one engineer, <em>no hand-offs</em></Fragment>
     <p slot="lede">
       Each of these was designed, built, secured, deployed, and then operated by me. Each case study
@@ -80,6 +81,7 @@ const ordinal = (index: number) => String(index + 1).padStart(2, '0');
         const status = STATUS_LABELS[system.data.status];
         const metrics = system.data.metrics.slice(0, 3);
         const limitation = system.data.limitations[0];
+        const island = SYSTEM_ISLAND[system.id];
         return (
           <section
             class="entry"
@@ -89,6 +91,17 @@ const ordinal = (index: number) => String(index + 1).padStart(2, '0');
           >
             <div class="container">
               <div class="entry-card">
+                {/* The system's own island from the home page's systems frame. */}
+                {island && (
+                  <PlateImage
+                    id="systems"
+                    sizes="(min-width: 1000px) 1150px, 170vw"
+                    cx={island.cx}
+                    cy={island.cy}
+                    zoom={3.1}
+                    class="entry-art"
+                  />
+                )}
                 <div class="entry-main">
                   <p class="entry-status">
                     <span class="entry-no" aria-hidden="true">
@@ -232,7 +245,8 @@ const ordinal = (index: number) => String(index + 1).padStart(2, '0');
     isolation: isolate;
     overflow: hidden;
     display: grid;
-    gap: var(--space-12);
+    grid-template-areas: 'art' 'main' 'metrics';
+    gap: var(--space-8);
     padding: var(--space-8) var(--space-6);
     background: var(--glass-bg);
     border: var(--border-width) solid var(--glass-edge);
@@ -269,9 +283,44 @@ const ordinal = (index: number) => String(index + 1).padStart(2, '0');
 
   @media (min-width: 1000px) {
     .entry-card {
-      grid-template-columns: minmax(0, 1.35fr) minmax(16rem, 0.65fr);
-      gap: var(--space-16);
+      grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.65fr);
+      grid-template-rows: auto 1fr;
+      grid-template-areas: 'main art' 'main metrics';
+      gap: var(--space-6) var(--space-16);
       align-items: start;
+    }
+  }
+
+  .entry-main {
+    grid-area: main;
+  }
+
+  /*
+   * THE ISLAND. The system's building from the home page's frame, framed and
+   * lit in its own colour, so the three systems are recognisable by sight
+   * from `/` to here. Decoration: the title beside it names the system.
+   */
+  .entry-card :global(.entry-art) {
+    grid-area: art;
+    aspect-ratio: 4 / 3;
+    border: var(--border-width) solid color-mix(in srgb, var(--hue) 35%, transparent);
+    border-radius: var(--radius-lg);
+    box-shadow:
+      0 0 0 1px rgb(255 255 255 / 0.03),
+      0 30px 70px -40px color-mix(in srgb, var(--hue) 70%, transparent);
+  }
+
+  .entry-card :global(.entry-art)::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(120% 90% at 50% 45%, transparent 55%, rgb(5 7 12 / 0.55));
+    pointer-events: none;
+  }
+
+  @media (max-width: 999.98px) {
+    .entry-card :global(.entry-art) {
+      aspect-ratio: 16 / 10;
     }
   }
 
@@ -382,6 +431,7 @@ const ordinal = (index: number) => String(index + 1).padStart(2, '0');
 
   /* Figures stacked beside the story: number first, its date, then what it is. */
   .entry-metrics {
+    grid-area: metrics;
     display: grid;
     gap: var(--space-4);
     margin: 0;

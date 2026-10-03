@@ -10,6 +10,7 @@
  */
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Button from '../components/Button.astro';
+import PlateImage from '../components/PlateImage.astro';
 import JsonLd from '../components/JsonLd.astro';
 import { profilePageSchema } from '../lib/structured-data';
 import { SITE } from '../config/site';
@@ -30,6 +31,14 @@ import {
   <Fragment slot="head">
     <JsonLd data={profilePageSchema(Astro.site!, '/cv', `${SITE.name} — CV`, description)} />
   </Fragment>
+
+  {
+    /* The home page's opening scene, behind the top of the document on screen.
+      Never printed: paper and the PDF stay exactly as they were. */
+  }
+  <div class="cv-scene no-print">
+    <PlateImage id="enter" priority="eager" sizes="100vw" focus="56% 40%" />
+  </div>
 
   <div class="container cv-page">
     <div class="cv-actions no-print">
@@ -362,8 +371,32 @@ import {
    * under a bar carrying the page's number and the download.
    */
   @media screen {
+    .cv-scene {
+      position: relative;
+      height: clamp(220px, 34vw, 420px);
+    }
+
+    .cv-scene :global(.plate-img) {
+      height: 100%;
+      background: transparent;
+    }
+
+    .cv-scene::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to top,
+        var(--bg) 0%,
+        rgb(10 14 21 / 0.4) 45%,
+        rgb(10 14 21 / 0.25) 100%
+      );
+    }
+
     .cv-page {
-      padding-block: var(--space-12) var(--space-24);
+      position: relative;
+      margin-block-start: clamp(-260px, -22vw, -120px);
+      padding-block: 0 var(--space-24);
     }
 
     .cv-actions {

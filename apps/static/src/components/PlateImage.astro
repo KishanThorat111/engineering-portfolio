@@ -1,0 +1,120 @@
+---
+/**
+ * A PLATE AS A PICTURE ON A PAGE — the one way a page beyond `/` shows artwork.
+ *
+ * Two framings of the same file:
+ *
+ *   cover   the plate fills its box, held on a focal point (`focus`, CSS
+ *           object-position). Used for openings and bands.
+ *   crop    one point of the plate, enlarged: `cx`/`cy` (0–1 across and down
+ *           the plate) is centred in the box and the plate is drawn `zoom`
+ *           times the box's width — station 02's islands, one per system.
+ *
+ * Every use is checked against config/page-art.ts at build time, so a page
+ * cannot quietly start carrying artwork nobody declared for it.
+ *
+ * The box is the caller's: it gives this component's root a size (an
+ * aspect-ratio or explicit dimensions) and the image fills it.
+ *
+ * `sizes` for a crop: an honest value would be zoom × box width, which on a
+ * high-density phone always selects the 2528px file (227KB for plate 02). The
+ * crops pass 170vw there instead, which selects the 1920px file — still about
+ * 2.5 file pixels per CSS pixel of the enlarged region, at two-thirds of the
+ * weight.
+ */
+import {
+  plateSources,
+  plateExists,
+  PLATE_INTRINSIC_WIDTH,
+  PLATE_INTRINSIC_HEIGHT,
+  type StationId,
+} from '../config/visual-world';
+import { assertDeclared } from '../config/page-art';
+
+interface Props {
+  id: StationId;
+  /** Empty for decoration; a real description when the picture is content. */
+  alt?: string;
+  /** The first picture on a page loads at once; everything else waits. */
+  priority?: 'eager' | 'lazy';
+  /** How wide the drawn plate is on screen, for the browser's choice of file. */
+  sizes: string;
+  focus?: string;
+  cx?: number;
+  cy?: number;
+  zoom?: number;
+  class?: string;
+}
+
+const {
+  id,
+  alt = '',
+  priority = 'lazy',
+  sizes,
+  focus = '50% 50%',
+  cx,
+  cy,
+  zoom = 1,
+  class: className,
+} = Astro.props;
+
+assertDeclared(Astro.url.pathname, id);
+const has = plateExists(id);
+const src = has ? plateSources(id) : null;
+const crop = cx !== undefined && cy !== undefined;
+const style = crop ? `--cx:${cx}; --cy:${cy}; --zoom:${zoom}` : `--focus:${focus}`;
+---
+
+{
+  src && (
+    <div class:list={['plate-img', crop && 'plate-img--crop', className]} style={style}>
+      <picture>
+        <source type="image/avif" srcset={src.avif} sizes={sizes} />
+        <source type="image/webp" srcset={src.webp} sizes={sizes} />
+        <img
+          src={src.webp.split(' ')[0]}
+          width={PLATE_INTRINSIC_WIDTH}
+          height={PLATE_INTRINSIC_HEIGHT}
+          alt={alt}
+          decoding="async"
+          loading={priority === 'eager' ? 'eager' : 'lazy'}
+          fetchpriority={priority === 'eager' ? 'high' : 'low'}
+        />
+      </picture>
+    </div>
+  )
+}
+
+<style>
+  .plate-img {
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-inset);
+  }
+
+  .plate-img img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: var(--focus);
+  }
+
+  /*
+   * The point (cx, cy) is put at the box's centre: the image is drawn `zoom`
+   * box-widths wide from the centre, then moved back by that fraction of its
+   * own size — translate percentages are the element's own, so this holds for
+   * any box shape without knowing its height.
+   */
+  .plate-img--crop img {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: calc(var(--zoom) * 100%);
+    max-width: none;
+    height: auto;
+    translate: calc(var(--cx) * -100%) calc(var(--cy) * -100%);
+    /* A caller's hover zoom grows around the subject, not the plate's middle. */
+    transform-origin: calc(var(--cx) * 100%) calc(var(--cy) * 100%);
+  }
+</style>

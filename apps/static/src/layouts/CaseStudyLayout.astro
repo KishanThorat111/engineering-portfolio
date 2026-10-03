@@ -29,7 +29,8 @@ import '../styles/diagrams.css';
 import BaseLayout from './BaseLayout.astro';
 import SectionHeader from '../components/SectionHeader.astro';
 import PageHero from '../components/PageHero.astro';
-import { SYSTEM_HUE } from '../config/system-hue';
+import PlateImage from '../components/PlateImage.astro';
+import { SYSTEM_HUE, SYSTEM_ISLAND, SYSTEM_SCENE } from '../config/system-hue';
 import { STATUS_LABELS } from '../schemas/constitution';
 import StatusBadge from '../components/StatusBadge.astro';
 import DecisionCard from '../components/DecisionCard.astro';
@@ -98,6 +99,7 @@ const position = all.findIndex((s) => s.id === entry.id);
 const ordinal = (index: number) => String(index + 1).padStart(2, '0');
 const others = all.filter((s) => s.id !== entry.id);
 const hue = SYSTEM_HUE[entry.id] ?? 'var(--hue-blue)';
+const scene = SYSTEM_SCENE[entry.id];
 
 /** The page's own index, in reading order; only sections this page renders. */
 const sections = [
@@ -127,7 +129,13 @@ const title = `${system.title} — case study`;
 
   <article class="case-study" style={`--hue: ${hue}`}>
     <!-- 1. Header -->
-    <PageHero index={ordinal(position)} label="Case study" hue={hue} compact>
+    <PageHero
+      index={ordinal(position)}
+      label="Case study"
+      hue={hue}
+      compact
+      art={scene && { plate: scene.plate, focus: scene.focus, focusNarrow: scene.focusNarrow }}
+    >
       <Fragment slot="title">{system.title}</Fragment>
       <p slot="lede" class="role">{system.role}</p>
       <div class="status-line">
@@ -335,9 +343,20 @@ const title = `${system.title} — case study`;
           others.map((other) => {
             const status = STATUS_LABELS[other.data.status];
             const index = all.findIndex((s) => s.id === other.id);
+            const island = SYSTEM_ISLAND[other.id];
             return (
               <li style={`--hue: ${SYSTEM_HUE[other.id] ?? 'var(--hue-blue)'}`}>
                 <a href={`/systems/${other.id}`}>
+                  {island && (
+                    <PlateImage
+                      id="systems"
+                      sizes="(min-width: 900px) 1700px, 170vw"
+                      cx={island.cx}
+                      cy={island.cy}
+                      zoom={3.1}
+                      class="more-art"
+                    />
+                  )}
                   <span class="more-top">
                     <span class="more-no">{ordinal(index)}</span>
                     <span class="more-status">{status.label}</span>
@@ -386,11 +405,12 @@ const title = `${system.title} — case study`;
     padding: 0;
   }
 
+  /* A solid backing, so a tag reads wherever the scene behind it is bright. */
   .stack li {
     padding: 0.3rem 0.65rem;
     border: var(--border-width) solid var(--glass-edge);
     border-radius: 6px;
-    background: rgb(255 255 255 / 0.02);
+    background: rgb(10 14 21 / 0.78);
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     color: var(--text-muted);
@@ -627,6 +647,24 @@ const title = `${system.title} — case study`;
     transition:
       border-color var(--duration-transition) var(--ease-out),
       box-shadow var(--duration-transition) var(--ease-out);
+  }
+
+  /* The system's island across the top of its card, fading into it. */
+  .more-list a :global(.more-art) {
+    aspect-ratio: 16 / 7;
+    margin: calc(-1 * var(--space-8)) calc(-1 * var(--space-8)) var(--space-2);
+    background: transparent;
+    mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  }
+
+  .more-list a :global(.more-art img) {
+    transition: scale 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .more-list a:hover :global(.more-art img) {
+      scale: 1.05;
+    }
   }
 
   .more-list a::after {

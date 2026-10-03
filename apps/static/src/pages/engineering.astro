@@ -19,6 +19,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from '../components/PageHero.astro';
 import SectionHeader from '../components/SectionHeader.astro';
 import DecisionCard from '../components/DecisionCard.astro';
+import PlateImage from '../components/PlateImage.astro';
 import { SITE } from '../config/site';
 import { PILLARS } from '../config/pillars';
 
@@ -33,7 +34,16 @@ const lessons = (await getCollection('lessons')).sort((a, b) => a.data.order - b
   title={`How I work — ${SITE.name}`}
   description="Principles with evidence behind them, the architecture decisions that shaped three platforms, and two things I got wrong and what changed because of them."
 >
-  <PageHero index="03" label="How I work">
+  <PageHero
+    index="03"
+    label="How I work"
+    art={{
+      plate: 'think',
+      focus: '66% 40%',
+      focusNarrow: '74% 34%',
+      alt: 'Kishan Thorat at his desk, working through an architecture drawing',
+    }}
+  >
     <Fragment slot="title">Judgement is the part <em>worth reading</em></Fragment>
     <p slot="lede">
       Anyone can list technologies. What is harder to fake is why a system is shaped the way it is,
@@ -129,6 +139,13 @@ const lessons = (await getCollection('lessons')).sort((a, b) => a.data.order - b
   <section class="band band--last">
     <div class="container">
       <SectionHeader index="04" kicker="Lessons" title="Two I got wrong" emphasis="got wrong" />
+      {/* The lab from the home page's fifth frame: where the lessons were learned. */}
+      <PlateImage
+        id="lab"
+        sizes="(min-width: 1120px) 1072px, 100vw"
+        focus="50% 52%"
+        class="lab-band"
+      />
       <p class="section-note">
         Both of these are still true of systems described elsewhere on this site. They are here
         because a portfolio with no failures in it is not a portfolio of a person who has shipped
@@ -326,6 +343,29 @@ const lessons = (await getCollection('lessons')).sort((a, b) => a.data.order - b
   .lesson {
     display: flex;
     flex-direction: column;
+  }
+
+  /* A wide window onto the lab, framed like the home page's phone pictures. */
+  .band :global(.lab-band) {
+    aspect-ratio: 21 / 8;
+    margin-block-end: var(--space-8);
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 30px 80px -44px rgb(139 108 246 / 0.6);
+  }
+
+  .band :global(.lab-band)::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgb(10 14 21 / 0.55), transparent 45%);
+    pointer-events: none;
+  }
+
+  @media (max-width: 767.98px) {
+    .band :global(.lab-band) {
+      aspect-ratio: 16 / 10;
+    }
   }
 
   .cross-link {

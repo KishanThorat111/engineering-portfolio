@@ -17,6 +17,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from '../components/PageHero.astro';
 import SectionHeader from '../components/SectionHeader.astro';
 import Button from '../components/Button.astro';
+import PlateImage from '../components/PlateImage.astro';
 import JsonLd from '../components/JsonLd.astro';
 import { profilePageSchema } from '../lib/structured-data';
 import { SITE } from '../config/site';
@@ -42,7 +43,17 @@ const reach = [
     <JsonLd data={profilePageSchema(Astro.site!, '/about', `About ${SITE.name}`, description)} />
   </Fragment>
 
-  <PageHero index="04" label="About" compact>
+  <PageHero
+    index="04"
+    label="About"
+    compact
+    art={{
+      plate: 'build',
+      focus: '80% 42%',
+      focusNarrow: '84% 38%',
+      alt: 'Kishan Thorat looking out over a city at night',
+    }}
+  >
     <Fragment slot="title">
       I came to software from somewhere else, <em>and it shows in how I build.</em>
     </Fragment>
@@ -94,20 +105,24 @@ const reach = [
       <aside class="side" aria-label="At a glance">
         {
           /*
-           * The headshot pipeline is built and waiting in
-           * src/components/Headshot.astro. This page reads correctly without an
-           * image, so nothing here is a gap to be filled with a grey box.
+           * THE PORTRAIT. This slot used to ask the owner for a headshot
+           * photograph. On 3 Oct 2026 the owner asked for the picture of him
+           * already in the site's artwork to be used here instead (PHASE_LOG
+           * S11), so the card opens on him at his desk — the home page's
+           * seventh frame, held on his face. src/components/Headshot.astro is
+           * still the way to swap in a photograph if he supplies one.
            */
         }
-        <!-- OWNER-INPUT: one owned headshot photograph — plain background, shoulders-up,
-             at least 480px on the short edge, JPEG or PNG. Save it as
-             src/assets/headshot.jpg, then switch it on with two lines: add
-             `import headshot from '../assets/headshot.jpg';` and
-             `import Headshot from '../components/Headshot.astro';` to this page's
-             frontmatter and render `<Headshot src={headshot} alt="Kishan Thorat" />`
-             here. The image must be owned, not hotlinked. -->
-
         <div class="card">
+          <PlateImage
+            id="think"
+            alt="Kishan Thorat"
+            sizes="(min-width: 960px) 1150px, 170vw"
+            cx={0.725}
+            cy={0.36}
+            zoom={3.2}
+            class="card-photo"
+          />
           <p class="card-mark" aria-hidden="true">KT</p>
           <p class="card-name">{SITE.name}</p>
           <p class="card-role">{SITE.role}</p>
@@ -225,6 +240,21 @@ const reach = [
     inset-block-start: 0;
     height: 2px;
     background: var(--brand-ramp);
+  }
+
+  /* The portrait across the head of the card, fading into it; the mark
+     overlaps its foot as the header's mark sits on its bar. */
+  .card :global(.card-photo) {
+    aspect-ratio: 1 / 1;
+    margin: calc(-1 * var(--space-6)) calc(-1 * var(--space-6)) 0;
+    background: transparent;
+    mask-image: linear-gradient(to bottom, #000 62%, transparent);
+  }
+
+  .card-photo + .card-mark,
+  .card :global(.card-photo) + .card-mark {
+    position: relative;
+    margin-block-start: -1.5rem;
   }
 
   .card-mark {
