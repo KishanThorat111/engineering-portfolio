@@ -50,6 +50,7 @@
     "stack:down": "docker compose -f infra/compose.yml -f infra/compose.local.yml down",
     "assets:benchmark": "node scripts/optimize-visual-world.mjs --benchmark",
     "assets:optimize": "node scripts/optimize-visual-world.mjs",
+    "audit:prod": "node scripts/audit-check.mjs",
     "assets:upload": "node scripts/upload-visual-world.mjs"
   },
   "devDependencies": {

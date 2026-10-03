@@ -3893,3 +3893,26 @@ What shipped:
   (LCP 2105–2180ms against 2106ms before), desktop **1.0**, CLS 0, TBT 0.
 - Home still loads **no JS files**: three inline modules, ~3.7KB gz total.
 - `verify` 0, render harness 35/35. /live/ untouched.
+
+### Addendum — the production audit, and an owner-approved exception
+
+The CI run for the motion commit failed the dependency audit on an advisory
+published 18 Sep 2026 and first seen by CI on 3 Oct: GHSA-ch52-4w7c-c8xp in
+`http-cache-semantics` (≤4.2.0), pulled in by `astro`. No patched version exists
+(4.2.0 is the latest) and astro 7.3.5, the latest, still requires it — so no
+upgrade can clear it. npm's only offered fix was astro 2.10.9.
+
+It is not reachable here. The flaw is a shared cache serving one user's zeroed
+`Set-Cookie` response to another on a client `max-stale` request. Astro uses the
+package in one place, to compute the time-to-live of a remote image fetched at
+build time — one process, no users, no client cache directives — and only for
+remote domains allowed in astro.config, of which there are none. Astro does not
+run in the deployed site at all.
+
+The owner was asked and approved a narrow exception rather than leaving CI red.
+`npm run audit:prod` (scripts/audit-check.mjs) keeps `npm audit --omit=dev
+--audit-level=high` strictness and accepts this one advisory only while every
+condition re-verifies on each run. Proved by injection, each reverted: remote
+images enabled → fail; review date passed → fail; another dependent → fail;
+exceptions list emptied → fail (plain audit strictness); a patched version
+published (simulated) → fail with "upgrade instead". Review by 31 Dec 2026.

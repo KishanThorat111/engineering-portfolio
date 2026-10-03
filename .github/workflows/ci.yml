@@ -34,8 +34,13 @@ jobs:
       - name: Install exact dependencies
         run: npm ci
 
+      # `npm audit --omit=dev --audit-level=high`, unchanged in strictness, plus
+      # checked exceptions for advisories with no fix that cannot be reached:
+      # each one's conditions are re-verified on every run and it fails the
+      # moment a fix ships or the code becomes reachable. See
+      # scripts/audit-check.mjs and docs/PHASE_LOG.md (S8).
       - name: Dependency audit (production, high+)
-        run: npm audit --omit=dev --audit-level=high
+        run: npm run audit:prod
 
       # Formatting was verified by hand before every commit until now, which
       # means it was verified by memory. It is deterministic and cheap, so it
