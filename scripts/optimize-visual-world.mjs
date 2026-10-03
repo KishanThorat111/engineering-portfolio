@@ -410,6 +410,42 @@ async function main() {
     },
   };
 
+  /*
+   * A FADE TO THE PAGE GROUND, AND WHY 10 NEEDS ONE.
+   *
+   * `10-end` was rendered with a strip of generated dashboard panels along its
+   * bottom edge — illegible AI lettering and a fake IP address (25.198.42.11).
+   * Shown whole, the strip sat directly above the site footer and read as a
+   * broken screenshot. The bottom of the plate now fades to the page's own
+   * ground colour (--bg, #0a0e15) from 82% down, so the final station runs
+   * into the footer without a seam and none of that lettering survives.
+   */
+  const BOTTOM_FADE = {
+    // The same strip runs along the top edge too; it fades the other way.
+    '10-end': { from: 0.82, solidAt: 0.93, topSolidUntil: 0.065, topClearAt: 0.13 },
+  };
+
+  async function bottomFade(stem, path) {
+    const cfg = BOTTOM_FADE[stem];
+    if (!cfg) return null;
+    const meta = await sharp(path).metadata();
+    const w = meta.width ?? 0;
+    const h = meta.height ?? 0;
+    return Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">` +
+        `<defs><linearGradient id="f" x1="0" y1="0" x2="0" y2="1">` +
+        (cfg.topSolidUntil
+          ? `<stop offset="0" stop-color="#0a0e15" stop-opacity="1"/>` +
+            `<stop offset="${cfg.topSolidUntil}" stop-color="#0a0e15" stop-opacity="1"/>` +
+            `<stop offset="${cfg.topClearAt}" stop-color="#0a0e15" stop-opacity="0"/>`
+          : '') +
+        `<stop offset="${cfg.from}" stop-color="#0a0e15" stop-opacity="0"/>` +
+        `<stop offset="${cfg.solidAt}" stop-color="#0a0e15" stop-opacity="1"/>` +
+        `<stop offset="1" stop-color="#0a0e15" stop-opacity="1"/>` +
+        `</linearGradient></defs><rect width="${w}" height="${h}" fill="url(#f)"/></svg>`,
+    );
+  }
+
   /** Build the blur overlay for one plate, or null if it needs none. */
   async function depthOverlay(stem, path) {
     const cfg = DEPTH_BLUR[stem];
@@ -476,11 +512,12 @@ Encoding ${files.length} plates: avif q65 primary, webp q85 fallback
      * result is identical for every width below it.
      */
     const overlay = await depthOverlay(stem, path);
-    const overlaySource = overlay
-      ? await sharp(path)
-          .composite([{ input: overlay }])
-          .png()
-          .toBuffer()
+    const layers = [];
+    if (overlay) layers.push({ input: overlay });
+    const fade = await bottomFade(stem, path);
+    if (fade) layers.push({ input: fade });
+    const overlaySource = layers.length
+      ? await sharp(path).composite(layers).png().toBuffer()
       : null;
     // The width available AFTER any crop, so a plate is never upscaled past
     // the pixels that actually survive into the frame.
