@@ -4038,3 +4038,64 @@ Fetched after 082dd61: `https://kishanthorat.com/` now serves the S9 build —
 Cloudflare builds (7d6c865, 6f5ea23) were not followed by further failures;
 their logs remain in the Cloudflare dashboard and the cause is not known from
 here. The OWNER-INPUT above is closed unless a later push fails to deploy.
+
+## S10 — Offline said plainly, phones, and every page in one language · 3 October 2026
+
+The owner asked three things: what the red "no answer" readings were and to
+make them right; a better phone layout; and the other pages — Systems,
+Experience, How I work, About, CV — brought into the home page's design.
+/live/ was left alone, as asked.
+
+**The red readings were true.** `https://kishanthorat.com/health` returns 530
+with Cloudflare error 1033: the tunnel to the control plane has no
+connection, so the VM or `cloudflared` is not running. The page measured that
+correctly and said "no answer" in alarm red in seven places, which read as
+the page being broken. Restarting the backend needs the owner's access
+(OWNER-INPUT: start the VM / tunnel, or dispatch Deploy API). What changed is
+how the same truth is said: one word, "offline", in the register's amber —
+already this design's colour for "cannot reach the plane" (contrast gate
+pairing) — a status sentence saying when it was checked, quiet dashes for
+readings that could not be taken, and a trace caption that says nothing on
+the panel is a measurement. An event-stream note that asserted the backend's
+state at build time ("the plane is not answering") would have gone false the
+moment it came back; it now says only what the page does.
+
+**Phones.** Every station after the opening one shows its artwork as a framed
+picture at full strength above its text, instead of a dim backdrop under a
+reading scrim — the treatment 07 and 08 already had, and the one that read
+best. Same plate file, no extra download. Phone headlines carry the wide
+composition's gradient words.
+
+**Every inner page.** A shared opening (PageHero), a glass material
+(tokens.css), numbered section headers with ramp emphasis, and restyled
+cards, pills and buttons; the systems lit in their home-page hues
+(config/system-hue.ts); case studies with a sticky section index and the
+other two systems at the end. No plate, stage or rail leaves `/` —
+station-check passes with all 10 static pages free of the world. Every
+sentence is unchanged.
+
+**Defect fixed.** About's closing paragraph rendered "them.The CV" and "isa
+PDF": Astro's HTML compression drops a line break before an inline link. A
+scan of every built page found it there and in the noindex gallery; both
+now carry explicit spaces.
+
+**The CV PDF.** Proved untouched by rendering it from this build and from the
+previous commit: byte-identical (sha256 dead3d27…). The committed cv.pdf
+dates from ae7ba33 and renders differently, but its text is identical to
+today's, so it was not regenerated. Note: `cv-pdf.mjs --check` also writes
+the PDF; it was restored from git after the check.
+
+### Verified
+
+- Offline state captured on station 01 (desktop and phone), 04, 06 and the
+  trace; all four home scripts still inline.
+- Phones and tablets, home: 10 viewports 320×568–1024×1366, no overflow,
+  no edge clipping, smallest text 10.6px, no control under 24px; motion
+  suite 0.
+- Inner pages: 9 routes × 6 viewports 320–1920, no overflow or edge
+  clipping, no control under 24px (case studies' smallest text is the
+  existing diagrams' 9.5px labels); nothing hidden under reduced motion,
+  JavaScript off, or after scrolling.
+- Lighthouse 1/1/1/1 mobile and desktop on all eight inner routes; home
+  0.99/1/0.96/1 mobile, 1/1/0.96/1 desktop (unchanged).
+- `verify` 0, render 35/35.
