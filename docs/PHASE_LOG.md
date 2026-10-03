@@ -4026,3 +4026,15 @@ runner, so the cause is on the Cloudflare side and its log is in a dashboard
 this repository cannot read. OWNER-INPUT: open the failed build in the
 Cloudflare dashboard (Workers → portfolio → Builds) and either retry it or
 share its log.
+
+### Addendum — the deploy followed (correction to the note above)
+
+Fetched after 082dd61: `https://kishanthorat.com/` now serves the S9 build —
+`index.T5cimHnz.css`, the same hash as the local artifact, with
+`vw__grain` 10, `data-chapters` 2, `chapters__label` 10, `data-band="third"`
+11, `enter__estate` 5, and `-webkit-backdrop-filter` in the served CSS. `/`,
+`/api/profile.json`, `/llms.txt`, `/systems/`, `/live/`, `/cv/` and
+`/sitemap-index.xml` return 200 with their content types. The two failed
+Cloudflare builds (7d6c865, 6f5ea23) were not followed by further failures;
+their logs remain in the Cloudflare dashboard and the cause is not known from
+here. The OWNER-INPUT above is closed unless a later push fails to deploy.
