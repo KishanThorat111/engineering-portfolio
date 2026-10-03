@@ -8,7 +8,9 @@
  * is rendered from it here, so the tab icon, the ICO for older browsers, the
  * iPhone home-screen icon and the install icons cannot drift apart.
  *
- *   favicon.ico            16 + 32 px, for browsers and tools that ask for it
+ *   favicon.ico            16 + 32 + 48 px, for browsers and tools that ask for it
+ *   favicon-96.png         96 px — Google Search asks for a square icon at a
+ *                          multiple of 48px, and shows it beside every result
  *   apple-touch-icon.png   180 px, full-bleed (iOS rounds the corners itself)
  *   icon-192.png, icon-512.png   for site.webmanifest
  *
@@ -66,11 +68,14 @@ function ico(images) {
   return Buffer.concat([header, dir, ...images.map((im) => im.data)]);
 }
 
-const sizes = [16, 32];
+const sizes = [16, 32, 48];
 const icoImages = [];
 for (const size of sizes) icoImages.push({ size, data: await tile(size).toBuffer() });
 writeFileSync(join(PUBLIC, 'favicon.ico'), ico(icoImages));
+writeFileSync(join(PUBLIC, 'favicon-96.png'), await tile(96).toBuffer());
 writeFileSync(join(PUBLIC, 'apple-touch-icon.png'), await fullBleed(180));
 writeFileSync(join(PUBLIC, 'icon-192.png'), await fullBleed(192));
 writeFileSync(join(PUBLIC, 'icon-512.png'), await fullBleed(512));
-console.log('make-icons: favicon.ico (16, 32), apple-touch-icon.png, icon-192.png, icon-512.png');
+console.log(
+  'make-icons: favicon.ico (16, 32, 48), favicon-96.png, apple-touch-icon.png, icon-192.png, icon-512.png',
+);

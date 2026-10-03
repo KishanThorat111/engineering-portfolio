@@ -218,6 +218,7 @@ const cacheRules = [
   ...[
     '/favicon.svg',
     '/favicon.ico',
+    '/favicon-96.png',
     '/apple-touch-icon.png',
     '/icon-192.png',
     '/icon-512.png',
