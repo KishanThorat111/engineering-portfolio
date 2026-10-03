@@ -113,6 +113,18 @@ export function initStageMotion(): void {
     { rootMargin: '0px 0px -8% 0px' },
   );
 
+  // A phone card's pinned labels light in turn once the card itself is in view.
+  const pinsIn = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        pinsIn.unobserve(entry.target);
+        show(Array.from(entry.target.children) as HTMLElement[]);
+      }
+    },
+    { rootMargin: '0px 0px -15% 0px' },
+  );
+
   const below = innerHeight;
   for (const stage of stages) {
     // Only the section's own box is read here; see visual-world.ts on why.
@@ -133,6 +145,11 @@ export function initStageMotion(): void {
       for (const el of mobileTargets(stage)) {
         el.dataset['rv'] = 'e';
         piece.observe(el);
+      }
+      const pins = stage.querySelector<HTMLElement>('.stage__pins');
+      if (pins) {
+        for (const pin of Array.from(pins.children) as HTMLElement[]) pin.dataset['rv'] = 'pin';
+        pinsIn.observe(pins);
       }
     }
   }

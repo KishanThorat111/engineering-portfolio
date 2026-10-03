@@ -87,6 +87,23 @@ interface Props {
    * same plate as content of its own (07 and 08's portraits of the owner).
    */
   mobileArt?: 'card' | 'backdrop' | 'none';
+  /**
+   * Labels pinned to the artwork on a phone or tablet, as the references draw
+   * them — a lit dot on the thing, a tag naming it. Positions are in the same
+   * stage percentages as the wide composition's callouts, so the two can be
+   * checked against each other; they are converted to the phone card below.
+   * Only drawn in `card` mode. Every word must already be on the site.
+   */
+  pins?: readonly Pin[];
+}
+
+export interface Pin {
+  /** Where the dot sits, in percent of the wide frame (the callouts' system). */
+  x: number;
+  y: number;
+  label: string;
+  /** Which side of the dot the tag sits: left, right, up or down. */
+  side?: 'l' | 'r' | 'u' | 'd';
 }
 
 const {
@@ -100,7 +117,29 @@ const {
   anchor,
   class: className,
   mobileArt = 'card',
+  pins = [],
 } = Astro.props;
+
+/*
+ * FROM THE WIDE FRAME TO THE PHONE CARD.
+ *
+ * Wide: the plate is 104% of the frame, offset -2% (its bleed), and moved
+ * `plateX` to the right. Card: the plate is drawn 110% tall from -5% with
+ * `object-fit: cover`, which at the card's 3:2 makes it 110% wide too, held at
+ * `object-position: 62%` — 6.2% of the card off its left edge. A point on the
+ * plate therefore lands at 1.1 × p − 0.062 across and 1.1 × p − 0.05 down.
+ * The card is locked to 3:2 for exactly this reason.
+ */
+const toPlate = (s: number, shift = 0) => (s / 100 + 0.02 - shift / 100) / 1.04;
+const pinned =
+  mobileArt === 'card'
+    ? pins.map((pin, i) => ({
+        ...pin,
+        i,
+        left: ((1.1 * toPlate(pin.x, plateX) - 0.062) * 100).toFixed(2),
+        top: ((1.1 * toPlate(pin.y) - 0.05) * 100).toFixed(2),
+      }))
+    : [];
 ---
 
 <section
@@ -115,7 +154,23 @@ const {
   data-station={id}
   style={`--plate-strength:${plate}; --plate-x:${(Math.max(-2, Math.min(2, plateX)) / 1.04).toFixed(3)}%`}
 >
-  <VisualWorld id={id} priority={priority} depth={depth} grid={grid} />
+  <VisualWorld id={id} priority={priority} depth={depth} grid={grid}>
+    {
+      pinned.length > 0 && (
+        <div slot="pins" class="stage__pins" aria-hidden="true">
+          {pinned.map((pin) => (
+            <span
+              class:list={['pin', `pin--${pin.side ?? 'r'}`]}
+              style={`--l:${pin.left}%; --t:${pin.top}%; --i:${pin.i}`}
+            >
+              <span class="pin__dot" />
+              <span class="pin__tag">{pin.label}</span>
+            </span>
+          ))}
+        </div>
+      )
+    }
+  </VisualWorld>
 
   {
     /*
@@ -285,12 +340,15 @@ const {
     .stage.stage--m-card > :global(.vw) {
       position: relative;
       inset: auto;
-      /* An explicit width, so a short landscape screen gets a wider crop of
-         the scene rather than a narrower card. */
-      width: calc(100% - 2 * var(--space-4));
+      /*
+       * Always the plate's own 3:2, so the pins land on what they name at
+       * every width. A short landscape screen gets a smaller card, centred,
+       * rather than a different crop of the scene.
+       */
+      width: min(calc(100% - 2 * var(--space-4)), calc(72svh * 1.5));
       margin-inline: auto;
       aspect-ratio: 3 / 2;
-      max-height: 72svh;
+      container-type: inline-size;
       border: 1px solid rgb(255 255 255 / 0.09);
       border-radius: 14px;
       overflow: hidden;
@@ -327,7 +385,7 @@ const {
 
   @media (min-width: 768px) and (max-width: 1024px) {
     .stage.stage--m-card > :global(.vw) {
-      width: calc(100% - 2 * var(--space-6));
+      width: min(calc(100% - 2 * var(--space-6)), calc(72svh * 1.5));
     }
   }
 
@@ -340,4 +398,162 @@ const {
       padding-top: var(--space-8);
     }
   }
+
+  /*
+   * THE PINS. A dot on the thing, a short rule, and a tag on its own dark
+   * backing so it reads over any part of the scene. They ride the plate's
+   * scroll drift (`--vw-plate-y`, set on the frame by visual-world.ts), so a
+   * dot stays on its subject while the scene moves, and they are never drawn
+   * on the wide composition, which has its own callouts.
+   */
+  .stage__pins {
+    display: none;
+  }
+
+  @media (max-width: 1024px) {
+    .stage__pins {
+      display: block;
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      translate: 0 var(--vw-plate-y, 0px);
+      font-family: var(--font-mono);
+      font-size: clamp(10.5px, 3.05cqw, 13px);
+      line-height: 1;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+  }
+
+  .pin {
+    position: absolute;
+    left: var(--l);
+    top: var(--t);
+  }
+
+  .pin__dot {
+    position: absolute;
+    left: -4px;
+    top: -4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow:
+      0 0 0 2px rgb(124 146 255 / 0.55),
+      0 0 12px 2px rgb(139 108 246 / 0.75);
+  }
+
+  .pin__tag {
+    position: absolute;
+    white-space: nowrap;
+    padding: 0.32em 0.55em 0.3em;
+    border: 1px solid rgb(255 255 255 / 0.14);
+    border-radius: 5px;
+    background: rgb(8 10 16 / 0.82);
+    color: var(--text);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+
+  /* The rule from the dot to its tag. */
+  .pin__tag::before {
+    content: '';
+    position: absolute;
+    background: rgb(255 255 255 / 0.45);
+  }
+
+  .pin--r .pin__tag {
+    left: 12px;
+    top: 0;
+    translate: 0 -50%;
+  }
+
+  .pin--l .pin__tag {
+    right: 12px;
+    top: 0;
+    translate: 0 -50%;
+  }
+
+  .pin--r .pin__tag::before,
+  .pin--l .pin__tag::before {
+    top: 50%;
+    width: 8px;
+    height: 1px;
+  }
+
+  .pin--r .pin__tag::before {
+    right: 100%;
+  }
+
+  .pin--l .pin__tag::before {
+    left: 100%;
+  }
+
+  .pin--u .pin__tag {
+    bottom: 12px;
+    left: 0;
+    translate: -50% 0;
+  }
+
+  .pin--d .pin__tag {
+    top: 12px;
+    left: 0;
+    translate: -50% 0;
+  }
+
+  .pin--u .pin__tag::before,
+  .pin--d .pin__tag::before {
+    left: 50%;
+    width: 1px;
+    height: 8px;
+  }
+
+  .pin--u .pin__tag::before {
+    top: 100%;
+  }
+
+  .pin--d .pin__tag::before {
+    bottom: 100%;
+  }
+
+  /* (After the base rules, which they override.) The smallest phones (a card under 340px): the same words, set tighter,
+     so neighbouring tags keep their gap and the left column clears the edge. */
+  @container (max-width: 340px) {
+    .stage__pins {
+      font-size: 10px;
+      letter-spacing: 0.02em;
+    }
+
+    .pin__tag {
+      padding: 0.24em 0.4em 0.22em;
+    }
+  }
+
+  /* 320px phones: a shorter rule and a slimmer tag, the words unchanged. */
+  @container (max-width: 300px) {
+    .pin__tag {
+      padding: 0.16em 0.34em 0.14em;
+    }
+
+    .pin--r .pin__tag {
+      left: 9px;
+    }
+
+    .pin--l .pin__tag {
+      right: 9px;
+    }
+
+    .pin--r .pin__tag::before,
+    .pin--l .pin__tag::before {
+      width: 5px;
+    }
+  }
+
+  /*
+   * They light in turn as the picture arrives: stage-motion.ts holds them and
+   * shows them in reading order (stations.css, "pins"). Without script, and
+   * under reduced motion, they are simply there.
+   */
 </style>

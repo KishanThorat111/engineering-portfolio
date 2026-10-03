@@ -36,7 +36,7 @@
  * misspelled, which is the standing reminder that words baked into the artwork
  * are never a source of truth.
  */
-import Stage from './stage/Stage.astro';
+import Stage, { type Pin } from './stage/Stage.astro';
 import Callout from './stage/Callout.astro';
 import Panel from './stage/Panel.astro';
 import Feed, { type Entry } from './stage/Feed.astro';
@@ -112,6 +112,17 @@ const LABEL_ROW = (12.5 * 100) / 1685;
 const ESTATE_DOT_X = 92.3;
 
 /*
+ * On a phone, the same eleven names pinned to the same pointer dots — the left
+ * column's at x 41.3%, the right column's at the line ends — so the opening
+ * reads as reference 01 does: the estate, named on the artwork. The names are
+ * PATH's and ESTATE's own; the detail lines stay in the wide composition.
+ */
+const PINS: Pin[] = [
+  ...PATH.map((item) => ({ x: 41.3, y: item.y, label: item.label, side: 'l' as const })),
+  ...ESTATE.map((item) => ({ x: ESTATE_DOT_X, y: item.y, label: item.label, side: 'l' as const })),
+];
+
+/*
  * THE INSTRUMENT PANEL, AND WHAT EACH SLOT IS ALLOWED TO CONTAIN.
  *
  * Reference 01's strip reads REQUESTS/MIN 2,487 · AVG LATENCY 32ms · UPTIME
@@ -184,7 +195,7 @@ const HOPS: Hop[] = [
   plateX={2}
   labelledby="claim"
   class="enter"
-  mobileArt="backdrop"
+  pins={PINS}
 >
   {/* ── Left column ─────────────────────────────────────────────── */}
   <div class="enter__col">

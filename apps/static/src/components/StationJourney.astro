@@ -48,6 +48,7 @@ import Legend from './stage/Legend.astro';
 import StatusBar from './stage/StatusBar.astro';
 import Note from './stage/Note.astro';
 import Portrait from './stage/Portrait.astro';
+import { type Pin } from './stage/Stage.astro';
 import StatRow, { type Stat } from './stage/StatRow.astro';
 import TraceRail, { type Hop } from './stage/TraceRail.astro';
 import { SITE } from '../config/site';
@@ -593,6 +594,41 @@ const FEATURED = {
  * which made the closing frame a map of most of the journey — and the one the
  * reader is standing on was the most conspicuous omission of the three.
  */
+/*
+ * THE PHONE PINS — labels on the artwork in the narrow composition, as the
+ * references draw them. Positions are stage percentages, the same system as
+ * the wide callouts; Stage converts them to the phone card. Every name is one
+ * this page already prints in the wide composition.
+ */
+const SHORT: Record<string, string> = {
+  'hospital-operations': 'Hospital',
+  'menu-platform': 'Menu',
+  'electrical-platform': 'Electrical',
+};
+const ISLAND_PIN: Record<string, [number, number, Pin['side']]> = {
+  'hospital-operations': [44.8, 15.7, 'd'],
+  'menu-platform': [75.5, 18.8, 'u'],
+  'electrical-platform': [76.5, 58.3, 'l'],
+};
+const PINS_SYSTEMS: Pin[] = [
+  ...systems.slice(0, 3).flatMap((system) => {
+    const at = ISLAND_PIN[system.id];
+    const status = STATUS_LABELS[system.data.status].label.split(' — ')[0];
+    return at
+      ? [{ x: at[0], y: at[1], side: at[2], label: `${SHORT[system.id] ?? ''} · ${status}` }]
+      : [];
+  }),
+  { x: 58.3, y: 41.7, side: 'l', label: 'Same foundations' },
+];
+const PINS_DISSECTION: Pin[] = [
+  { x: 35.4, y: 11.2, side: 'l', label: 'Client' },
+  { x: 35.4, y: 21.4, side: 'l', label: 'Edge' },
+  { x: 36.4, y: 31.6, side: 'l', label: 'API' },
+  { x: 32.6, y: 43.4, side: 'l', label: 'Services' },
+  { x: 74.6, y: 63.2, side: 'r', label: 'Data' },
+  { x: 82.8, y: 76.4, side: 'l', label: 'Observability' },
+];
+
 const MAP = [
   { x: 45.5, y: 82, label: '01 · Enter', lines: ['Where you came in'] },
   { x: 36, y: 20, label: '02 · Systems', lines: ['Three platforms'] },
@@ -605,10 +641,50 @@ const MAP = [
   { x: 37, y: 61, label: '09 · Proof', lines: ['The archive'] },
   { x: 86, y: 66, label: '10 · End', lines: ['You are here'] },
 ] as const;
+
+/* 04: the request's stages, on the objects the artwork draws for them. */
+const stageName = (i: number) => STAGES[i]!.label.split(' · ')[1] ?? STAGES[i]!.label;
+const PINS_DATA: Pin[] = [
+  { x: 8.4, y: 60.4, side: 'r', label: stageName(0) },
+  { x: 20.9, y: 47.9, side: 'u', label: stageName(1) },
+  { x: 38.6, y: 39.6, side: 'r', label: stageName(2) },
+  { x: 60.4, y: 32.3, side: 'u', label: stageName(3) },
+  { x: 83.3, y: 50, side: 'u', label: stageName(5) },
+];
+
+/* 06: the control plane's screen and three of the deck's modules. */
+const PINS_LIVE: Pin[] = [
+  { x: 50, y: 36, side: 'u', label: 'Control plane' },
+  { x: 26.6, y: 75.2, side: 'd', label: 'Cloudflare' },
+  { x: 51.4, y: 75.2, side: 'd', label: 'Fastify' },
+  { x: 68.3, y: 75.2, side: 'r', label: 'Redis' },
+];
+
+/* 09: three of the drawers, with the counts the wide frame prints on them. */
+const PINS_PROOF: Pin[] = (
+  [
+    [1, 'r'],
+    [3, 'l'],
+    [5, 'r'],
+  ] as const
+).map(([i, side]) => ({
+  x: 40.4,
+  y: 29.7 + 3.15 * i,
+  side,
+  label: `${DRAWERS[i]!.count} ${DRAWERS[i]!.unit}`,
+}));
+
+/* 10: four stops on the map — where you came in, the plane, the next system, here. */
+const PINS_END: Pin[] = [
+  { x: MAP[0].x, y: MAP[0].y, side: 'd', label: MAP[0].label },
+  { x: MAP[5].x, y: MAP[5].y, side: 'u', label: MAP[5].label },
+  { x: MAP[7].x, y: MAP[7].y, side: 'u', label: MAP[7].label },
+  { x: MAP[9].x, y: MAP[9].y, side: 'l', label: `${MAP[9].label} · ${MAP[9].lines[0]}` },
+];
 ---
 
 {/* ══ 02 SYSTEMS ═══════════════════════════════════════════════════ */}
-<Stage id="systems" depth={1.1} plate={0.95} labelledby="st-systems">
+<Stage id="systems" depth={1.1} plate={0.95} labelledby="st-systems" pins={PINS_SYSTEMS}>
   {
     /*
       THE LEFT COLUMN, as reference 02 draws it: eyebrow, claim, lede, the call
@@ -774,7 +850,14 @@ const MAP = [
 </Stage>
 
 {/* ══ 03 DISSECTION ════════════════════════════════════════════════ */}
-<Stage id="dissection" anchor="dissection" depth={1} plate={0.95} labelledby="st-dissect">
+<Stage
+  id="dissection"
+  anchor="dissection"
+  depth={1}
+  plate={0.95}
+  labelledby="st-dissect"
+  pins={PINS_DISSECTION}
+>
   {
     /*
       The eyebrow breaks after the slash, as reference 03's does: on one line it
@@ -886,7 +969,7 @@ const MAP = [
 </Stage>
 
 {/* ══ 04 DATA ══════════════════════════════════════════════════════ */}
-<Stage id="data" anchor="data" depth={1.05} plate={0.95} labelledby="st-data">
+<Stage id="data" anchor="data" depth={1.05} plate={0.95} labelledby="st-data" pins={PINS_DATA}>
   <div class="col rq__col">
     <p class="eyebrow">04 / Request trace</p>
     <h2 class="claim" id="st-data">
@@ -1121,7 +1204,7 @@ const MAP = [
 </Stage>
 
 {/* ══ 06 LIVE ══════════════════════════════════════════════════════ */}
-<Stage id="live" depth={1} plate={0.95} labelledby="st-live">
+<Stage id="live" depth={1} plate={0.95} labelledby="st-live" pins={PINS_LIVE}>
   <div class="col live__col">
     <p class="eyebrow">06 / Live</p>
     <h2 class="claim" id="st-live">
@@ -1510,7 +1593,7 @@ const MAP = [
 </Stage>
 
 {/* ══ 09 PROOF ═════════════════════════════════════════════════════ */}
-<Stage id="proof" depth={1} plate={0.95} labelledby="st-proof">
+<Stage id="proof" depth={1} plate={0.95} labelledby="st-proof" pins={PINS_PROOF}>
   {
     /*
       Laid out as reference 09, measured against the plate: the archive cabinet
@@ -1676,7 +1759,7 @@ const MAP = [
 </Stage>
 
 {/* ══ 10 END ═══════════════════════════════════════════════════════ */}
-<Stage id="end" depth={0.9} plate={0.95} grid={false} labelledby="st-end">
+<Stage id="end" depth={0.9} plate={0.95} grid={false} labelledby="st-end" pins={PINS_END}>
   <div class="col end__col">
     <p class="eyebrow">10 / End</p>
     <h2 class="claim end__claim" id="st-end">

@@ -124,7 +124,9 @@ export function initVisualWorld(): void {
         // On laptop widths the labels cannot follow the plate, so it holds still.
         const held = wide.matches && !full.matches;
         const drift = `${held ? 0 : (progress * 9 * d).toFixed(2)}px`;
-        layer.plate.style.setProperty('--vw-plate-y', drift);
+        // Set on the frame, not the plate: the plate inherits it, and so do
+        // the phone pins (Stage.astro), which must move with the artwork.
+        layer.root.style.setProperty('--vw-plate-y', drift);
         /*
          * THE LABELS RIDE WITH THE ARTWORK.
          *
@@ -189,7 +191,7 @@ export function initVisualWorld(): void {
     if (!motionOn) {
       // Clear every offset so nothing is left mid-drift.
       for (const layer of layers) {
-        layer.plate?.style.removeProperty('--vw-plate-y');
+        layer.root.style.removeProperty('--vw-plate-y');
         layer.overlay?.style.removeProperty('translate');
         layer.column?.style.removeProperty('translate');
         layer.veil?.style.removeProperty('opacity');

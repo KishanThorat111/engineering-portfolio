@@ -150,6 +150,8 @@ const nextHasPlate = next ? plateExists(next.id) : false;
   <div class="vw__sweep"></div>
   <div class="vw__light"></div>
   <div class="vw__veil"></div>
+  {/* Labels pinned to the artwork in the narrow composition (Stage.astro). */}
+  <slot name="pins" />
 </div>
 
 {
