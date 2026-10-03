@@ -1,0 +1,74 @@
+---
+/**
+ * THE OWNER, ON A PHONE.
+ *
+ * Stations 07 and 08 are composed around the owner — at his desk, and looking
+ * out over the city. On a wide screen the plate is the whole frame and he is
+ * plainly in it. In the narrow composition the plate sits behind stacked text
+ * under a dark scrim, and he was reduced to a shadow behind a paragraph.
+ *
+ * So the narrow composition gets the same plate as a real picture at the top,
+ * cropped to him with a per-station focal point. It is the same file the stage
+ * already uses, so a reader who scrolls on from the wide view gets it from
+ * cache, and it is lazy everywhere else.
+ *
+ * It is CONTENT here, not decoration — it is a picture of the person the site
+ * is about — so it carries real alt text rather than the plate layer's empty
+ * one.
+ */
+import {
+  plateSources,
+  plateExists,
+  PLATE_INTRINSIC_WIDTH,
+  PLATE_INTRINSIC_HEIGHT,
+  type StationId,
+} from '../../config/visual-world';
+
+interface Props {
+  id: StationId;
+  alt: string;
+  /** CSS object-position, so the crop holds the subject. */
+  focus: string;
+}
+
+const { id, alt, focus } = Astro.props;
+const has = plateExists(id);
+const src = has ? plateSources(id) : null;
+---
+
+{
+  src && (
+    <figure class="portrait-m" style={`--focus:${focus}`}>
+      <picture>
+        <source type="image/avif" srcset={src.avif} sizes="100vw" />
+        <source type="image/webp" srcset={src.webp} sizes="100vw" />
+        <img
+          src={src.webp.split(' ')[0]}
+          width={PLATE_INTRINSIC_WIDTH}
+          height={PLATE_INTRINSIC_HEIGHT}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+        />
+      </picture>
+    </figure>
+  )
+}
+
+<style>
+  .portrait-m {
+    margin: 0 0 1.5rem;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    aspect-ratio: 4 / 3;
+  }
+
+  .portrait-m img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: var(--focus);
+  }
+</style>

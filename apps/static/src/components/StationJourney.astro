@@ -47,6 +47,7 @@ import DissectionIndex from './stage/DissectionIndex.astro';
 import Legend from './stage/Legend.astro';
 import StatusBar from './stage/StatusBar.astro';
 import Note from './stage/Note.astro';
+import Portrait from './stage/Portrait.astro';
 import StatRow, { type Stat } from './stage/StatRow.astro';
 import TraceRail, { type Hop } from './stage/TraceRail.astro';
 import { SITE } from '../config/site';
@@ -1277,24 +1278,26 @@ const MAP = [
 <Stage id="think" depth={1} plate={0.95} labelledby="st-think">
   {
     /*
-      THE SET'S ONE SERIF, HONOURED.
+      THE SET'S ONE SERIF, AND THE FIGURE IT WAS COMPOSED AROUND.
 
       §8 of the decomposition calls this frame "the typographic outlier and its
-      best moment": a serif display over a sans body over dense mono, because
-      each family carries a different register — serif is judgment, sans is
-      explanation, mono is record. Every other station in the set is sans, and
-      that is exactly why this one lands.
+      best moment": serif display over sans body over dense mono — serif is
+      judgment, sans explanation, mono record.
 
-      The second serif line the reference sets beneath the display is the lede,
-      which already said the right thing in the wrong voice.
+      The plate is shown whole again, with the owner at his desk on the right
+      (see the CROPS note in the image pipeline). Measured with a grid: the
+      monitor occupies x 30–43% / y 29–71%, the figure x 60–90%, his face
+      y 20–42%. The claim column stops short of the monitor's lit screen, and
+      every panel sits below his shoulders, so nothing is laid over his face.
     */
   }
-  <div class="col col--wide think__col">
+  <div class="col think__col">
     <p class="eyebrow">07 / Think</p>
     <h2 class="claim claim--serif" id="st-think">
       <span>Systems are only</span>
       <span>half the story.</span>
-      <span>The other half is <em>judgment</em>.</span>
+      <span>The other half</span>
+      <span>is <em>judgment</em>.</span>
     </h2>
     <p class="lede lede--serif">
       Knowing what to build, what not to build, what to measure, what to question, and when a
@@ -1305,49 +1308,16 @@ const MAP = [
 
   {
     /*
-    THE REFERENCE HAS A FACE HERE. THIS DOES NOT.
-
-    Reference 07 is composed around a photorealistic generated portrait. No owned
-    photograph of the subject exists in this repository, `/about` already carries
-    the OWNER-INPUT marker requesting one, and generating a face would be
-    publishing a fabricated image of a real person — which no honesty rule needs
-    to be quoted to rule out. The plate was rendered as a recently-vacated desk
-    for the same reason, and the frame says so rather than leaving a reader to
-    wonder whose desk it is.
-  */
-  }
-  <Panel x={62} y={16} w={26} title="No portrait" status="fault">
-    <p>
-      The reference for this frame is built around a photorealistic generated person, and the plate
-      was rendered with one in it. It is cropped out. No owned photograph of me exists in this
-      repository, and a generated face on a personal site reads as a photograph of its subject —
-      which would be a fabricated picture of a real person.
-    </p>
-    <p class="note">
-      What is left is a monitor, some architecture sketches and an empty desk. That is the honest
-      version of this reference.
-    </p>
-  </Panel>
-
-  {
-    /*
-      THE FIVE PRINCIPLES, WITH THEIR STATEMENTS.
-
-      They shipped as five numbered titles in a single line across the bottom of
-      the frame — a row of headings with nothing under them, which is the shape
-      of a slogan. Each pillar carries a written statement in the same config
-      the /engineering page and the machine layer read, and it was never
-      rendered here. The reference's own interaction note for this frame is
-      "hover a principle → expands to its full statement"; there is no hover on
-      a static page, so the statement is simply shown.
+      THE FIVE PRINCIPLES, in the reference's row across the bottom: numeral,
+      title, and the statement each pillar carries in config.
     */
   }
-  <Panel x={4.8} y={53} w={27} title="Five things I hold to" note="held, not claimed">
-    <ol class="pillars">
+  <Panel x={4.8} y={68.5} w={63} title="Five things I hold to" note="held, not claimed">
+    <ol class="pillars pillars--row">
       {
         PILLARS.map((pillar, i) => (
           <li>
-            <span class="pillars__num">{String(i + 1).padStart(2, '0')}</span>
+            <span class="pillars__big">{i + 1}</span>
             <span class="pillars__body">
               <span class="pillars__title">{pillar.title}</span>
               <span class="pillars__line">{pillar.line}</span>
@@ -1358,18 +1328,8 @@ const MAP = [
     </ol>
   </Panel>
 
-  {
-    /*
-      WHAT I GOT WRONG — reference 07 §9, and deliberately the SHORT form.
-
-      Station 05 publishes these two lessons in full, in all four of their
-      fields. Reprinting them here would be the duplicate-list failure the
-      dissection index was rebuilt to fix. On this frame they are evidence for a
-      claim about judgment, so what is needed is that they exist and are
-      readable, not their text a second time.
-    */
-  }
-  <Panel x={36} y={53} w={23} title="What I got wrong" status="fault" dense>
+  {/* WHAT I GOT WRONG — short form; station 05 publishes both in full. */}
+  <Panel x={70} y={68.5} w={27.5} title="What I got wrong" status="fault" dense>
     <ol class="wrongs">
       {
         lessons.slice(0, 2).map((lesson) => (
@@ -1379,68 +1339,24 @@ const MAP = [
         ))
       }
     </ol>
-    <p class="note">
-      Both are written up in full on station 05 above, with what each one cost and what changed
-      because of it.
-    </p>
   </Panel>
 
-  {
-    /*
-      THE CAREER TIMELINE, from the experience collection. The reference draws a
-      long horizontal rail with many stops; this one has the number of stops the
-      record actually has, and the roles are dated because every figure on this
-      site is.
-    */
-  }
-  <Panel x={36} y={70} w={26} title="Where I have worked" note="from the record">
-    <StageTimeline
-      stages={CAREER}
-      caption="Both roles are on the CV in full, with what each one covered."
-    />
+  {/* The career rail, from the experience collection. */}
+  <Panel x={4.8} y={86} w={40} title="Where I have worked" note="from the record" dense>
+    <StageTimeline stages={CAREER} />
   </Panel>
 
-  {
-    /*
-      THE PORTRAIT SLOT.
+  {/* The reference's closing card — this site's own next frame, linked. */}
+  <a class="think__next" href="#contact">
+    <span class="think__nextText">
+      <span>Have a difficult system?</span>
+      <span>Let's build something worth operating.</span>
+    </span>
+    <span class="think__nextGo">Let's talk <span aria-hidden="true">→</span></span>
+  </a>
 
-      Reference 07 is composed around a photorealistic generated portrait. No
-      owned photograph of the subject exists in this repository, and a generated
-      face on a personal site reads as a photograph of its subject — a
-      fabricated picture of a real person.
-
-      The slot is therefore built, marked, and left empty, and the composition
-      is arranged so that it holds that way: the frame's weight is carried by
-      the serif column on the left and the three panels beneath it, not by this
-      corner. When a real photograph arrives it drops into this box and nothing
-      else has to move.
-    */
-  }
-  {/* OWNER-INPUT: an owned photograph of the subject, for this slot and /about */}
-  <Panel x={62} y={16} w={26} title="No portrait" status="fault">
-    <div class="portrait" role="img" aria-label="Portrait slot, deliberately empty">
-      <span class="portrait__mark" aria-hidden="true">Awaiting an owned photograph</span>
-    </div>
-    <p>
-      The reference for this frame is built around a photorealistic generated person, and the plate
-      was rendered with one in it. It is cropped out. No owned photograph of me exists in this
-      repository, and a generated face on a personal site reads as a photograph of its subject —
-      which would be a fabricated picture of a real person.
-    </p>
-    <p class="note">
-      What is left is a monitor, some architecture sketches and an empty desk. That is the honest
-      version of this reference.
-    </p>
-  </Panel>
-
-  {
-    /*
-    The serif carries to the narrow composition. It is the one frame in the set
-    set in a serif, and a phone reader seeing it in the same sans as every other
-    station simply does not get the frame.
-  */
-  }
   <div slot="mobile" class="m">
+    <Portrait id="think" alt="Kishan Thorat at his desk" focus="74% 30%" />
     <p class="m__eyebrow">07 / Think</p>
     <h2 class="m__claim m__claim--serif">
       Systems are only half the story. The other half is judgment.
@@ -1462,21 +1378,27 @@ const MAP = [
         ))
       }
     </ol>
-    <p class="m__note">
-      There is no photograph of me on this site. No owned one exists, and a generated face would be
-      an invented picture of a real person.
-    </p>
     <a class="cta cta--m" href="/about">Read the long version <span aria-hidden="true">→</span></a>
   </div>
 </Stage>
 
 {/* ══ 08 BUILD ═════════════════════════════════════════════════════ */}
 <Stage id="build" anchor="contact" depth={1} plate={0.95} labelledby="st-build">
-  <div class="col col--wide">
+  {
+    /*
+      Shown whole, with the owner on the right looking out over the city
+      (x 72–98%). Measured with a grid: the icon column sits at x 40% with seven
+      icons from y 13.5% to 51.5%, and the artwork draws two empty boxes for
+      text — a small one at x 71–79% / y 19–27% beside the cube, and one at
+      x 42–56% / y 66–73% at the foot of the glowing path.
+    */
+  }
+  <div class="col build__col">
     <p class="eyebrow">08 / Build</p>
     <h2 class="claim" id="st-build">
-      <span>Have a difficult system?</span>
-      <span><em>Let's build</em> something</span>
+      <span>Have a difficult</span>
+      <span>system?</span>
+      <span><em>Let's build something</em></span>
       <span>worth operating.</span>
     </h2>
     <p class="lede">
@@ -1489,31 +1411,49 @@ const MAP = [
       <span class="available__dot" aria-hidden="true"></span>
       Available for engineering · systems · AI
     </p>
+    <ul class="build__links">
+      <li><a href={SITE.github}>GitHub</a></li>
+      <li><a href={SITE.linkedin}>LinkedIn</a></li>
+      <li><a href={`mailto:${SITE.email}`}>Email</a></li>
+    </ul>
   </div>
 
+  {/* One label beside each icon the artwork draws, in the reference's column. */}
   {
-    /*
-    "STATE: UNDEFINED" is the one reading on this frame that needs no
-    reconciliation — it was already true, and it is a better line than anything
-    that could replace it.
-  */
+    [
+      { y: 13.7, label: 'Systems', line: 'Multi-tenant platforms' },
+      { y: 19.6, label: 'Architecture', line: 'Modular monoliths' },
+      { y: 25.6, label: 'Request trace', line: 'Observability first' },
+      { y: 31.6, label: 'Experiments', line: 'Written up, with cost' },
+      { y: 38.6, label: 'Control plane', line: 'Operated, not just shipped' },
+      { y: 45.6, label: 'Edge', line: 'Cloudflare, no inbound port' },
+      { y: 51.6, label: 'Observability', line: 'Spans, logs, audit' },
+    ].map((row) => (
+      <p class="build__icon" style={`--y:${row.y}%`}>
+        <span class="build__iconLabel">{row.label}</span>
+        <span class="build__iconLine">{row.line}</span>
+      </p>
+    ))
   }
-  {
-    /*
-      THE PANEL THAT COVERS THE PLATE'S EMPTY BOX.
 
-      Reference 08 draws a bordered green box near the lower right reading "THE
-      NEXT SYSTEM / AWAITING THE RIGHT PROBLEM". It is baked into the artwork,
-      its lettering is AI nonsense, and at our crop it rendered as an empty
-      bordered rectangle with nothing in it — the defect the owner reported.
+  {/* In the small box the artwork draws beside the cube. */}
+  <div class="build__state">
+    <span>Next system</span>
+    <span>State:</span>
+    <span class="build__undef">Undefined</span>
+  </div>
 
-      It cannot be cropped out without losing the desk and the cube the frame is
-      composed around. So a real panel sits exactly over it, carrying the thing
-      this station is actually for: how to reach a person. Contact is the point
-      of 08, and until now the only route was a single button.
-    */
-  }
-  <Panel x={61} y={62} w={26} title="How to reach me" note="no form, no tracker">
+  {/* In the box at the foot of the glowing path. */}
+  <div class="build__await">
+    <span class="build__awaitDot" aria-hidden="true"></span>
+    <span>
+      <span class="build__awaitHead">The next system</span>
+      <span class="build__awaitLine">Awaiting the right problem</span>
+    </span>
+  </div>
+
+  {/* How to reach a person — the point of this frame. Bottom left, clear of him. */}
+  <Panel x={4.8} y={72} w={21} title="How to reach me" note="no form, no tracker" dense>
     <Inspector
       rows={[
         { label: 'Email', value: SITE.email, mono: true },
@@ -1521,50 +1461,11 @@ const MAP = [
         { label: 'Based in', value: 'Belagavi, India' },
         { label: 'Availability', value: 'Open to relocation — UK', tone: 'signal' },
       ]}
-      action={{ label: 'Start a conversation', href: `mailto:${SITE.email}` }}
     />
   </Panel>
 
-  {
-    /*
-      The left column ended at the availability line and the frame ran on for
-      another half-screen. The five principles are the honest thing to put in
-      front of someone deciding whether to make contact — they are what they
-      would be hiring — and they are already the repository's own words.
-    */
-  }
-  <Panel x={4.8} y={46} w={26} title="What you would be getting" dense>
-    <ol class="build__pillars">
-      {
-        PILLARS.map((pillar, i) => (
-          <li>
-            <span class="build__pillarNum">{String(i + 1).padStart(2, '0')}</span>
-            <span>{pillar.title}</span>
-          </li>
-        ))
-      }
-    </ol>
-  </Panel>
-
-  <Panel x={66} y={20} w={22} title="The next system" status="pending">
-    <p class="state">State: undefined</p>
-    <p class="note">Awaiting the right problem.</p>
-  </Panel>
-
-  {
-    [
-      { y: 14, label: 'Systems', lines: ['Multi-tenant platforms'] },
-      { y: 24, label: 'Architecture', lines: ['Modular monoliths'] },
-      { y: 34, label: 'Request trace', lines: ['Observability first'] },
-      { y: 44, label: 'Experiments', lines: ['Written up, with cost'] },
-      { y: 54, label: 'Control plane', lines: ['Operated, not just shipped'] },
-      { y: 64, label: 'Observability', lines: ['Spans, logs, audit'] },
-    ].map((row) => (
-      <Callout x={36} y={row.y} side="left" label={row.label} lines={row.lines} lead={6} w={13} />
-    ))
-  }
-
   <div slot="mobile" class="m">
+    <Portrait id="build" alt="Kishan Thorat looking out over the city" focus="80% 32%" />
     <p class="m__eyebrow">08 / Build</p>
     <h2 class="m__claim">Have a difficult system? Let's build something worth operating.</h2>
     <p class="m__lede">
@@ -2004,6 +1905,188 @@ const MAP = [
       linear-gradient(rgb(14 14 26 / 0.94), rgb(14 14 26 / 0.94)) padding-box,
       var(--brand-ramp) border-box;
     box-shadow: 0 0 calc(24 * var(--u)) rgb(139 108 246 / 0.28);
+  }
+
+  /* ── 07's composition ──────────────────────────────────────────── */
+
+  .think__col {
+    top: 9%;
+    width: 25%;
+  }
+
+  .pillars.pillars--row {
+    display: grid;
+    flex-direction: initial;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: calc(22 * var(--u));
+  }
+
+  .pillars.pillars--row li {
+    border-top: 0;
+    padding-top: 0;
+    gap: calc(10 * var(--u));
+  }
+
+  .pillars__big {
+    flex: none;
+    font-family: var(--font-serif);
+    font-size: calc(46 * var(--u));
+    line-height: 0.9;
+    color: var(--text-muted);
+  }
+
+  .think__next {
+    position: absolute;
+    left: 47%;
+    top: 86%;
+    width: 31%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(20 * var(--u));
+    padding: calc(18 * var(--u)) calc(24 * var(--u));
+    border: 1px solid transparent;
+    border-radius: calc(10 * var(--u));
+    background:
+      linear-gradient(rgb(8 10 18 / 0.94), rgb(8 10 18 / 0.94)) padding-box,
+      var(--brand-ramp) border-box;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .think__nextText {
+    display: flex;
+    flex-direction: column;
+    gap: calc(4 * var(--u));
+    font-size: calc(19 * var(--u));
+    line-height: 1.3;
+  }
+
+  .think__nextGo {
+    font-family: var(--font-mono);
+    font-size: calc(15 * var(--u));
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--hue-blue);
+    white-space: nowrap;
+  }
+
+  .think__next:hover {
+    box-shadow: 0 0 calc(24 * var(--u)) rgb(139 108 246 / 0.3);
+  }
+
+  /* ── 08's composition ──────────────────────────────────────────── */
+
+  .build__col {
+    top: 9%;
+    width: 30%;
+  }
+
+  .build__links {
+    display: flex;
+    gap: calc(28 * var(--u));
+    margin: calc(26 * var(--u)) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .build__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    font-size: calc(18 * var(--u));
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    text-decoration-color: var(--text-faint);
+  }
+
+  .build__links a:hover {
+    text-decoration-color: var(--hue-violet);
+  }
+
+  .build__icon {
+    position: absolute;
+    left: 41.8%;
+    top: var(--y);
+    transform: translateY(-50%);
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: calc(2 * var(--u));
+    text-shadow:
+      0 0 calc(3 * var(--u)) rgb(3 5 10 / 0.95),
+      0 0 calc(10 * var(--u)) rgb(3 5 10 / 0.85);
+  }
+
+  .build__iconLabel {
+    font-family: var(--font-mono);
+    font-size: calc(17 * var(--u));
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .build__iconLine {
+    font-size: calc(14 * var(--u));
+    color: color-mix(in srgb, var(--text) 68%, var(--text-muted));
+  }
+
+  .build__state {
+    position: absolute;
+    left: 71.4%;
+    top: 19.6%;
+    width: 7.4%;
+    display: flex;
+    flex-direction: column;
+    gap: calc(4 * var(--u));
+    font-family: var(--font-mono);
+    font-size: calc(15 * var(--u));
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .build__undef {
+    color: var(--pending);
+  }
+
+  .build__await {
+    position: absolute;
+    left: 42.6%;
+    top: 67%;
+    width: 13%;
+    display: flex;
+    align-items: flex-start;
+    gap: calc(12 * var(--u));
+    font-family: var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .build__awaitDot {
+    flex: none;
+    width: calc(9 * var(--u));
+    height: calc(9 * var(--u));
+    margin-top: calc(7 * var(--u));
+    border-radius: 50%;
+    background: var(--pending);
+  }
+
+  .build__await > span:last-child {
+    display: flex;
+    flex-direction: column;
+    gap: calc(6 * var(--u));
+  }
+
+  .build__awaitHead {
+    font-size: calc(17 * var(--u));
+    color: var(--text);
+  }
+
+  .build__awaitLine {
+    font-size: calc(13 * var(--u));
+    color: var(--text-muted);
   }
 
   /* ── 05's composition ──────────────────────────────────────────── */

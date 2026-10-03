@@ -3814,3 +3814,23 @@ its unmeasured state — which is the state the rebuild was designed around and 
 reason the empty states got the attention they did. The portrait remains an
 OWNER-INPUT. Stations 01, 08 and 09 keep the compositions S2 gave them; 04's plate does
 most of its own work and gained only the callout move.
+
+---
+
+## S7 — The owner restored to stations 07 and 08 · 3 October 2026
+
+**A recorded ruling reversed, on the owner's instruction.** Plates 07 and 08
+were cropped (S2) to remove the figure in them, on the assumption that it was a
+generated stranger who would read as a photograph of the subject. The owner has
+stated that the figure is him and asked for it to be shown. A picture of the
+subject that the subject has approved as his own likeness is not a fabricated
+picture of a real person, so the reason for the crop no longer holds. Both
+plates now ship whole; the crop mechanism stays in the pipeline, empty.
+
+The "No portrait" panels on 07 (there were two, a duplicate) and their
+OWNER-INPUT marker are removed. `/about`'s own photograph request is untouched.
+
+Both frames were recomposed against grid measurements of the full plates, with
+every panel kept below the owner's shoulders on 07 and clear of him on 08. On a
+phone the plate sat dimmed behind text, so the narrow composition of each now
+opens with the same image as a real, captioned picture cropped to him.
