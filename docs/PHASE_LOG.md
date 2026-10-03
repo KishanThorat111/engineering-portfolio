@@ -4234,3 +4234,13 @@ immutable folder is not content-hashed.
 
 The caching takes effect only once deployed; verified by fetching after the
 push (addendum below).
+
+### Addendum — the caching verified on the live origin
+
+Fetched after 9cb3b50 deployed: `/_astro/*.css` and `/visual-world/*.avif`
+now return `public, max-age=31536000, immutable`; fonts `public,
+max-age=604800, stale-while-revalidate=2592000`; `/favicon.svg` a day; `/`
+and `/experience/` still `public, max-age=0, must-revalidate`, as intended.
+The home page carries all ten `data-preview` hooks; /experience/ serves the
+career line. `/`, `/systems/`, `/about/`, `/cv/`, `/cv.pdf`, `/live/` and
+`/api/profile.json` return 200. CI 28/28 at step level.
