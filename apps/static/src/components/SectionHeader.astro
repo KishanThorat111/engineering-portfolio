@@ -19,37 +19,58 @@ interface Props {
    */
   level?: 'h2' | 'h3';
   id?: string;
+  /** Two-digit position in the page, shown before the kicker. */
+  index?: string;
+  /**
+   * A word or phrase of the title to set in the brand ramp, as the home
+   * page's headlines do. Must appear verbatim in `title`; the title's text is
+   * unchanged either way.
+   */
+  emphasis?: string;
 }
 
-const { kicker, title, level: Tag = 'h2', id } = Astro.props;
+const { kicker, title, level: Tag = 'h2', id, index, emphasis } = Astro.props;
+
+const at = emphasis ? title.indexOf(emphasis) : -1;
+if (emphasis && at < 0) {
+  throw new Error(`SectionHeader: emphasis "${emphasis}" is not in the title "${title}".`);
+}
+const parts =
+  at >= 0
+    ? [
+        title.slice(0, at),
+        title.slice(at, at + emphasis!.length),
+        title.slice(at + emphasis!.length),
+      ]
+    : null;
 ---
 
 <header class="section-header">
   {
     kicker && (
       <p class="kicker">
+        {index && <span class="no">{index}</span>}
         <span class="rule" aria-hidden="true" />
         {kicker}
       </p>
     )
   }
-  <Tag id={id}>{title}</Tag>
+  <Tag id={id}>
+    {
+      parts ? (
+        <Fragment>
+          {parts[0]}
+          <em>{parts[1]}</em>
+          {parts[2]}
+        </Fragment>
+      ) : (
+        title
+      )
+    }
+  </Tag>
 </header>
 
 <style>
-  /*
-   * Brought onto the redesign's type and eyebrow system.
-   *
-   * This component sets the opening of nearly every section on /about,
-   * /engineering, /experience and the case studies. It was a small grey kicker
-   * over a --text-xl heading, which is why those pages read a full tier quieter
-   * than the pages that were rebuilt by hand — same site, two different voices.
-   * Changing it here rather than page by page is what makes the whole surface
-   * agree, and it is the reason those pages needed no edits of their own.
-   *
-   * The leading rule is the same mark the home and register openings carry: it
-   * is how a section announces itself across this site.
-   */
   .section-header {
     margin-block-end: var(--space-12);
   }
@@ -60,17 +81,22 @@ const { kicker, title, level: Tag = 'h2', id } = Astro.props;
     gap: var(--space-3);
     font-family: var(--font-mono);
     font-size: var(--text-xs);
-    color: var(--text-faint);
+    color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.18em;
     margin-block-end: var(--space-4);
   }
 
+  .no {
+    color: var(--text);
+  }
+
+  /* The ramp, short — the same mark that opens every page. */
   .kicker .rule {
     width: 2.5rem;
     height: 1px;
     flex: none;
-    background: var(--border-strong);
+    background: var(--brand-ramp);
   }
 
   h2 {
@@ -85,5 +111,29 @@ const { kicker, title, level: Tag = 'h2', id } = Astro.props;
   h3 {
     font-size: var(--text-lg);
     letter-spacing: -0.015em;
+  }
+
+  em {
+    font-style: normal;
+    color: var(--hue-violet);
+  }
+
+  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    em {
+      background-image: var(--brand-ramp);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
+    }
+  }
+
+  @media (forced-colors: active) {
+    em {
+      background: none;
+      -webkit-text-fill-color: CanvasText;
+      color: CanvasText;
+    }
   }
 </style>

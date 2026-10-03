@@ -9,9 +9,14 @@
  * The six decision records are the same collection entries the case studies
  * render, selected by their `featured` flag — one source, two places, no way
  * for them to disagree (constitution rule 10).
+ *
+ * IN THE HOME PAGE'S LANGUAGE (Oct 2026). The inner pages' hero, numbered
+ * sections, the principles as numbered panels of glass, and the ownership
+ * statement as the one feature card on the page. Every word is unchanged.
  */
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
 import SectionHeader from '../components/SectionHeader.astro';
 import DecisionCard from '../components/DecisionCard.astro';
 import { SITE } from '../config/site';
@@ -28,25 +33,30 @@ const lessons = (await getCollection('lessons')).sort((a, b) => a.data.order - b
   title={`How I work — ${SITE.name}`}
   description="Principles with evidence behind them, the architecture decisions that shaped three platforms, and two things I got wrong and what changed because of them."
 >
-  <section class="intro">
-    <div class="container">
-      <p class="kicker">How I work</p>
-      <h1>Judgement is the part worth reading</h1>
-      <p class="lede">
-        Anyone can list technologies. What is harder to fake is why a system is shaped the way it
-        is, what each decision cost, and what happened the last time the call was wrong.
-      </p>
-    </div>
-  </section>
+  <PageHero index="03" label="How I work">
+    <Fragment slot="title">Judgement is the part <em>worth reading</em></Fragment>
+    <p slot="lede">
+      Anyone can list technologies. What is harder to fake is why a system is shaped the way it is,
+      what each decision cost, and what happened the last time the call was wrong.
+    </p>
+  </PageHero>
 
   <!-- The five pillars, each with one concrete thing behind it. -->
   <section class="band">
     <div class="container">
-      <SectionHeader kicker="Principles" title="Five things, and the evidence for each" />
+      <SectionHeader
+        index="01"
+        kicker="Principles"
+        title="Five things, and the evidence for each"
+        emphasis="the evidence"
+      />
       <ol class="pillars">
         {
           PILLARS.map((pillar, index) => (
             <li data-reveal style={`--reveal-delay: ${Math.min(index * 60, 240)}ms`}>
+              <span class="pillar-no" aria-hidden="true">
+                {String(index + 1).padStart(2, '0')}
+              </span>
               <h3>{pillar.title}</h3>
               <p class="pillar-line">{pillar.line}</p>
               <p class="pillar-evidence">{pillar.evidence}</p>
@@ -60,7 +70,7 @@ const lessons = (await getCollection('lessons')).sort((a, b) => a.data.order - b
   <!-- The AI ownership statement. Its single appearance on the site. -->
   <section class="band">
     <div class="container">
-      <SectionHeader kicker="Method" title="How AI fits into this" />
+      <SectionHeader index="02" kicker="Method" title="How AI fits into this" emphasis="AI" />
       <blockquote class="ownership" data-reveal>
         <p>
           I use AI tools to accelerate implementation; architecture, security, tenant isolation,
@@ -86,7 +96,12 @@ const lessons = (await getCollection('lessons')).sort((a, b) => a.data.order - b
   <!-- Six decision records, rendered from the same entries the case studies use. -->
   <section class="band">
     <div class="container">
-      <SectionHeader kicker="Decisions" title="Six calls worth defending" />
+      <SectionHeader
+        index="03"
+        kicker="Decisions"
+        title="Six calls worth defending"
+        emphasis="worth defending"
+      />
       <p class="section-note">
         Four are the recorded architecture decisions from the pre-launch platform; two are
         cross-cutting calls from the platforms already running. Each cites the document it came
@@ -111,9 +126,9 @@ const lessons = (await getCollection('lessons')).sort((a, b) => a.data.order - b
   </section>
 
   <!-- The two lessons. Rendered through the decision card, using its AGED row. -->
-  <section class="band">
+  <section class="band band--last">
     <div class="container">
-      <SectionHeader kicker="Lessons" title="Two I got wrong" />
+      <SectionHeader index="04" kicker="Lessons" title="Two I got wrong" emphasis="got wrong" />
       <p class="section-note">
         Both of these are still true of systems described elsewhere on this site. They are here
         because a portfolio with no failures in it is not a portfolio of a person who has shipped
@@ -148,52 +163,25 @@ const lessons = (await getCollection('lessons')).sort((a, b) => a.data.order - b
 </BaseLayout>
 
 <style>
-  .intro {
-    padding-block: var(--space-16) var(--space-8);
-  }
-
-  @media (min-width: 768px) {
-    .intro {
-      padding-block: var(--space-24) var(--space-12);
-    }
-  }
-
-  .kicker {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-block-end: var(--space-4);
-  }
-
-  h1 {
-    font-size: var(--text-xl);
-    max-width: 22ch;
-  }
-
-  @media (min-width: 768px) {
-    h1 {
-      font-size: var(--text-2xl);
-    }
-  }
-
-  .lede {
-    margin-block-start: var(--space-6);
-    max-width: var(--measure);
-    color: var(--text-muted);
-    font-size: var(--text-md);
-  }
-
   .band {
-    padding-block: var(--space-8) var(--space-12);
+    padding-block: var(--space-12);
+  }
+
+  @media (min-width: 768px) {
+    .band {
+      padding-block: var(--space-16);
+    }
+  }
+
+  .band--last {
+    padding-block-end: var(--space-24);
   }
 
   .section-note {
     color: var(--text-muted);
     font-size: var(--text-sm);
     max-width: var(--measure);
-    margin-block-end: var(--space-6);
+    margin-block-end: var(--space-8);
   }
 
   .narrow {
@@ -201,95 +189,153 @@ const lessons = (await getCollection('lessons')).sort((a, b) => a.data.order - b
   }
 
   /*
-   * USE THE WIDTH THE PAGE ALREADY HAS.
-   *
-   * The container is 1120px and every list inside it ran as a single column at
-   * a reading measure, so on any desktop the right half of the page was empty.
-   * That emptiness is most of what made these routes read as a plainer, older
-   * site next to the home stations: same tokens, same type, but a composition
-   * that stops halfway across the frame.
-   *
-   * Two columns above 1040px, one below. The measure of each column is still a
-   * reading measure — this widens the COMPOSITION, not the line length, which
-   * would have made it harder to read rather than easier.
+   * THE PRINCIPLES, AS NUMBERED PANELS. Each number is set in the brand ramp,
+   * as the home page sets its emphasis, and the evidence under each sits on a
+   * violet rule — the record behind the principle.
    */
   .pillars {
     list-style: none;
     margin: 0;
     padding: 0;
     display: grid;
-    gap: var(--space-8) var(--space-12);
+    gap: var(--space-6);
   }
 
-  @media (min-width: 1040px) {
+  @media (min-width: 900px) {
     .pillars {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      align-items: start;
+    }
+
+    /* Five panels: the last one takes the whole row rather than half of it. */
+    .pillars > li:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .pillars > li {
+    position: relative;
+    padding: var(--space-6);
+    background: var(--glass-bg);
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: var(--radius-lg);
+    transition: border-color var(--duration-transition) var(--ease-out);
+  }
+
+  @media (min-width: 768px) {
+    .pillars > li {
+      padding: var(--space-8);
+    }
+  }
+
+  .pillars > li:hover {
+    border-color: var(--glass-edge-strong);
+  }
+
+  .pillar-no {
+    display: block;
+    margin-block-end: var(--space-4);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-medium);
+    line-height: 1;
+    color: var(--hue-violet);
+  }
+
+  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    .pillar-no {
+      width: fit-content;
+      background-image: var(--brand-ramp);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .pillar-no {
+      background: none;
+      -webkit-text-fill-color: CanvasText;
     }
   }
 
   .pillars h3 {
-    font-size: var(--text-md);
+    font-size: var(--text-lg);
+    letter-spacing: -0.012em;
   }
 
   .pillar-line {
     margin-block-start: var(--space-2);
     color: var(--text);
     font-size: var(--text-sm);
+    line-height: var(--leading-body);
     max-width: var(--measure);
   }
 
   .pillar-evidence {
-    margin-block-start: var(--space-3);
+    margin-block-start: var(--space-4);
     padding-inline-start: var(--space-4);
-    border-inline-start: 2px solid var(--accent);
+    border-inline-start: 2px solid var(--hue-violet);
     color: var(--text-muted);
     font-size: var(--text-sm);
+    line-height: var(--leading-body);
     max-width: var(--measure);
   }
 
+  /*
+   * THE ONE FEATURE CARD. The statement this page exists to make, framed in the
+   * full brand ramp — the outline the home page gives its primary action.
+   */
   .ownership {
+    position: relative;
     margin: 0 0 var(--space-8);
-    padding: var(--space-6);
-    background: var(--bg-raised);
-    border: var(--border-width) solid var(--border);
-    border-radius: var(--radius);
-    max-width: var(--measure);
+    padding: var(--space-8);
+    max-width: 52rem;
+    border: var(--border-width) solid transparent;
+    border-radius: var(--radius-xl);
+    background:
+      linear-gradient(rgb(12 14 24 / 0.96), rgb(12 14 24 / 0.96)) padding-box,
+      var(--brand-ramp) border-box;
+    box-shadow: 0 30px 80px -40px rgb(139 108 246 / 0.45);
+  }
+
+  @media (min-width: 768px) {
+    .ownership {
+      padding: var(--space-12);
+    }
   }
 
   .ownership p {
-    font-size: var(--text-md);
-    line-height: var(--leading-body);
+    font-size: clamp(1.2rem, 2.2vw, 1.6rem);
+    font-weight: var(--weight-medium);
+    line-height: 1.45;
+    letter-spacing: -0.01em;
   }
 
   .decision-list {
     display: grid;
-    gap: var(--space-6) var(--space-12);
+    gap: var(--space-6);
   }
 
   @media (min-width: 1040px) {
     .decision-list {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      align-items: start;
+      align-items: stretch;
     }
   }
 
-  /*
-   * WCAG 2.2 AA, SC 2.5.8 Target Size (Minimum): a control that is not inline
-   * in a sentence needs a 24x24 CSS-pixel target. These links sit on a ~19px
-   * line box, so the hit area is grown with padding and the padding is undone
-   * with an equal negative margin — the target grows, the layout does not move
-   * by a pixel. Links that genuinely sit inside a sentence are exempt under the
-   * same criterion and are left alone.
-   */
-  .cross-link a {
-    display: inline-block;
-    padding-block: 4px;
-    margin-block: -4px;
+  .lesson {
+    display: flex;
+    flex-direction: column;
   }
 
   .cross-link {
     margin-block-start: var(--space-3);
     font-size: var(--text-sm);
+  }
+
+  .cross-link a {
+    display: inline-block;
+    padding-block: 4px;
+    margin-block: -4px;
   }
 </style>

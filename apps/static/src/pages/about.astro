@@ -5,9 +5,18 @@
  * What is deliberately NOT here: the AI-assisted ownership statement. Blueprint
  * §3.3 gives it exactly one appearance on the whole site, on /engineering, and
  * Phase 6 owns it. Repeating it here would weaken it in both places.
+ *
+ * IN THE HOME PAGE'S LANGUAGE (Oct 2026). The inner pages' hero, the story in
+ * one reading column, and the facts a recruiter scans for — where, when, which
+ * languages, how to reach me — in a glass card that stays beside it. Every
+ * sentence is unchanged; the closing paragraph's two links had lost the spaces
+ * before them to HTML compression ("them.The CV", "isa PDF"), and have them
+ * back as explicit spaces.
  */
 import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
 import SectionHeader from '../components/SectionHeader.astro';
+import Button from '../components/Button.astro';
 import JsonLd from '../components/JsonLd.astro';
 import { profilePageSchema } from '../lib/structured-data';
 import { SITE } from '../config/site';
@@ -20,6 +29,12 @@ const facts = [
   { label: 'Availability', value: SITE.availability },
   { label: 'Languages', value: SITE.languages.join(', ') },
 ];
+
+const reach = [
+  { label: 'Email', href: `mailto:${SITE.email}`, rel: undefined },
+  { label: 'LinkedIn', href: SITE.linkedin, rel: 'me noopener' },
+  { label: 'GitHub', href: SITE.github, rel: 'me noopener' },
+];
 ---
 
 <BaseLayout title={`About — ${SITE.name}`} description={description}>
@@ -27,16 +42,15 @@ const facts = [
     <JsonLd data={profilePageSchema(Astro.site!, '/about', `About ${SITE.name}`, description)} />
   </Fragment>
 
-  <section class="intro">
-    <div class="container">
-      <p class="kicker">About</p>
-      <h1>I came to software from somewhere else, and it shows in how I build.</h1>
-    </div>
-  </section>
+  <PageHero index="04" label="About" compact>
+    <Fragment slot="title">
+      I came to software from somewhere else, <em>and it shows in how I build.</em>
+    </Fragment>
+  </PageHero>
 
   <section class="band">
     <div class="container about-layout">
-      <div class="body-copy prose">
+      <div class="body-copy prose story">
         <p>
           I studied electrical and electronics engineering, and then spent four years not writing
           software. I supervised operations, and I taught. Both left marks. Running operations is
@@ -61,7 +75,7 @@ const facts = [
           pre-launch, and says so.
         </p>
 
-        <p>
+        <p class="pull">
           That last part matters more to me than the count. Anyone can ship something. Staying on
           the hook for it — being the person who finds out first when it breaks — is a different
           job, and it is the one I have chosen.
@@ -77,7 +91,7 @@ const facts = [
         </p>
       </div>
 
-      <aside class="side">
+      <aside class="side" aria-label="At a glance">
         {
           /*
            * The headshot pipeline is built and waiting in
@@ -93,65 +107,63 @@ const facts = [
              frontmatter and render `<Headshot src={headshot} alt="Kishan Thorat" />`
              here. The image must be owned, not hotlinked. -->
 
-        <dl class="facts">
-          {
-            facts.map((fact) => (
-              <div class="fact">
-                <dt>{fact.label}</dt>
-                <dd>{fact.value}</dd>
-              </div>
-            ))
-          }
-        </dl>
+        <div class="card">
+          <p class="card-mark" aria-hidden="true">KT</p>
+          <p class="card-name">{SITE.name}</p>
+          <p class="card-role">{SITE.role}</p>
+
+          <dl class="facts">
+            {
+              facts.map((fact) => (
+                <div class="fact">
+                  <dt>{fact.label}</dt>
+                  <dd>{fact.value}</dd>
+                </div>
+              ))
+            }
+          </dl>
+
+          <ul class="reach">
+            {
+              reach.map((r) => (
+                <li>
+                  <a href={r.href} rel={r.rel}>
+                    {r.label} <span aria-hidden="true">→</span>
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
       </aside>
     </div>
   </section>
 
-  <section class="band">
+  <section class="band band--last">
     <div class="container">
-      <SectionHeader kicker="Next" title="The engineering is the evidence" />
-      <p class="body-copy narrow">
-        The systems above are described in full, including what is wrong with them.
-        <a href="/cv">The CV</a> has the short version, and there is
-        <a href="/cv.pdf" download>a PDF</a> if you would rather read it offline.
-      </p>
+      <div class="next" data-reveal>
+        <SectionHeader kicker="Next" title="The engineering is the evidence" emphasis="evidence" />
+        <p class="body-copy narrow">
+          The systems above are described in full, including what is wrong with them.{' '}
+          <a href="/cv">The CV</a> has the short version, and there is{' '}
+          <a href="/cv.pdf" download>a PDF</a> if you would rather read it offline.
+        </p>
+        <p class="next-actions">
+          <Button href="/systems">See the systems <span aria-hidden="true">→</span></Button>
+          <Button href="/cv" variant="secondary">Read the CV</Button>
+        </p>
+      </div>
     </div>
   </section>
 </BaseLayout>
 
 <style>
-  .intro {
-    padding-block: var(--space-16) var(--space-4);
-  }
-
-  @media (min-width: 768px) {
-    .intro {
-      padding-block: var(--space-24) var(--space-8);
-    }
-  }
-
-  .kicker {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-block-end: var(--space-4);
-  }
-
-  h1 {
-    font-size: var(--text-xl);
-    max-width: 26ch;
-  }
-
-  @media (min-width: 768px) {
-    h1 {
-      font-size: var(--text-2xl);
-    }
-  }
-
   .band {
-    padding-block: var(--space-8) var(--space-12);
+    padding-block: var(--space-12);
+  }
+
+  .band--last {
+    padding-block-end: var(--space-24);
   }
 
   .about-layout {
@@ -160,41 +172,159 @@ const facts = [
     align-items: start;
   }
 
-  @media (min-width: 900px) {
+  @media (min-width: 960px) {
     .about-layout {
-      grid-template-columns: minmax(0, 1fr) 15rem;
+      grid-template-columns: minmax(0, 1fr) 19rem;
       gap: var(--space-16);
     }
   }
 
-  .body-copy h2 {
+  .story {
+    font-size: var(--text-md);
+    line-height: 1.75;
+  }
+
+  /* The paragraph the page turns on, given the weight it carries. */
+  .pull {
+    padding: var(--space-6);
+    background: var(--glass-bg);
+    border: var(--border-width) solid var(--glass-edge);
+    border-inline-start: 2px solid var(--hue-violet);
+    border-radius: var(--radius-lg);
+    color: var(--text);
+  }
+
+  .story h2 {
+    margin-block-start: var(--space-12);
+    font-size: var(--text-xl);
+    letter-spacing: -0.015em;
+  }
+
+  /* The card that stays beside the story on a wide screen. */
+  @media (min-width: 960px) {
+    .side {
+      position: sticky;
+      inset-block-start: 6rem;
+    }
+  }
+
+  .card {
+    position: relative;
+    overflow: hidden;
+    padding: var(--space-6);
+    background: var(--glass-bg);
+    background-image: radial-gradient(80% 60% at 0% 0%, rgb(76 134 255 / 0.12), transparent 70%);
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: var(--radius-xl);
+  }
+
+  .card::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 0;
+    height: 2px;
+    background: var(--brand-ramp);
+  }
+
+  .card-mark {
+    display: inline-grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid transparent;
+    border-radius: 0.75rem;
+    background:
+      linear-gradient(rgb(12 14 24), rgb(12 14 24)) padding-box,
+      var(--brand-ramp) border-box;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .card-name {
+    margin-block-start: var(--space-4);
     font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+  }
+
+  .card-role {
+    color: var(--hue-blue);
+    font-size: var(--text-sm);
   }
 
   .facts {
-    margin: 0;
+    margin: var(--space-6) 0 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
-    border-block-start: var(--border-width) solid var(--border);
-    padding-block-start: var(--space-4);
+    padding-block-start: var(--space-6);
+    border-block-start: var(--border-width) solid var(--glass-edge);
   }
 
   .fact dt {
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.12em;
     color: var(--text-muted);
   }
 
   .fact dd {
-    margin: 0;
-    margin-block-start: var(--space-1);
+    margin: var(--space-1) 0 0;
     font-size: var(--text-sm);
+  }
+
+  .reach {
+    display: flex;
+    flex-direction: column;
+    margin: var(--space-6) 0 0;
+    padding: var(--space-4) 0 0;
+    list-style: none;
+    border-block-start: var(--border-width) solid var(--glass-edge);
+  }
+
+  .reach a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 2.5rem;
+    font-size: var(--text-sm);
+    background-image: none;
+    color: var(--text);
+  }
+
+  .reach a:hover {
+    color: var(--hue-violet);
+  }
+
+  .next {
+    position: relative;
+    padding: var(--space-8);
+    background: var(--glass-bg);
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: var(--radius-xl);
+  }
+
+  @media (min-width: 768px) {
+    .next {
+      padding: var(--space-12);
+    }
+  }
+
+  .next :global(.section-header) {
+    margin-block-end: var(--space-6);
   }
 
   .narrow {
     max-width: var(--measure);
+    color: var(--text-muted);
+  }
+
+  .next-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    margin-block-start: var(--space-8);
   }
 </style>

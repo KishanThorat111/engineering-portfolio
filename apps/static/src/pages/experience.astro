@@ -6,9 +6,14 @@
  * An NDA-bound engagement described at CV level, and labelled as such, reads
  * as someone who can be trusted with a boundary. The same engagement described
  * vaguely with no explanation reads as a gap.
+ *
+ * IN THE HOME PAGE'S LANGUAGE (Oct 2026). The inner pages' hero opens it; the
+ * roles hang off one rail in the brand ramp, newest first, so the page reads
+ * as a timeline rather than a stack of boxes. Every word is unchanged.
  */
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
 import SectionHeader from '../components/SectionHeader.astro';
 import ExperienceCard from '../components/ExperienceCard.astro';
 import { SITE } from '../config/site';
@@ -16,25 +21,23 @@ import { CV_EARLIER_CAREER } from '../config/cv';
 import { MORE_SYSTEMS } from '../config/more-systems';
 
 const roles = (await getCollection('experience')).sort((a, b) => a.data.order - b.data.order);
+const description =
+  'Enterprise AI workflow automation for a UK client, freelance full-stack delivery, and the earlier career that shaped how I operate systems.';
 ---
 
-<BaseLayout
-  title={`Experience — ${SITE.name}`}
-  description="Enterprise AI workflow automation for a UK client, freelance full-stack delivery, and the earlier career that shaped how I operate systems."
->
-  <section class="intro">
-    <div class="container">
-      <p class="kicker">Experience</p>
-      <h1>Where the work has been, and what it was</h1>
-    </div>
-  </section>
+<BaseLayout title={`Experience — ${SITE.name}`} description={description}>
+  <PageHero index="02" label="Experience">
+    <Fragment slot="title">Where the work has been, and <em>what it was</em></Fragment>
+    <p slot="lede">{description}</p>
+  </PageHero>
 
-  <section class="band">
+  <section class="band" aria-label="Roles">
     <div class="container">
-      <div class="role-list">
+      <ol class="timeline">
         {
           roles.map((role, index) => (
-            <div data-reveal style={`--reveal-delay: ${Math.min(index * 60, 120)}ms`}>
+            <li data-reveal style={`--reveal-delay: ${Math.min(index * 60, 120)}ms`}>
+              <span class="node" aria-hidden="true" />
               <ExperienceCard
                 role={role.data.role}
                 organisation={role.data.organisation}
@@ -45,18 +48,23 @@ const roles = (await getCollection('experience')).sort((a, b) => a.data.order - 
                 note={role.data.note}
                 level="h2"
               />
-            </div>
+            </li>
           ))
         }
-      </div>
+      </ol>
     </div>
   </section>
 
   <section class="band">
     <div class="container">
-      <SectionHeader kicker="Before software" title="What transferred" />
-      <div class="prose body-copy narrow" data-reveal>
-        <p>{CV_EARLIER_CAREER}</p>
+      <SectionHeader
+        index="01"
+        kicker="Before software"
+        title="What transferred"
+        emphasis="transferred"
+      />
+      <div class="before" data-reveal>
+        <p class="before-lead">{CV_EARLIER_CAREER}</p>
         <p>
           Both halves of that stuck. Supervising operations is where I learned that a system is not
           finished when it works, and teaching is where the habit of writing things down came from.
@@ -68,9 +76,14 @@ const roles = (await getCollection('experience')).sort((a, b) => a.data.order - 
     </div>
   </section>
 
-  <section class="band">
+  <section class="band band--last">
     <div class="container">
-      <SectionHeader kicker="Also built" title="Smaller things, still shipped" />
+      <SectionHeader
+        index="02"
+        kicker="Also built"
+        title="Smaller things, still shipped"
+        emphasis="still shipped"
+      />
       <p class="strip-note">
         No case studies behind these — they are real work at a smaller scale, and saying so is more
         useful than presenting three platforms and three side projects as one list.
@@ -98,55 +111,105 @@ const roles = (await getCollection('experience')).sort((a, b) => a.data.order - 
 </BaseLayout>
 
 <style>
-  .intro {
-    padding-block: var(--space-16) var(--space-8);
-  }
-
-  @media (min-width: 768px) {
-    .intro {
-      padding-block: var(--space-24) var(--space-12);
-    }
-  }
-
-  .kicker {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-block-end: var(--space-4);
-  }
-
-  h1 {
-    font-size: var(--text-xl);
-    max-width: 24ch;
-  }
-
-  @media (min-width: 768px) {
-    h1 {
-      font-size: var(--text-2xl);
-    }
-  }
-
   .band {
-    padding-block: var(--space-8) var(--space-12);
+    padding-block: var(--space-12);
   }
 
-  .role-list {
+  .band--last {
+    padding-block-end: var(--space-24);
+  }
+
+  /*
+   * THE RAIL. One line in the brand ramp, fading out at its foot, with a node
+   * per role — newest at the top. On a phone the rail stays, closer in.
+   */
+  .timeline {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--space-6);
+    gap: var(--space-8);
+    margin: 0;
+    padding: 0 0 0 var(--space-8);
+    list-style: none;
   }
 
-  .narrow {
+  .timeline::before {
+    content: '';
+    position: absolute;
+    inset-block: 0.75rem 0;
+    inset-inline-start: 0.4rem;
+    width: 2px;
+    border-radius: 1px;
+    background: linear-gradient(
+      var(--hue-blue),
+      var(--hue-violet) 45%,
+      var(--hue-ember) 80%,
+      transparent
+    );
+    opacity: 0.7;
+  }
+
+  @media (min-width: 768px) {
+    .timeline {
+      padding-inline-start: var(--space-12);
+    }
+
+    .timeline::before {
+      inset-inline-start: 0.9rem;
+    }
+  }
+
+  .timeline > li {
+    position: relative;
+  }
+
+  .node {
+    position: absolute;
+    inset-block-start: 1.75rem;
+    inset-inline-start: calc(-1 * var(--space-8) + 0.05rem);
+    width: 0.9rem;
+    height: 0.9rem;
+    border: 2px solid var(--hue-violet);
+    border-radius: 50%;
+    background: var(--bg);
+    box-shadow: 0 0 14px rgb(139 108 246 / 0.55);
+  }
+
+  @media (min-width: 768px) {
+    .node {
+      inset-inline-start: calc(-1 * var(--space-12) + 0.55rem);
+    }
+  }
+
+  .before {
     max-width: var(--measure);
+  }
+
+  .before p + p {
+    margin-block-start: var(--space-4);
+  }
+
+  /* The earlier career, set as the section's lead line. */
+  .before-lead {
+    padding: var(--space-6);
+    background: var(--glass-bg);
+    border: var(--border-width) solid var(--glass-edge);
+    border-inline-start: 2px solid var(--hue-violet);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-md);
+    line-height: 1.6;
+  }
+
+  .before-lead + p {
+    margin-block-start: var(--space-6);
+    color: var(--text-muted);
   }
 
   .strip-note {
     color: var(--text-muted);
     font-size: var(--text-sm);
     max-width: var(--measure);
-    margin-block-end: var(--space-6);
+    margin-block-end: var(--space-8);
   }
 
   .strip {
@@ -160,35 +223,53 @@ const roles = (await getCollection('experience')).sort((a, b) => a.data.order - 
   @media (min-width: 768px) {
     .strip {
       grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+      gap: var(--space-6);
     }
   }
 
   .strip-card {
+    position: relative;
     height: 100%;
-    background: var(--bg-raised);
-    border: var(--border-width) solid var(--border);
-    border-radius: var(--radius);
-    padding: var(--space-5);
+    padding: var(--space-6);
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-3);
+    background: var(--glass-bg);
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: var(--radius-lg);
+    transition: border-color var(--duration-transition) var(--ease-out);
+  }
+
+  .strip-card::before {
+    content: '';
+    position: absolute;
+    inset-inline: var(--space-6);
+    inset-block-start: -1px;
+    height: 1px;
+    background: var(--brand-ramp);
+    opacity: 0.5;
+  }
+
+  .strip-card:hover {
+    border-color: var(--glass-edge-strong);
   }
 
   .strip-card h3 {
-    font-size: var(--text-base);
+    font-size: var(--text-md);
   }
 
   .community {
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     color: var(--accent-warm);
   }
 
   .strip-summary {
     color: var(--text-muted);
     font-size: var(--text-sm);
+    line-height: var(--leading-body);
   }
 
   .strip-stack {
@@ -197,15 +278,16 @@ const roles = (await getCollection('experience')).sort((a, b) => a.data.order - 
     flex-wrap: wrap;
     gap: var(--space-2);
     margin: auto 0 0;
-    padding-block-start: var(--space-3);
+    padding: var(--space-4) 0 0;
   }
 
   .strip-stack li {
+    padding: 0.25rem 0.6rem;
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: 6px;
+    background: rgb(255 255 255 / 0.02);
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     color: var(--text-muted);
-    border: var(--border-width) solid var(--border);
-    border-radius: var(--radius);
-    padding: var(--space-1) var(--space-2);
   }
 </style>

@@ -27,11 +27,19 @@
  *
  * Blueprint §4.4 still governs scope: the three platforms that get full case
  * studies, and no compact side-project cards mixed in.
+ *
+ * IN THE HOME PAGE'S LANGUAGE (Oct 2026). Every word above still holds; the
+ * entries are now panels of the inner pages' glass, each lit in the colour its
+ * island has on the home page, with the story on the left and its dated
+ * figures stacked on the right.
  */
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/PageHero.astro';
+import Button from '../../components/Button.astro';
 import { SITE } from '../../config/site';
 import { STATUS_LABELS } from '../../schemas/constitution';
+import { SYSTEM_HUE } from '../../config/system-hue';
 
 const systems = (await getCollection('systems')).sort((a, b) => a.data.order - b.data.order);
 
@@ -42,20 +50,29 @@ const ordinal = (index: number) => String(index + 1).padStart(2, '0');
   title={`Systems — ${SITE.name}`}
   description="Three multi-tenant platforms, designed, built, and operated end to end: one in daily hospital production, one live with subscription billing, one pre-launch."
 >
-  <section class="intro">
-    <div class="container">
-      <p class="eyebrow intro-eyebrow">
-        <span class="rule" aria-hidden="true"></span>
-        Systems
-      </p>
-      <h1>Three platforms, one engineer, no hand-offs</h1>
-      <p class="lede">
-        Each of these was designed, built, secured, deployed, and then operated by me. Each case
-        study says what it does, what it cost, and what is wrong with it — including the one running
-        in a hospital with no test suite behind it.
-      </p>
-    </div>
-  </section>
+  <PageHero index="01" label="Systems">
+    <Fragment slot="title">Three platforms, one engineer, <em>no hand-offs</em></Fragment>
+    <p slot="lede">
+      Each of these was designed, built, secured, deployed, and then operated by me. Each case study
+      says what it does, what it cost, and what is wrong with it — including the one running in a
+      hospital with no test suite behind it.
+    </p>
+    <ul class="jump">
+      {
+        systems.map((system, index) => (
+          <li>
+            <a
+              href={`#sys-${system.id}`}
+              style={`--hue: ${SYSTEM_HUE[system.id] ?? 'var(--hue-blue)'}`}
+            >
+              <span class="jump-no">{ordinal(index)}</span>
+              {system.data.title}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </PageHero>
 
   <div class="register">
     {
@@ -64,59 +81,72 @@ const ordinal = (index: number) => String(index + 1).padStart(2, '0');
         const metrics = system.data.metrics.slice(0, 3);
         const limitation = system.data.limitations[0];
         return (
-          <section class="entry" data-tone={status.tone} aria-labelledby={`sys-${system.id}`}>
-            <div class="container entry-inner">
-              <p class="entry-status">
-                <span class="entry-no" aria-hidden="true">
-                  {ordinal(index)}
-                </span>
-                <span class="entry-dot" aria-hidden="true" />
-                {status.label}
-                {system.data.statusDetail ? ` · ${system.data.statusDetail}` : ''}
-              </p>
+          <section
+            class="entry"
+            data-tone={status.tone}
+            style={`--hue: ${SYSTEM_HUE[system.id] ?? 'var(--hue-blue)'}`}
+            aria-labelledby={`sys-${system.id}`}
+          >
+            <div class="container">
+              <div class="entry-card">
+                <div class="entry-main">
+                  <p class="entry-status">
+                    <span class="entry-no" aria-hidden="true">
+                      {ordinal(index)}
+                    </span>
+                    <span class="entry-pill">
+                      <span class="entry-dot" aria-hidden="true" />
+                      {status.label}
+                      {system.data.statusDetail ? ` · ${system.data.statusDetail}` : ''}
+                    </span>
+                  </p>
 
-              <h2 id={`sys-${system.id}`}>{system.data.title}</h2>
-              <p class="entry-problem">{system.data.problem}</p>
+                  <h2 id={`sys-${system.id}`}>{system.data.title}</h2>
+                  <p class="entry-problem">{system.data.problem}</p>
 
-              {/* The system's own measured figures, each carrying its date. */}
-              <dl class="entry-metrics">
-                {metrics.map((metric) => (
-                  <div data-reveal>
-                    <dt>{metric.caption}</dt>
-                    <dd>
-                      <span class="figure">{metric.value}</span>
-                      <span class="when">{metric.qualifier}</span>
-                    </dd>
+                  {/*
+                    The disclosed limitation, verbatim from the collection. It is
+                    marked in the fault colour and given a rule of its own, because
+                    the register should not be able to show a system without
+                    showing what is wrong with it.
+
+                    A div, not an aside. It was an aside first, which made three
+                    unnamed complementary landmarks on one page — html-validate
+                    failed the build for it, correctly. A limitation a system
+                    discloses about itself is not tangential to that entry; it is
+                    the entry's most load-bearing sentence.
+                  */}
+                  <div class="entry-limit">
+                    <p class="entry-limit-label">Disclosed limitation</p>
+                    <p class="entry-limit-text">{limitation.limitation}</p>
                   </div>
-                ))}
-              </dl>
 
-              {/*
-                The disclosed limitation, verbatim from the collection. It is
-                marked in the fault colour and given a rule of its own, because
-                the register should not be able to show a system without
-                showing what is wrong with it.
+                  <ul class="entry-stack">
+                    {system.data.stack.map((item) => (
+                      <li>{item}</li>
+                    ))}
+                  </ul>
 
-                A div, not an aside. It was an aside first, which made three
-                unnamed complementary landmarks on one page — html-validate
-                failed the build for it, correctly. A limitation a system
-                discloses about itself is not tangential to that entry; it is
-                the entry's most load-bearing sentence.
-              */}
-              <div class="entry-limit">
-                <p class="entry-limit-label eyebrow">Disclosed limitation</p>
-                <p class="entry-limit-text">{limitation.limitation}</p>
+                  <p class="entry-go">
+                    <Button href={`/systems/${system.id}`}>
+                      Read the case study <span aria-hidden="true">→</span>
+                    </Button>
+                  </p>
+                </div>
+
+                {/* The system's own measured figures, each carrying its date. */}
+                <dl class="entry-metrics">
+                  {metrics.map((metric) => (
+                    <div data-reveal>
+                      <dt>{metric.caption}</dt>
+                      <dd>
+                        <span class="figure">{metric.value}</span>
+                        <span class="when">{metric.qualifier}</span>
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
               </div>
-
-              <p class="entry-stack">
-                {system.data.stack.map((item) => (
-                  <span>{item}</span>
-                ))}
-              </p>
-
-              <p class="entry-go">
-                <a href={`/systems/${system.id}`}>Read the case study →</a>
-              </p>
             </div>
           </section>
         );
@@ -126,65 +156,55 @@ const ordinal = (index: number) => String(index + 1).padStart(2, '0');
 </BaseLayout>
 
 <style>
-  .intro {
-    padding-block: var(--space-16) var(--space-12);
-  }
-
-  @media (min-width: 768px) {
-    .intro {
-      padding-block: var(--space-24) var(--space-16);
-    }
-  }
-
-  .intro-eyebrow {
+  /* A quick index under the opening: the three systems, by number and colour. */
+  .jump {
     display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .jump a {
+    display: inline-flex;
     align-items: center;
     gap: var(--space-3);
-    margin-block-end: var(--space-6);
+    min-height: 2.5rem;
+    padding: 0.5rem 1rem;
+    border: var(--border-width) solid var(--glass-edge-strong);
+    border-radius: 999px;
+    background: var(--glass-bg);
+    font-size: var(--text-sm);
+    color: var(--text);
+    transition: border-color var(--duration-micro) var(--ease-out);
   }
 
-  .intro-eyebrow .rule {
-    width: 2.5rem;
-    height: 1px;
-    background: var(--border-strong);
+  /* A pill is identified by its outline, so it takes no link underline. */
+  .jump a,
+  .jump a:hover {
+    background-image: none;
   }
 
-  h1 {
-    font-size: var(--text-mega);
-    line-height: var(--leading-display);
-    letter-spacing: var(--tracking-display);
-    max-width: 18ch;
+  .jump a:hover {
+    border-color: var(--hue);
   }
 
-  .lede {
-    margin-block-start: var(--space-6);
-    max-width: 62ch;
-    color: var(--text-muted);
-    font-size: var(--text-md);
+  .jump-no {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--hue);
   }
 
-  /*
-   * Entries alternate ground and inset so the page reads as a sequence of
-   * distinct places rather than one long column. Each is full-bleed and ruled,
-   * which is what stops three systems looking like three tiles.
-   */
+  .register {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    padding-block: var(--space-12) var(--space-24);
+  }
+
   .entry {
-    border-block-start: var(--border-width) solid var(--border);
-    padding-block: var(--space-16);
-  }
-
-  .entry:nth-child(even) {
-    background: var(--bg-inset);
-  }
-
-  .entry:last-child {
-    border-block-end: var(--border-width) solid var(--border);
-  }
-
-  @media (min-width: 1000px) {
-    .entry {
-      padding-block: var(--space-24);
-    }
+    scroll-margin-top: 5rem;
   }
 
   .entry[data-tone='accent'] {
@@ -199,18 +219,88 @@ const ordinal = (index: number) => String(index + 1).padStart(2, '0');
     --tone: var(--text-faint);
   }
 
+  /*
+   * ONE PANEL PER SYSTEM, LIT IN ITS OWN COLOUR.
+   *
+   * Each system keeps the hue its island has on the home page as a soft light
+   * in the panel's corner, along its top edge and on its number — the same
+   * three systems, recognisably, from the front page to this one. The hue is
+   * identity, not state: the status pill carries the state.
+   */
+  .entry-card {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: grid;
+    gap: var(--space-12);
+    padding: var(--space-8) var(--space-6);
+    background: var(--glass-bg);
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: var(--radius-xl);
+  }
+
+  .entry-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(
+      60% 55% at 0% 0%,
+      color-mix(in srgb, var(--hue) 11%, transparent),
+      transparent 70%
+    );
+  }
+
+  .entry-card::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--hue), transparent 60%);
+    opacity: 0.8;
+  }
+
+  @media (min-width: 768px) {
+    .entry-card {
+      padding: var(--space-12);
+    }
+  }
+
+  @media (min-width: 1000px) {
+    .entry-card {
+      grid-template-columns: minmax(0, 1.35fr) minmax(16rem, 0.65fr);
+      gap: var(--space-16);
+      align-items: start;
+    }
+  }
+
   .entry-status {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-3);
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    letter-spacing: 0.1em;
-    color: var(--text-muted);
+    gap: var(--space-4);
   }
 
   .entry-no {
-    color: var(--text-faint);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-medium);
+    line-height: 1;
+    color: var(--hue);
+  }
+
+  .entry-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0.35rem 0.75rem;
+    border: var(--border-width) solid var(--glass-edge-strong);
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.1em;
+    color: var(--text);
   }
 
   .entry-dot {
@@ -218,11 +308,10 @@ const ordinal = (index: number) => String(index + 1).padStart(2, '0');
     height: 0.45rem;
     border-radius: 50%;
     background: var(--tone);
-    margin-inline-start: var(--space-2);
   }
 
   .entry h2 {
-    margin-block-start: var(--space-4);
+    margin-block-start: var(--space-6);
     font-size: var(--text-mega);
     line-height: var(--leading-display);
     letter-spacing: var(--tracking-display);
@@ -236,38 +325,89 @@ const ordinal = (index: number) => String(index + 1).padStart(2, '0');
     font-size: var(--text-lg);
     line-height: 1.45;
     color: var(--text-muted);
-    max-width: 52ch;
+    max-width: 46ch;
   }
 
+  /*
+   * The limitation. Fault-coloured rule, not a fault-coloured block — this is
+   * disclosure, not an error state, and colouring the whole panel red would
+   * dramatise something that is here to be read plainly.
+   */
+  .entry-limit {
+    margin-block-start: var(--space-8);
+    padding: var(--space-4) var(--space-6);
+    border-inline-start: 2px solid var(--fault);
+    border-radius: 0 10px 10px 0;
+    background: rgb(248 113 113 / 0.04);
+    max-width: 64ch;
+  }
+
+  .entry-limit-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--fault);
+  }
+
+  .entry-limit-text {
+    margin-block-start: var(--space-2);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--leading-body);
+  }
+
+  .entry-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-8) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .entry-stack li {
+    padding: 0.3rem 0.65rem;
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: 6px;
+    background: rgb(255 255 255 / 0.02);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+  }
+
+  .entry-go {
+    margin-block-start: var(--space-8);
+  }
+
+  /* Figures stacked beside the story: number first, its date, then what it is. */
   .entry-metrics {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-6);
-    margin-block-start: var(--space-12);
-    border-block-start: var(--border-width) solid var(--border);
-    padding-block-start: var(--space-8);
+    gap: var(--space-4);
+    margin: 0;
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 640px) and (max-width: 999px) {
     .entry-metrics {
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: var(--space-8);
     }
   }
 
-  /* Figure first, caption under it — the caption is long and the number is the
-     thing being read, so the number leads and the words explain it. */
   .entry-metrics div {
     display: flex;
     flex-direction: column-reverse;
     justify-content: flex-end;
+    padding: var(--space-6);
+    background: rgb(5 7 12 / 0.55);
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: var(--radius-lg);
   }
 
   .entry-metrics dt {
+    margin-block-start: var(--space-3);
     color: var(--text-muted);
     font-size: var(--text-sm);
-    margin-block-start: var(--space-3);
-    max-width: 34ch;
+    line-height: 1.5;
   }
 
   .entry-metrics dd {
@@ -279,74 +419,16 @@ const ordinal = (index: number) => String(index + 1).padStart(2, '0');
     font-family: var(--font-mono);
     font-size: var(--text-metric);
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
     line-height: 1;
     color: var(--text);
   }
 
   .when {
     display: block;
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--text-faint);
     margin-block-start: var(--space-2);
-  }
-
-  /*
-   * The limitation. Fault-coloured rule, not a fault-coloured block — this is
-   * disclosure, not an error state, and colouring the whole panel red would
-   * dramatise something that is here to be read plainly.
-   */
-  .entry-limit {
-    margin-block-start: var(--space-12);
-    border-inline-start: 2px solid var(--fault);
-    padding-inline-start: var(--space-6);
-    max-width: 68ch;
-  }
-
-  .entry-limit-label {
-    color: var(--fault);
-  }
-
-  .entry-limit-text {
-    margin-block-start: var(--space-3);
-    color: var(--text-muted);
-  }
-
-  .entry-stack {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1) var(--space-3);
-    margin-block-start: var(--space-8);
     font-family: var(--font-mono);
     font-size: var(--text-xs);
-    color: var(--text-faint);
-  }
-
-  .entry-stack span + span::before {
-    content: '·';
-    margin-inline-end: var(--space-3);
-  }
-
-  .entry-go {
-    margin-block-start: var(--space-8);
-    font-size: var(--text-md);
-  }
-
-  /*
-   * WCAG 2.2 AA, SC 2.5.8 Target Size (Minimum): a control that is not inline
-   * in a sentence needs a 24x24 CSS-pixel target. These links sit on a ~19px
-   * line box, so the hit area is grown with padding and the padding is undone
-   * with an equal negative margin — the target grows, the layout does not move
-   * by a pixel. Links that genuinely sit inside a sentence are exempt under the
-   * same criterion and are left alone.
-   */
-  .entry-go a {
-    display: inline-block;
-    padding-block: 3px;
-    margin-block: -3px;
-  }
-
-  .entry-go a {
-    --link-rule: var(--tone);
+    color: var(--text-muted);
   }
 </style>

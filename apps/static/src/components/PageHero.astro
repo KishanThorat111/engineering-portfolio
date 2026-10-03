@@ -1,0 +1,180 @@
+---
+/**
+ * THE OPENING OF EVERY PAGE BEYOND THE HOME PAGE.
+ *
+ * The home page opens on a lit frame; the other routes opened on a small grey
+ * kicker and a heading, in the site's earlier, plainer voice, so following a
+ * link from `/` felt like arriving on a different website. This is the home
+ * page's opening, rebuilt from what the inner pages may carry: the numbered
+ * mono eyebrow, a display headline whose emphasis takes the brand ramp, the
+ * lede, and the ambient light the frames are lit with — drawn in CSS, because
+ * the artwork itself belongs to `/` alone (station-check §3).
+ *
+ * The headline arrives through a slot so a page can mark its own emphasis
+ * with `<em>`; nothing here rewords a claim.
+ */
+interface Props {
+  /** Two-digit position, shown before the label, as the stations number theirs. */
+  index?: string;
+  label: string;
+  /** Tints the ambient light, e.g. a case study's own system colour. */
+  hue?: string;
+  /** Sets the headline a size down, for pages whose title is a sentence. */
+  compact?: boolean;
+}
+
+const { index, label, hue, compact = false } = Astro.props;
+---
+
+<header class:list={['ph', compact && 'ph--compact']} style={hue ? `--ph-hue:${hue}` : undefined}>
+  <div class="ph-sky" aria-hidden="true"></div>
+  <div class="container ph-inner">
+    <p class="ph-eyebrow">
+      {index && <span class="ph-no">{index}</span>}
+      <span class="ph-rule" aria-hidden="true"></span>
+      <span>{label}</span>
+    </p>
+    <h1 class="ph-title"><slot name="title" /></h1>
+    {
+      Astro.slots.has('lede') && (
+        <div class="ph-lede">
+          <slot name="lede" />
+        </div>
+      )
+    }
+    {
+      Astro.slots.has('default') && (
+        <div class="ph-meta">
+          <slot />
+        </div>
+      )
+    }
+  </div>
+</header>
+
+<style>
+  .ph {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding-block: clamp(4.5rem, 11vw, 8.5rem) clamp(3rem, 6vw, 5rem);
+    --ph-hue: var(--hue-blue);
+  }
+
+  /* The hairline the header and footer draw, closing the opening. */
+  .ph::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    height: 1px;
+    background: var(--brand-ramp);
+    opacity: 0.35;
+    mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+  }
+
+  /*
+   * The frames' light, without the frames: two soft pools in the ramp's own
+   * hues and a fine technical grid fading out from the top-left, where the
+   * headline sits. Kept dim — the faintest text on it still clears 4.5:1.
+   */
+  .ph-sky {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        55% 70% at 12% 0%,
+        color-mix(in srgb, var(--ph-hue) 13%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(45% 65% at 88% 8%, rgb(139 108 246 / 0.1), transparent 70%),
+      radial-gradient(40% 60% at 70% 110%, rgb(242 135 92 / 0.06), transparent 70%);
+  }
+
+  .ph-sky::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(70% 90% at 20% 0%, #000, transparent 75%);
+  }
+
+  .ph-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-block-end: var(--space-6);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .ph-no {
+    color: var(--text);
+  }
+
+  .ph-rule {
+    width: 2.5rem;
+    height: 1px;
+    flex: none;
+    background: var(--brand-ramp);
+  }
+
+  .ph-title {
+    max-width: 18ch;
+    font-size: clamp(2.4rem, 6.2vw, 4.6rem);
+    font-weight: 600;
+    line-height: 1.02;
+    letter-spacing: -0.032em;
+  }
+
+  .ph--compact .ph-title {
+    max-width: 22ch;
+    font-size: clamp(2.1rem, 4.8vw, 3.6rem);
+    line-height: 1.06;
+  }
+
+  /* The home page's emphasis: the brand ramp, never through cyan. */
+  .ph-title :global(em) {
+    font-style: normal;
+    color: var(--hue-violet);
+  }
+
+  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    .ph-title :global(em) {
+      background-image: var(--brand-ramp);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .ph-title :global(em) {
+      background: none;
+      -webkit-text-fill-color: CanvasText;
+      color: CanvasText;
+    }
+  }
+
+  .ph-lede {
+    margin-block-start: var(--space-6);
+    max-width: 60ch;
+    font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+    line-height: 1.6;
+    color: var(--text-muted);
+  }
+
+  .ph-meta {
+    margin-block-start: var(--space-8);
+  }
+</style>

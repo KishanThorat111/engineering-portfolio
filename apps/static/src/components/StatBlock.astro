@@ -24,26 +24,37 @@ const { value, caption, qualifier } = Astro.props;
 </div>
 
 <style>
+  /* A figure tile: the number leads, the caption explains it, the date
+     qualifier — which every number on this site carries — closes it. */
   .stat-block {
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
+    gap: var(--space-2);
+    height: 100%;
+    padding: var(--space-6);
+    background: var(--glass-bg);
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: var(--radius-lg);
   }
 
   .value {
     font-family: var(--font-mono);
-    font-size: var(--text-xl);
+    font-size: var(--text-metric);
     font-weight: var(--weight-medium);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
     color: var(--text);
-    line-height: var(--leading-heading);
   }
 
   .caption {
     color: var(--text);
     font-size: var(--text-sm);
+    line-height: 1.5;
   }
 
   .qualifier {
+    margin-block-start: auto;
     font-family: var(--font-mono);
     color: var(--text-muted);
     font-size: var(--text-xs);

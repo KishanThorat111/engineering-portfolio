@@ -28,6 +28,9 @@ import { getCollection } from 'astro:content';
 import '../styles/diagrams.css';
 import BaseLayout from './BaseLayout.astro';
 import SectionHeader from '../components/SectionHeader.astro';
+import PageHero from '../components/PageHero.astro';
+import { SYSTEM_HUE } from '../config/system-hue';
+import { STATUS_LABELS } from '../schemas/constitution';
 import StatusBadge from '../components/StatusBadge.astro';
 import DecisionCard from '../components/DecisionCard.astro';
 import LimitationNote from '../components/LimitationNote.astro';
@@ -78,6 +81,37 @@ const decisionsHeading =
   decisionCount === 1
     ? 'One call, and what it cost'
     : `${decisionWord} calls, and what each one cost`;
+const decisionsEmphasis = decisionCount === 1 ? 'what it cost' : 'what each one cost';
+
+/*
+ * IN THE HOME PAGE'S LANGUAGE (Oct 2026).
+ *
+ * Nothing above changes: the same ten items, in the same order, from the same
+ * schema data, and the same refusal to build without a section. What changes
+ * is how a reader moves through it. The opening is the inner pages' hero, lit
+ * in this system's own colour from the home page; the sections are numbered;
+ * on a wide screen an index of them stays beside the reading column; and the
+ * page ends by pointing at the other two systems rather than at nothing.
+ */
+const all = (await getCollection('systems')).sort((a, b) => a.data.order - b.data.order);
+const position = all.findIndex((s) => s.id === entry.id);
+const ordinal = (index: number) => String(index + 1).padStart(2, '0');
+const others = all.filter((s) => s.id !== entry.id);
+const hue = SYSTEM_HUE[entry.id] ?? 'var(--hue-blue)';
+
+/** The page's own index, in reading order; only sections this page renders. */
+const sections = [
+  { id: 'context', label: 'Context' },
+  { id: 'constraints', label: 'Constraints' },
+  { id: 'architecture', label: 'Architecture' },
+  ...(decisions.length > 0 ? [{ id: 'decisions', label: 'Decisions' }] : []),
+  { id: 'security', label: 'Security' },
+  { id: 'operations', label: 'Operations' },
+  { id: 'limitations', label: 'Limitations' },
+  { id: 'outcomes', label: 'Outcomes' },
+  ...(Astro.slots.has('gallery') ? [{ id: 'gallery', label: 'Gallery' }] : []),
+];
+const no = (id: string) => ordinal(sections.findIndex((s) => s.id === id));
 
 const title = `${system.title} — case study`;
 ---
@@ -91,148 +125,193 @@ const title = `${system.title} — case study`;
     <JsonLd data={softwareApplicationSchema(Astro.site!, entry)} />
   </Fragment>
 
-  <article class="case-study">
+  <article class="case-study" style={`--hue: ${hue}`}>
     <!-- 1. Header -->
-    <header class="cs-header">
-      <div class="container">
-        <p class="kicker">Case study</p>
-        <h1>{system.title}</h1>
-        <div class="status-line">
-          <StatusBadge status={system.status} detail={system.statusDetail} />
-        </div>
-        <p class="role">{system.role}</p>
-        <ul class="stack">
-          {system.stack.map((tag) => <li>{tag}</li>)}
-        </ul>
+    <PageHero index={ordinal(position)} label="Case study" hue={hue} compact>
+      <Fragment slot="title">{system.title}</Fragment>
+      <p slot="lede" class="role">{system.role}</p>
+      <div class="status-line">
+        <StatusBadge status={system.status} detail={system.statusDetail} />
+        <a class="back" href="/systems">← All systems</a>
       </div>
-    </header>
+      <ul class="stack">
+        {system.stack.map((tag) => <li>{tag}</li>)}
+      </ul>
+    </PageHero>
 
-    <!-- 2. Context -->
-    <section class="cs-section">
-      <div class="container">
-        <SectionHeader kicker="Context" title="What it does and who depends on it" />
-        <div class="prose body-copy" data-reveal><slot name="context" /></div>
-      </div>
-    </section>
-
-    <!-- 3. Constraints -->
-    <section class="cs-section">
-      <div class="container">
-        <SectionHeader kicker="Constraints" title="What made it hard" />
-        <div class="prose body-copy" data-reveal><slot name="constraints" /></div>
-      </div>
-    </section>
-
-    <!-- 4. Architecture -->
-    <section class="cs-section">
-      <div class="container">
-        <SectionHeader kicker="Architecture" title="How a request travels" />
-        <div class="architecture" data-reveal><slot name="architecture" /></div>
-      </div>
-    </section>
-
-    <!-- 5. Engineering decisions -->
-    {
-      decisions.length > 0 && (
-        <section class="cs-section">
-          <div class="container">
-            <SectionHeader kicker="Decisions" title={decisionsHeading} />
-            <div class="decision-list">
-              {decisions.map((decision, index) => (
-                <div data-reveal style={`--reveal-delay: ${Math.min(index * 60, 180)}ms`}>
-                  <DecisionCard
-                    title={decision.data.title}
-                    decision={decision.data.decision}
-                    why={decision.data.why}
-                    tradeoff={decision.data.tradeoff}
-                    aged={decision.data.aged}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )
-    }
-
-    <!-- 6. Security & tenancy -->
-    <section class="cs-section">
-      <div class="container">
-        <SectionHeader kicker="Security" title="Tenancy, identity, and abuse" />
-        <div class="prose body-copy" data-reveal><slot name="security" /></div>
-      </div>
-    </section>
-
-    <!-- 7. Reliability & operations -->
-    <section class="cs-section">
-      <div class="container">
-        <SectionHeader kicker="Operations" title="Shipping it, and keeping it up" />
-        <div class="prose body-copy" data-reveal><slot name="operations" /></div>
-      </div>
-    </section>
-
-    <!-- 8. Honest limitations — constitution rule 3, rendered from schema data -->
-    <section class="cs-section">
-      <div class="container">
-        <SectionHeader kicker="Limitations" title="What is wrong with it" />
-        <div class="limitation-list">
+    <div class="container cs-layout">
+      <nav class="toc" aria-label="On this page">
+        <p class="toc-label">On this page</p>
+        <ol>
           {
-            system.limitations.map((item) => (
-              <div data-reveal>
-                <LimitationNote limitation={item.limitation} addressedBy={item.addressedBy} />
-              </div>
+            sections.map((section, index) => (
+              <li>
+                <a href={`#${section.id}`}>
+                  <span class="toc-no">{ordinal(index)}</span>
+                  {section.label}
+                </a>
+              </li>
             ))
           }
-        </div>
-      </div>
-    </section>
+        </ol>
+      </nav>
 
-    <!-- 9. Outcomes & takeaways -->
-    <section class="cs-section">
-      <div class="container">
-        <SectionHeader kicker="Outcomes" title="What it runs on today" />
+      <div class="cs-body">
+        <!-- 2. Context -->
+        <section class="cs-section" id="context">
+          <SectionHeader
+            index={no('context')}
+            kicker="Context"
+            title="What it does and who depends on it"
+            emphasis="who depends on it"
+          />
+          <div class="prose body-copy" data-reveal><slot name="context" /></div>
+        </section>
+
+        <!-- 3. Constraints -->
+        <section class="cs-section" id="constraints">
+          <SectionHeader
+            index={no('constraints')}
+            kicker="Constraints"
+            title="What made it hard"
+            emphasis="hard"
+          />
+          <div class="prose body-copy" data-reveal><slot name="constraints" /></div>
+        </section>
+
+        <!-- 4. Architecture -->
+        <section class="cs-section" id="architecture">
+          <SectionHeader
+            index={no('architecture')}
+            kicker="Architecture"
+            title="How a request travels"
+            emphasis="travels"
+          />
+          <div class="architecture" data-reveal><slot name="architecture" /></div>
+        </section>
+
+        <!-- 5. Engineering decisions -->
         {
-          system.metrics.length > 0 && (
-            <div class="metric-row" data-reveal>
-              {system.metrics.map((metric) => (
-                <StatBlock
-                  value={metric.value}
-                  caption={metric.caption}
-                  qualifier={metric.qualifier}
-                />
-              ))}
-            </div>
+          decisions.length > 0 && (
+            <section class="cs-section" id="decisions">
+              <SectionHeader
+                index={no('decisions')}
+                kicker="Decisions"
+                title={decisionsHeading}
+                emphasis={decisionsEmphasis}
+              />
+              <div class="decision-list">
+                {decisions.map((decision, index) => (
+                  <div data-reveal style={`--reveal-delay: ${Math.min(index * 60, 180)}ms`}>
+                    <DecisionCard
+                      title={decision.data.title}
+                      decision={decision.data.decision}
+                      why={decision.data.why}
+                      tradeoff={decision.data.tradeoff}
+                      aged={decision.data.aged}
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
           )
         }
-        {
-          Astro.slots.has('outcomes') && (
-            <div class="prose body-copy outcomes-prose" data-reveal>
-              <slot name="outcomes" />
-            </div>
-          )
-        }
-        <aside class="takeaways" data-reveal>
-          <h3>What this demonstrates</h3>
-          <ul>
-            {system.takeaways.map((takeaway) => <li>{takeaway}</li>)}
-          </ul>
-        </aside>
-      </div>
-    </section>
 
-    <!-- 10. Gallery — renders only when a system supplies figures. -->
-    {
-      Astro.slots.has('gallery') && (
-        <section class="cs-section">
-          <div class="container">
-            <SectionHeader kicker="Gallery" title="The product itself" />
-            <div class="gallery-grid" data-reveal>
-              <slot name="gallery" />
-            </div>
+        <!-- 6. Security & tenancy -->
+        <section class="cs-section" id="security">
+          <SectionHeader
+            index={no('security')}
+            kicker="Security"
+            title="Tenancy, identity, and abuse"
+            emphasis="abuse"
+          />
+          <div class="prose body-copy" data-reveal><slot name="security" /></div>
+        </section>
+
+        <!-- 7. Reliability & operations -->
+        <section class="cs-section" id="operations">
+          <SectionHeader
+            index={no('operations')}
+            kicker="Operations"
+            title="Shipping it, and keeping it up"
+            emphasis="keeping it up"
+          />
+          <div class="prose body-copy" data-reveal><slot name="operations" /></div>
+        </section>
+
+        <!-- 8. Honest limitations — constitution rule 3, rendered from schema data -->
+        <section class="cs-section" id="limitations">
+          <SectionHeader
+            index={no('limitations')}
+            kicker="Limitations"
+            title="What is wrong with it"
+            emphasis="wrong"
+          />
+          <div class="limitation-list">
+            {
+              system.limitations.map((item) => (
+                <div data-reveal>
+                  <LimitationNote limitation={item.limitation} addressedBy={item.addressedBy} />
+                </div>
+              ))
+            }
           </div>
         </section>
-      )
-    }
+
+        <!-- 9. Outcomes & takeaways -->
+        <section class="cs-section" id="outcomes">
+          <SectionHeader
+            index={no('outcomes')}
+            kicker="Outcomes"
+            title="What it runs on today"
+            emphasis="today"
+          />
+          {
+            system.metrics.length > 0 && (
+              <div class="metric-row" data-reveal>
+                {system.metrics.map((metric) => (
+                  <StatBlock
+                    value={metric.value}
+                    caption={metric.caption}
+                    qualifier={metric.qualifier}
+                  />
+                ))}
+              </div>
+            )
+          }
+          {
+            Astro.slots.has('outcomes') && (
+              <div class="prose body-copy outcomes-prose" data-reveal>
+                <slot name="outcomes" />
+              </div>
+            )
+          }
+          <aside class="takeaways" data-reveal>
+            <h3>What this demonstrates</h3>
+            <ul>
+              {system.takeaways.map((takeaway) => <li>{takeaway}</li>)}
+            </ul>
+          </aside>
+        </section>
+
+        <!-- 10. Gallery — renders only when a system supplies figures. -->
+        {
+          Astro.slots.has('gallery') && (
+            <section class="cs-section" id="gallery">
+              <SectionHeader
+                index={no('gallery')}
+                kicker="Gallery"
+                title="The product itself"
+                emphasis="itself"
+              />
+              <div class="gallery-grid" data-reveal>
+                <slot name="gallery" />
+              </div>
+            </section>
+          )
+        }
+      </div>
+    </div>
 
     {
       /* Carries OWNER-INPUT comments into the built HTML, where the copy gate
@@ -241,49 +320,61 @@ const title = `${system.title} — case study`;
     }
     <slot name="owner-input" />
   </article>
+
+  {/* Where to go next: the other two systems, never a dead end. */}
+  <section class="more" aria-labelledby="more-systems">
+    <div class="container">
+      <SectionHeader
+        id="more-systems"
+        kicker="More systems"
+        title="The other two, built the same way"
+        emphasis="the same way"
+      />
+      <ul class="more-list">
+        {
+          others.map((other) => {
+            const status = STATUS_LABELS[other.data.status];
+            const index = all.findIndex((s) => s.id === other.id);
+            return (
+              <li style={`--hue: ${SYSTEM_HUE[other.id] ?? 'var(--hue-blue)'}`}>
+                <a href={`/systems/${other.id}`}>
+                  <span class="more-top">
+                    <span class="more-no">{ordinal(index)}</span>
+                    <span class="more-status">{status.label}</span>
+                  </span>
+                  <span class="more-title">{other.data.title}</span>
+                  <span class="more-problem">{other.data.problem}</span>
+                  <span class="more-go">
+                    Read the case study <span aria-hidden="true">→</span>
+                  </span>
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </div>
+  </section>
 </BaseLayout>
 
 <style>
-  .cs-header {
-    padding-block: var(--space-12) var(--space-8);
-    border-block-end: var(--border-width) solid var(--border);
-  }
-
-  @media (min-width: 768px) {
-    .cs-header {
-      padding-block: var(--space-16) var(--space-12);
-    }
-  }
-
-  .kicker {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-block-end: var(--space-4);
-  }
-
-  h1 {
-    font-size: var(--text-2xl);
-    max-width: 20ch;
-  }
-
-  @media (min-width: 768px) {
-    h1 {
-      font-size: var(--text-3xl);
-    }
+  .role {
+    max-width: 52ch;
   }
 
   .status-line {
-    margin-block-start: var(--space-6);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4) var(--space-6);
   }
 
-  .role {
-    margin-block-start: var(--space-4);
+  .back {
+    display: inline-block;
+    padding-block: 3px;
+    margin-block: -3px;
+    font-size: var(--text-sm);
     color: var(--text-muted);
-    font-size: var(--text-md);
-    max-width: var(--measure);
   }
 
   .stack {
@@ -296,33 +387,133 @@ const title = `${system.title} — case study`;
   }
 
   .stack li {
+    padding: 0.3rem 0.65rem;
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: 6px;
+    background: rgb(255 255 255 / 0.02);
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     color: var(--text-muted);
-    border: var(--border-width) solid var(--border);
-    border-radius: var(--radius);
-    padding: var(--space-1) var(--space-2);
+  }
+
+  /*
+   * THE READING COLUMN, AND ITS INDEX.
+   *
+   * On a wide screen the page's sections are listed beside the column and the
+   * list stays in view while reading — a case study is long, and a reader
+   * looking for the security model should not have to scroll past the
+   * constraints to find it. Under 1100px the column takes the width and the
+   * list is not drawn; every section is still reachable by its heading.
+   */
+  .cs-layout {
+    display: grid;
+    gap: var(--space-8);
+    padding-block: var(--space-8) var(--space-16);
+  }
+
+  .toc {
+    display: none;
+  }
+
+  @media (min-width: 1100px) {
+    .cs-layout {
+      grid-template-columns: 12.5rem minmax(0, 1fr);
+      gap: var(--space-16);
+    }
+
+    .toc {
+      display: block;
+      position: sticky;
+      inset-block-start: 6rem;
+      align-self: start;
+      padding-block-start: var(--space-12);
+    }
+  }
+
+  .toc-label {
+    margin-block-end: var(--space-4);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .toc ol {
+    margin: 0;
+    padding: 0 0 0 var(--space-4);
+    list-style: none;
+    border-inline-start: var(--border-width) solid var(--glass-edge-strong);
+  }
+
+  .toc a {
+    display: flex;
+    gap: var(--space-3);
+    align-items: baseline;
+    min-height: 2rem;
+    padding-block: 0.3rem;
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    background-image: none;
+  }
+
+  .toc a:hover {
+    color: var(--text);
+  }
+
+  .toc-no {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--hue);
   }
 
   .cs-section {
     padding-block: var(--space-12);
+    scroll-margin-top: 5rem;
   }
 
-  .decision-list,
+  .cs-section + .cs-section {
+    border-block-start: var(--border-width) solid var(--glass-edge);
+  }
+
+  /*
+   * The drawing on a blueprint: the pages' glass with a fine grid, so the
+   * diagram reads as an engineering drawing rather than boxes on the page.
+   */
+  .architecture {
+    padding: var(--space-6);
+    background-color: var(--glass-bg);
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.03) 1px, transparent 1px);
+    background-size: 28px 28px;
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: var(--radius-xl);
+  }
+
+  @media (min-width: 768px) {
+    .architecture {
+      padding: var(--space-8) var(--space-12);
+    }
+  }
+
+  /* One per row: the reading column is ~800px at its widest, and a decision
+     card's label column needs the room to keep its text a readable measure. */
+  .decision-list {
+    display: grid;
+    gap: var(--space-6);
+  }
+
   .limitation-list {
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
   }
 
-  .limitation-list {
-    gap: var(--space-8);
-  }
-
   .metric-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-8) var(--space-12);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: var(--space-4);
     margin-block-end: var(--space-8);
   }
 
@@ -331,37 +522,57 @@ const title = `${system.title} — case study`;
   }
 
   .takeaways {
-    border: var(--border-width) solid var(--border);
-    border-radius: var(--radius);
-    background: var(--bg-raised);
-    padding: var(--space-6);
+    position: relative;
+    padding: var(--space-6) var(--space-8);
+    background: var(--glass-bg);
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: var(--radius-lg);
     max-width: var(--measure);
+  }
+
+  .takeaways::before {
+    content: '';
+    position: absolute;
+    inset-inline: var(--space-8);
+    inset-block-start: -1px;
+    height: 1px;
+    background: var(--brand-ramp);
   }
 
   .takeaways h3 {
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.14em;
     color: var(--text-muted);
     margin-block-end: var(--space-4);
   }
 
   .takeaways ul {
     margin: 0;
-    padding-inline-start: var(--space-5);
+    padding: 0;
+    list-style: none;
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-3);
   }
 
   .takeaways li {
+    position: relative;
+    padding-inline-start: var(--space-6);
     font-size: var(--text-sm);
     line-height: var(--leading-body);
   }
 
-  .architecture {
-    max-width: 44rem;
+  .takeaways li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0.2rem;
+    inset-block-start: 0.7em;
+    width: 0.45rem;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--brand-ramp);
   }
 
   .gallery-grid {
@@ -373,5 +584,101 @@ const title = `${system.title} — case study`;
     .gallery-grid {
       grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
     }
+  }
+
+  /* The other two systems: whole cards as links, lit in their own colours. */
+  .more {
+    padding-block: var(--space-16) var(--space-24);
+    border-block-start: var(--border-width) solid var(--glass-edge);
+  }
+
+  .more-list {
+    display: grid;
+    gap: var(--space-6);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 900px) {
+    .more-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .more-list a {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    height: 100%;
+    padding: var(--space-8);
+    background-color: var(--glass-bg);
+    background-image: radial-gradient(
+      70% 80% at 0% 0%,
+      color-mix(in srgb, var(--hue) 11%, transparent),
+      transparent 70%
+    );
+    background-size: auto;
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: var(--radius-xl);
+    color: var(--text);
+    transition:
+      border-color var(--duration-transition) var(--ease-out),
+      box-shadow var(--duration-transition) var(--ease-out);
+  }
+
+  .more-list a::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--hue), transparent 60%);
+  }
+
+  .more-list a:hover {
+    background-size: auto;
+    border-color: var(--glass-edge-strong);
+    box-shadow: 0 24px 60px -34px color-mix(in srgb, var(--hue) 60%, transparent);
+  }
+
+  .more-top {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+  }
+
+  .more-no {
+    font-size: var(--text-xl);
+    letter-spacing: 0;
+    color: var(--hue);
+  }
+
+  .more-title {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  .more-problem {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--leading-body);
+  }
+
+  .more-go {
+    margin-block-start: auto;
+    padding-block-start: var(--space-4);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
 </style>

@@ -33,6 +33,9 @@ import {
 
   <div class="container cv-page">
     <div class="cv-actions no-print">
+      <p class="cv-eyebrow">
+        <span class="cv-no">05</span><span class="cv-rule" aria-hidden="true"></span>CV
+      </p>
       <Button href="/cv.pdf" download>Download as PDF</Button>
     </div>
 
@@ -348,6 +351,117 @@ import {
   .certifications {
     font-size: var(--text-sm);
     color: var(--text-muted);
+  }
+
+  /*
+   * ON SCREEN, A DOCUMENT IN THE SITE'S OWN MATERIAL (Oct 2026).
+   *
+   * Everything here is screen-only, so paper — and the PDF scripts/cv-pdf.mjs
+   * captures from the print rules below — is untouched. The CV sits centred
+   * as one panel of the inner pages' glass with the brand ramp along its top,
+   * under a bar carrying the page's number and the download.
+   */
+  @media screen {
+    .cv-page {
+      padding-block: var(--space-12) var(--space-24);
+    }
+
+    .cv-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      max-width: 54rem;
+      margin-inline: auto;
+      margin-block-end: var(--space-6);
+    }
+
+    .cv-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .cv-no {
+      color: var(--text);
+    }
+
+    .cv-rule {
+      width: 2.5rem;
+      height: 1px;
+      background: var(--brand-ramp);
+    }
+
+    .cv {
+      position: relative;
+      max-width: 54rem;
+      margin-inline: auto;
+      padding: var(--space-8) var(--space-6);
+      background: var(--glass-bg);
+      background-image: radial-gradient(60% 30% at 0% 0%, rgb(76 134 255 / 0.08), transparent 70%);
+      border: var(--border-width) solid var(--glass-edge);
+      border-radius: var(--radius-xl);
+    }
+
+    .cv::before {
+      content: '';
+      position: absolute;
+      inset-inline: var(--space-8);
+      inset-block-start: -1px;
+      height: 2px;
+      background: var(--brand-ramp);
+    }
+
+    .cv-header h1 {
+      font-size: clamp(2rem, 5vw, 3rem);
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+    }
+
+    .cv-section > h2 {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      border-block-end-color: var(--glass-edge);
+      letter-spacing: 0.16em;
+    }
+
+    .cv-section > h2::before {
+      content: '';
+      width: 1.5rem;
+      height: 1px;
+      background: var(--brand-ramp);
+    }
+
+    .role-period {
+      padding: 0.25rem 0.6rem;
+      border: var(--border-width) solid var(--glass-edge-strong);
+      border-radius: 999px;
+    }
+
+    .platform {
+      padding: var(--space-4) var(--space-4) var(--space-4) var(--space-6);
+      border: var(--border-width) solid var(--glass-edge);
+      border-inline-start: 2px solid var(--hue-violet);
+      border-radius: var(--radius-lg);
+      background: rgb(5 7 12 / 0.4);
+    }
+  }
+
+  @media screen and (min-width: 768px) {
+    .cv {
+      padding: var(--space-12);
+    }
+
+    .cv::before {
+      inset-inline: var(--space-12);
+    }
   }
 
   /*

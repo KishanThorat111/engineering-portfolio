@@ -63,28 +63,37 @@ const CONFIDENTIAL: Status = 'CONFIDENTIAL';
 </article>
 
 <style>
+  /* A role, on the pages' glass. The dates sit in a pill, as the home page's
+     readings do; the bullets take a small ramp mark instead of a disc. */
   .experience-card {
-    border: var(--border-width) solid var(--border);
-    border-radius: var(--radius);
-    background: var(--bg-raised);
-    padding: var(--space-6);
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: var(--space-6);
+    padding: var(--space-6);
+    background: var(--glass-bg);
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: var(--radius-lg);
+  }
+
+  @media (min-width: 768px) {
+    .experience-card {
+      padding: var(--space-8);
+    }
   }
 
   .head {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    align-items: baseline;
-    gap: var(--space-2);
+    align-items: flex-start;
+    gap: var(--space-3);
   }
 
   h2,
   h3,
   h4 {
-    font-size: var(--text-md);
+    font-size: var(--text-lg);
+    letter-spacing: -0.012em;
   }
 
   .org {
@@ -94,6 +103,9 @@ const CONFIDENTIAL: Status = 'CONFIDENTIAL';
   }
 
   .period {
+    padding: 0.3rem 0.7rem;
+    border: var(--border-width) solid var(--glass-edge-strong);
+    border-radius: 999px;
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     color: var(--text-muted);
@@ -105,9 +117,9 @@ const CONFIDENTIAL: Status = 'CONFIDENTIAL';
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-3);
-    border: var(--border-width) solid var(--border);
-    border-radius: var(--radius);
-    padding: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: var(--border-width) dashed var(--glass-edge-strong);
+    border-radius: 10px;
   }
 
   .confidential-note {
@@ -118,17 +130,33 @@ const CONFIDENTIAL: Status = 'CONFIDENTIAL';
   .bullets {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-3);
     margin: 0;
-    padding-inline-start: var(--space-4);
+    padding: 0;
+    list-style: none;
   }
 
   .bullets li {
+    position: relative;
+    padding-inline-start: var(--space-6);
     font-size: var(--text-sm);
     line-height: var(--leading-body);
   }
 
+  .bullets li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0.2rem;
+    inset-block-start: 0.7em;
+    width: 0.45rem;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--brand-ramp);
+  }
+
   .note {
+    padding-block-start: var(--space-4);
+    border-block-start: var(--border-width) solid var(--glass-edge);
     font-size: var(--text-sm);
     color: var(--text-muted);
   }

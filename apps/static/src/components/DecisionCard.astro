@@ -50,24 +50,64 @@ const rows = [
 </article>
 
 <style>
+  /*
+   * GLASS, IN THE HOME PAGE'S LANGUAGE.
+   *
+   * It was --bg-raised with a 1px border — the card every dark template ships.
+   * Now the inner pages' material (tokens.css, GLASS): translucent over the
+   * page's ambient light, a hairline edge that brightens under the pointer,
+   * and the brand ramp drawn along its top edge as the one mark of identity.
+   * Only colour and shadow change on hover; nothing moves.
+   */
   .decision-card {
-    background: var(--bg-raised);
-    border: var(--border-width) solid var(--border);
-    border-radius: var(--radius);
+    position: relative;
+    height: 100%;
     padding: var(--space-6);
+    background: var(--glass-bg);
+    border: var(--border-width) solid var(--glass-edge);
+    border-radius: var(--radius-lg);
+    transition:
+      border-color var(--duration-transition) var(--ease-out),
+      box-shadow var(--duration-transition) var(--ease-out);
+  }
+
+  .decision-card::before {
+    content: '';
+    position: absolute;
+    inset-inline: var(--space-6);
+    inset-block-start: -1px;
+    height: 1px;
+    background: var(--brand-ramp);
+    opacity: 0.55;
+  }
+
+  .decision-card:hover {
+    border-color: var(--glass-edge-strong);
+    box-shadow: 0 24px 60px -34px rgb(76 134 255 / 0.45);
+  }
+
+  @media (min-width: 768px) {
+    .decision-card {
+      padding: var(--space-8);
+    }
+
+    .decision-card::before {
+      inset-inline: var(--space-8);
+    }
   }
 
   h3,
   h4 {
-    font-size: var(--text-md);
-    margin-block-end: var(--space-4);
+    font-size: var(--text-lg);
+    letter-spacing: -0.012em;
+    margin-block-end: var(--space-6);
   }
 
   dl {
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--space-4);
   }
 
   .row {
@@ -77,7 +117,7 @@ const rows = [
 
   @media (min-width: 640px) {
     .row {
-      grid-template-columns: 7.5rem 1fr;
+      grid-template-columns: 7rem 1fr;
       gap: var(--space-4);
     }
   }
@@ -86,9 +126,9 @@ const rows = [
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.12em;
     color: var(--text-muted);
-    padding-block-start: 0.15em;
+    padding-block-start: 0.2em;
   }
 
   dd {
@@ -101,8 +141,8 @@ const rows = [
   /* The aged row is the admission, so it is set apart with the caution token
      rather than blended into the decision it revises. */
   .row-aged {
-    border-block-start: var(--border-width) solid var(--border);
-    padding-block-start: var(--space-3);
+    border-block-start: var(--border-width) solid var(--glass-edge);
+    padding-block-start: var(--space-4);
   }
 
   .row-aged dt {

@@ -32,55 +32,73 @@ const Tag = href ? 'a' : 'button';
 </Tag>
 
 <style>
+  /*
+   * THE HOME PAGE'S CALL TO ACTION, EVERYWHERE.
+   *
+   * The primary button was a filled blue slab — blue is the register's "live
+   * in production", so a download button was borrowing a state it does not
+   * have, and it looked like no other control on the site. It is now the
+   * home page's own call to action: a dark plate with the brand ramp as its
+   * outline, uppercase and tracked, lighting to the full ramp on hover. The
+   * secondary is the same shape in plain glass.
+   */
   .button {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-2);
+    gap: var(--space-3);
+    min-height: 2.75rem;
+    padding: 0.8rem 1.4rem;
+    border: var(--border-width) solid transparent;
+    border-radius: 10px;
     font-family: var(--font-sans);
     font-size: var(--text-sm);
     font-weight: var(--weight-medium);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
     line-height: 1.2;
-    border-radius: var(--radius);
-    border: var(--border-width) solid transparent;
-    padding: var(--space-3) var(--space-4);
+    white-space: nowrap;
     text-decoration: none;
+    background-image: none;
+    color: var(--text);
     cursor: pointer;
-    transition: transform var(--duration-micro) var(--ease-out);
+    transition:
+      box-shadow var(--duration-micro) var(--ease-out),
+      border-color var(--duration-micro) var(--ease-out);
   }
 
   .button[data-variant='primary'] {
-    background: var(--accent);
-    color: var(--bg);
+    background:
+      linear-gradient(rgb(8 10 17 / 0.94), rgb(8 10 17 / 0.94)) padding-box,
+      linear-gradient(
+          90deg,
+          rgb(124 146 255 / 0.75),
+          rgb(176 132 220 / 0.6) 55%,
+          rgb(242 135 92 / 0.75)
+        )
+        border-box;
   }
 
-  /**
-   * The boundary uses --text-muted, not --border. A secondary button's outline
-   * is the only thing identifying it as a control, so WCAG 2.2 SC 1.4.11 asks
-   * for 3:1 against the background; --border is 1.33:1 and would fail, while
-   * --text-muted is 7.59:1. Both are tokens from tokens.css — this is a usage
-   * decision, not a new colour. Verified by scripts/contrast-check.mjs.
-   */
+  .button[data-variant='primary']:hover {
+    background:
+      linear-gradient(rgb(14 14 26 / 0.94), rgb(14 14 26 / 0.94)) padding-box,
+      var(--brand-ramp) border-box;
+    box-shadow: 0 0 24px rgb(139 108 246 / 0.28);
+  }
+
   .button[data-variant='secondary'] {
-    background: transparent;
-    color: var(--text);
-    border-color: var(--text-muted);
+    background: var(--glass-bg);
+    border-color: var(--glass-edge-strong);
   }
 
   .button[data-variant='secondary']:hover {
-    border-color: var(--accent);
+    border-color: var(--text-muted);
   }
 
-  .button:active {
-    transform: scale(0.98);
-  }
-
-  /* Blueprint §6 requires reduced motion to remove transforms outright, not
-     merely shorten them — the global rule zeroes durations, so the transform
-     itself is cancelled here. */
-  @media (prefers-reduced-motion: reduce) {
-    .button:active {
-      transform: none;
+  @media (forced-colors: active) {
+    .button {
+      border-color: ButtonText;
     }
   }
 </style>

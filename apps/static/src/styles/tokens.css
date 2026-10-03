@@ -210,6 +210,23 @@
   --surface-instrument: color-mix(in srgb, var(--bg-raised) 78%, transparent);
   --border-instrument: color-mix(in srgb, var(--signal) 22%, var(--border));
 
+  /*
+   * GLASS — the material of every page beyond the home page.
+   *
+   * The inner pages speak the home page's language without its image world:
+   * the plates, the stage and the rail belong to `/` alone, and station-check
+   * fails the build if any of them appears anywhere else. What they share is
+   * the palette, the type, the ramp and this: a translucent raised plane over
+   * the page's own ambient light, with a hairline edge. It composites darker
+   * than --bg-raised, so every text pairing the contrast gate asserts on the
+   * raised surface holds on it.
+   */
+  --glass-bg: rgb(16 20 30 / 0.62);
+  --glass-edge: rgb(255 255 255 / 0.08);
+  --glass-edge-strong: rgb(255 255 255 / 0.16);
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
   /* --- Motion --------------------------------------------------------- */
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
   --duration-micro: 150ms;
