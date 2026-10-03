@@ -4200,3 +4200,37 @@ One defect found and fixed during the work: CSS view-timeline animation of
 the pins left them all at opacity 0, because the card's `overflow: hidden`
 makes it the timeline's scroll container and it never scrolls. The reveal
 moved to stage-motion.ts, where every other arrival on the page lives.
+
+## S13 — Experience as a timeline, and the home page under a slow network · 4 October 2026
+
+**Experience.** At the owner's 1692px it was one narrow column with most of
+the width empty. Now: a career line across the foot of the opening (the
+three stages, oldest first, each a link); the roles as a timeline with the
+period held in view beside each one and its bullets as tiles; "What
+transferred" beside plate 10 with the three stages on its path (declared in
+page-art.ts); numbered side projects; a way on. The earliest stage is
+parsed out of `CV_EARLIER_CAREER`, and the build fails if that line changes
+shape — it is never retyped. Every bullet unchanged; confidential-parity
+still matches all six to /cv.
+
+**"The home page is loading slow."** Measured before changing anything, on
+throttled slow-4G and 3G, cold and warm, at the owner's screen and a phone,
+against a local server reproducing the live origin's caching
+(`build/verify/serve-cf.cjs`, `load-test.cjs`). Four causes, four fixes:
+
+| cause | fix |
+|---|---|
+| every frame empty until its artwork arrived (5.9–8s on 3G at desktop size) | ~250-byte instant previews of each plate, inlined with the page; the frame shows its scene on first paint |
+| the live origin sent `max-age=0, must-revalidate` for content-hashed files | year-long `immutable` for `_astro/`, `visual-world/`, `live/assets/`; a week for fonts; pages unchanged |
+| a 1692px @1.5 screen picked the 2528px files | a source capped at the 1920 rung for screens up to 1920px |
+| the arrival choreography ran ~3s after load, warm or cold | the same moves at about half the length |
+
+Before → after, cold: opening artwork at 1692 on slow-4G 2.90s → 2.18s, on
+3G 7.95s → 5.89s, and the frame is never empty; bytes 573KB → 425KB. Warm:
+re-asked files 6–7 → 2; artwork 379ms → 192ms. Text paints at ~1.0s on
+slow-4G in both. Two new gates, each proven by injection: station-check
+fails a missing or stale preview; emit-headers fails if a file in an
+immutable folder is not content-hashed.
+
+The caching takes effect only once deployed; verified by fetching after the
+push (addendum below).
