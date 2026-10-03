@@ -7,6 +7,7 @@ import '../styles/motion.css';
 import SkipLink from '../components/SkipLink.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import Pointer from '../components/Pointer.astro';
 import JsonLd from '../components/JsonLd.astro';
 import { ogSlugFor } from '../lib/og-cards';
 import { personSchema } from '../lib/structured-data';
@@ -88,9 +89,17 @@ const ogImage = new URL(`/og/${ogSlugFor(Astro.url.pathname)}.png`, origin).href
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#0B0E14" />
+    <meta name="theme-color" content="#0a0e15" />
     {canonical && <link rel="canonical" href={canonicalHref} />}
+    {
+      /* The icon set, all rendered from favicon.svg by scripts/make-icons.mjs.
+         The ICO first for browsers without SVG favicons; the SVG wins where it
+         is supported. */
+    }
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
 
     {noindex && <meta name="robots" content="noindex, nofollow" />}
 
@@ -201,5 +210,6 @@ const ogImage = new URL(`/og/${ogSlugFor(Astro.url.pathname)}.png`, origin).href
       <slot />
     </main>
     <Footer />
+    <Pointer />
   </body>
 </html>

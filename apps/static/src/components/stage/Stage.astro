@@ -152,6 +152,7 @@ const pinned =
   id={anchor ?? id}
   aria-labelledby={labelledby}
   data-station={id}
+  data-light=".vw"
   style={`--plate-strength:${plate}; --plate-x:${(Math.max(-2, Math.min(2, plateX)) / 1.04).toFixed(3)}%`}
 >
   <VisualWorld id={id} priority={priority} depth={depth} grid={grid}>

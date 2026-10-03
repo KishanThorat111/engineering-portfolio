@@ -52,7 +52,8 @@
     "assets:optimize": "node scripts/optimize-visual-world.mjs",
     "audit:prod": "node scripts/audit-check.mjs",
     "assets:upload": "node scripts/upload-visual-world.mjs",
-    "assets:previews": "node scripts/visual-world-previews.mjs"
+    "assets:previews": "node scripts/visual-world-previews.mjs",
+    "assets:icons": "node scripts/make-icons.mjs"
   },
   "devDependencies": {
     "html-validate": "^10.0.0",

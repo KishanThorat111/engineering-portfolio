@@ -1,0 +1,78 @@
+---
+/**
+ * THE POINTER RING — site chrome, like the header: on every page, owned by no
+ * page. The element is created by scripts/pointer.ts, so with no script (or a
+ * touch screen, or reduced motion) there is nothing here at all and the
+ * system cursor is the whole story. The system cursor is never hidden: the
+ * ring is a companion to it, not a replacement, so nothing about pointing,
+ * selecting text or clicking changes.
+ */
+---
+
+<script>
+  import { initPointer } from '../scripts/pointer';
+  initPointer();
+</script>
+
+<style is:global>
+  .cursor {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 9999;
+    width: 34px;
+    height: 34px;
+    margin: -17px 0 0 -17px;
+    border-radius: 50%;
+    border: 1.5px solid rgb(214 206 255 / 0.6);
+    box-shadow:
+      0 0 0 1px rgb(10 14 21 / 0.35),
+      0 0 18px rgb(139 108 246 / 0.22);
+    pointer-events: none;
+    opacity: 0;
+    scale: 0.5;
+    transition:
+      opacity 0.3s ease,
+      scale 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      box-shadow 0.3s ease;
+    will-change: translate;
+  }
+
+  .cursor[data-on] {
+    opacity: 1;
+    scale: 1;
+  }
+
+  /* Over anything that can be clicked, the ring opens and fills faintly. */
+  .cursor[data-on][data-hot] {
+    scale: 1.7;
+    border-color: rgb(255 255 255 / 0.8);
+    background-color: rgb(139 108 246 / 0.12);
+    box-shadow:
+      0 0 0 1px rgb(10 14 21 / 0.25),
+      0 0 26px rgb(139 108 246 / 0.4);
+  }
+
+  /* A press presses in. */
+  .cursor[data-on][data-press] {
+    scale: 0.78;
+  }
+
+  .cursor[data-on][data-hot][data-press] {
+    scale: 1.35;
+  }
+
+  @media (prefers-reduced-motion: reduce), (hover: none), (pointer: coarse), print {
+    .cursor {
+      display: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .cursor {
+      display: none;
+    }
+  }
+</style>

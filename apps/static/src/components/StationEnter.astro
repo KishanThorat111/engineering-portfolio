@@ -744,6 +744,9 @@ const HOPS: Hop[] = [
     margin-right: 0;
   }
 
+  /* The readings stand on the artwork with no panel, so their labels carry
+     the same glyph halo as the callouts: legible over the bright parts of the
+     plate and under the pointer's light. */
   .enter__stats dt {
     font-family: var(--font-mono);
     font-size: calc(15 * var(--u));
@@ -751,6 +754,10 @@ const HOPS: Hop[] = [
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--text-muted);
+    text-shadow:
+      0 0 calc(2 * var(--u)) rgb(3 5 10 / 0.95),
+      0 0 calc(8 * var(--u)) rgb(3 5 10 / 0.85),
+      0 0 calc(18 * var(--u)) rgb(3 5 10 / 0.6);
   }
 
   .enter__stats dd {

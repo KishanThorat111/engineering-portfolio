@@ -50,7 +50,11 @@ const style = [hue && `--ph-hue:${hue}`, art && `--ph-focus-narrow:${art.focusNa
   .join('; ');
 ---
 
-<header class:list={['ph', compact && 'ph--compact', art && 'ph--art']} style={style || undefined}>
+<header
+  class:list={['ph', compact && 'ph--compact', art && 'ph--art']}
+  style={style || undefined}
+  data-light={art ? '.ph-scene' : undefined}
+>
   <div class="ph-sky" aria-hidden="true"></div>
   {
     art && (
@@ -68,6 +72,9 @@ const style = [hue && `--ph-hue:${hue}`, art && `--ph-focus-narrow:${art.focusNa
           class="ph-plate"
         />
         <span class="ph-sweep" aria-hidden="true" />
+        {/* The pointer's lamp on the scene, as on the home page's frames. */}
+        <span class="ph-shade" aria-hidden="true" />
+        <span class="ph-light" aria-hidden="true" />
       </div>
     )
   }
@@ -262,6 +269,51 @@ const style = [hue && `--ph-hue:${hue}`, art && `--ph-focus-narrow:${art.focusNa
       transparent 62%
     );
     background-size: 250% 100%;
+  }
+
+  .ph-shade,
+  .ph-light {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+
+  .ph-shade {
+    background: radial-gradient(
+      circle 600px at var(--lx, 50%) var(--ly, 50%),
+      transparent 30%,
+      rgb(5 7 12 / 0.22) 100%
+    );
+  }
+
+  .ph-light {
+    background:
+      radial-gradient(
+        circle 150px at var(--lx, 50%) var(--ly, 50%),
+        rgb(214 204 255 / 0.16),
+        rgb(139 108 246 / 0.06) 55%,
+        transparent 100%
+      ),
+      radial-gradient(
+        circle 440px at var(--lx, 50%) var(--ly, 50%),
+        rgb(124 146 255 / 0.05),
+        transparent 100%
+      );
+    mix-blend-mode: screen;
+  }
+
+  .ph[data-lit] .ph-shade,
+  .ph[data-lit] .ph-light {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ph-shade,
+    .ph-light {
+      display: none;
+    }
   }
 
   /* Phones and small tablets: the scene is a picture under the header and

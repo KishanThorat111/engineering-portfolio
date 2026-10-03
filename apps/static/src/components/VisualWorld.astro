@@ -160,6 +160,7 @@ const nextHasPlate = next ? plateExists(next.id) : false;
   }
   <div class="vw__grain"></div>
   <div class="vw__sweep"></div>
+  <div class="vw__shade"></div>
   <div class="vw__light"></div>
   <div class="vw__veil"></div>
   {/* Labels pinned to the artwork in the narrow composition (Stage.astro). */}
@@ -264,8 +265,8 @@ const nextHasPlate = next ? plateExists(next.id) : false;
     /* Scroll drift plus pointer depth: the haze is nearer than the artwork,
        so it moves further against the pointer than the scene does. */
     transform: translate3d(
-      calc(var(--vw-px, 0) * -22px),
-      calc(var(--vw-atmos-y, 0px) + var(--vw-py, 0) * -14px),
+      calc(var(--lpx, 0) * -22px),
+      calc(var(--vw-atmos-y, 0px) + var(--lpy, 0) * -14px),
       0
     );
   }
@@ -294,8 +295,8 @@ const nextHasPlate = next ? plateExists(next.id) : false;
     will-change: transform;
     /* The grid is the nearest drafting surface: it moves furthest. */
     transform: translate3d(
-      calc(var(--vw-px, 0) * -38px),
-      calc(var(--vw-grid-y, 0px) + var(--vw-py, 0) * -24px),
+      calc(var(--lpx, 0) * -38px),
+      calc(var(--vw-grid-y, 0px) + var(--lpy, 0) * -24px),
       0
     );
   }
@@ -362,28 +363,84 @@ const nextHasPlate = next ? plateExists(next.id) : false;
     pointer-events: none;
   }
 
+  /*
+   * THE LIGHT, AS A LAMP RATHER THAN A TINT (Oct 2026).
+   *
+   * Two layers, positioned by scripts/pointer.ts from one smoothed pointer
+   * position (`--lx`/`--ly`, set on the stage and inherited here):
+   *
+   *   shade  the scene falls off gently away from the pointer — a quarter
+   *          darker at the frame's far edges, untouched near it
+   *   light  a small bright pool where the pointer is, in the ramp's
+   *          violet-white, screen-blended so it brightens the artwork itself
+   *
+   * It replaced one 54vmax disc of blue haze: a fog over the whole scene that
+   * lit nothing in particular. Both fade in when the pointer arrives on a
+   * frame and out when it leaves; neither exists under reduced motion or on a
+   * touch screen.
+   */
+  .vw__shade,
   .vw__light {
     position: absolute;
-    left: 0;
-    top: 0;
-    width: 54vmax;
-    height: 54vmax;
-    border-radius: 50%;
-    background: radial-gradient(
-      closest-side,
-      rgb(124 146 255 / 0.2),
-      rgb(139 108 246 / 0.1) 42%,
-      transparent 100%
-    );
-    mix-blend-mode: screen;
-    transform: translate3d(calc(var(--vw-sx, 50%) - 50%), calc(var(--vw-sy, 50%) - 50%), 0);
-    opacity: 0;
-    transition: opacity 0.7s ease;
+    inset: 0;
     pointer-events: none;
-    will-change: transform;
+    opacity: 0;
+    transition: opacity 0.6s ease;
   }
 
-  .vw[data-lit] .vw__light {
+  .vw__shade {
+    background: radial-gradient(
+      circle 620px at var(--lx, 50%) var(--ly, 50%),
+      transparent 20%,
+      rgb(5 7 12 / 0.42) 100%
+    );
+  }
+
+  .vw__light {
+    background:
+      radial-gradient(
+        circle 190px at var(--lx, 50%) var(--ly, 50%),
+        rgb(220 210 255 / 0.1),
+        rgb(139 108 246 / 0.045) 55%,
+        transparent 100%
+      ),
+      radial-gradient(
+        circle 480px at var(--lx, 50%) var(--ly, 50%),
+        rgb(124 146 255 / 0.04),
+        transparent 100%
+      );
+    mix-blend-mode: screen;
+  }
+
+  /*
+   * THE DRAFTING GRID UNDER THE LAMP. The scene's faint technical grid lights
+   * up in the ramp's violet within a couple of hundred pixels of the pointer
+   * and fades out beyond — the signature of the light: an engineering drawing
+   * under a desk lamp. It is the grid's own child, so it moves with the grid's
+   * parallax; the mask's centre adds that movement back so the lit patch
+   * stays under the pointer.
+   */
+  .vw__grid::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgb(176 158 255 / 0.28) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(176 158 255 / 0.28) 1px, transparent 1px);
+    background-size: 96px 96px;
+    mask-image: radial-gradient(
+      circle 230px at calc(var(--lx, -999px) + var(--lpx, 0) * 38px)
+        calc(var(--ly, -999px) - var(--vw-grid-y, 0px) + var(--lpy, 0) * 24px),
+      black,
+      transparent
+    );
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+
+  :global([data-lit]) .vw__shade,
+  :global([data-lit]) .vw__light,
+  :global([data-lit]) .vw__grid::after {
     opacity: 1;
   }
 
@@ -402,7 +459,9 @@ const nextHasPlate = next ? plateExists(next.id) : false;
    */
   @media (prefers-reduced-motion: reduce) {
     .vw__sweep,
-    .vw__light {
+    .vw__light,
+    .vw__shade,
+    .vw__grid::after {
       display: none;
     }
 
