@@ -106,7 +106,9 @@ a:hover {
 .site-nav a,
 .brand,
 .skip-link,
-.site-footer nav a {
+.site-footer nav a,
+.footer-brand,
+.footer-links a {
   background-image: none;
   padding-block-end: 0;
 }

@@ -482,3 +482,30 @@
     margin-top: -4rem;
   }
 }
+
+/*
+ * On the home page the footer follows straight on from the final station,
+ * whose plate already fades to the page ground — so the 6rem gap the other
+ * routes need between content and footer would only leave an empty band.
+ */
+.site-footer {
+  margin-block-start: 0;
+}
+
+/*
+ * The final station's plate fades to the page ground over its last ~14%, so
+ * that band is empty by design. On the wide composition the footer is drawn up
+ * over it (the footer's ground is the same colour), closing the gap between
+ * the journey's last frame and the bar that ends the page.
+ */
+@media (min-width: 1025px) {
+  .stage#end {
+    margin-bottom: -8vw;
+  }
+
+  .stage#end + * .site-footer,
+  .site-footer {
+    position: relative;
+    z-index: 3;
+  }
+}

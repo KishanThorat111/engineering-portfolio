@@ -324,6 +324,27 @@ const PATTERN_ROWS = [
   { label: 'Limit', value: 'The worst behaviour written down' },
 ];
 
+/*
+ * STATION 09'S ARCHIVE DRAWERS — the seven slots the artwork draws, labelled
+ * with what this repository actually keeps.
+ *
+ * Measured off the rendered plate with a fine grid (Oct 2026): the open door's
+ * seven slots are centred at x 27.7% from y 31.9% in steps of 3.15%, tilted up
+ * to the right by ~6°; the seven lit drawers inside start at x 40.4% from y
+ * 29.7% in the same steps, tilted down by ~9°. Reference 09 prints an index on
+ * the door and a name on each drawer; here the door carries the index and each
+ * drawer carries the real count, computed at build time.
+ */
+const DRAWERS = [
+  { name: 'Systems', count: counts.systems, unit: 'platforms' },
+  { name: 'Decisions', count: counts.decisions, unit: 'decisions' },
+  { name: 'Evidence', count: counts.evidence, unit: 'evidence' },
+  { name: 'Tests', count: counts.tests, unit: 'tests' },
+  { name: 'Migrations', count: 4, unit: 'migrations' },
+  { name: 'Lessons', count: counts.lessons, unit: 'lessons' },
+  { name: 'Roles', count: experience.length, unit: 'roles' },
+];
+
 const PATTERNS: TLStage[] = [
   { name: 'Tenancy', detail: 'multi-tenant from the first migration', state: 'done' },
   { name: 'Shape', detail: 'a modular monolith, not services', state: 'done' },
@@ -573,16 +594,16 @@ const FEATURED = {
  * reader is standing on was the most conspicuous omission of the three.
  */
 const MAP = [
-  { x: 27, y: 74, label: '01 · Enter', lines: ['Where you came in'] },
+  { x: 45.5, y: 82, label: '01 · Enter', lines: ['Where you came in'] },
   { x: 36, y: 20, label: '02 · Systems', lines: ['Three platforms'] },
   { x: 48, y: 29, label: '03 · Dissection', lines: ['Architecture layers'] },
   { x: 33, y: 43, label: '04 · Data', lines: ['One request path'] },
   { x: 70, y: 56, label: '05 · Lab', lines: ['What did not work'] },
   { x: 55, y: 50, label: '06 · Live', lines: ['The control plane'] },
-  { x: 63, y: 35, label: '07 · Think', lines: ['The judgment'] },
-  { x: 76, y: 44, label: '08 · Build', lines: ['The next system'] },
-  { x: 38, y: 60, label: '09 · Proof', lines: ['The archive'] },
-  { x: 92, y: 68, label: '10 · End', lines: ['You are here'] },
+  { x: 51.5, y: 38.5, label: '07 · Think', lines: ['The judgment'] },
+  { x: 81, y: 46, label: '08 · Build', lines: ['The next system'] },
+  { x: 37, y: 61, label: '09 · Proof', lines: ['The archive'] },
+  { x: 86, y: 66, label: '10 · End', lines: ['You are here'] },
 ] as const;
 ---
 
@@ -1480,7 +1501,16 @@ const MAP = [
 
 {/* ══ 09 PROOF ═════════════════════════════════════════════════════ */}
 <Stage id="proof" depth={1} plate={0.95} labelledby="st-proof">
-  <div class="col">
+  {
+    /*
+      Laid out as reference 09, measured against the plate: the archive cabinet
+      fills x 24–64% / y 16–60%, so the claim column stops at x 23%, the stat
+      bar runs across the top above it, the right column carries the flow and
+      the decision, and the lower band carries the overview, the ranked records
+      and the verification chain. Nothing sits on the cabinet but its labels.
+    */
+  }
+  <div class="col proof__col">
     <p class="eyebrow">09 / Proof</p>
     <h2 class="claim" id="st-proof">
       <span>Inspect.</span>
@@ -1496,109 +1526,62 @@ const MAP = [
 
   {
     /*
-      THE STAT BAR.
-
-      The reference reads CASES ARCHIVED 7,842 +12.9% · ARTIFACTS 128K ·
-      DECISIONS 14.6K · TESTS RUN 22.1K · VERIFIED 99.98% · LINKS ANALYZED 3.6M.
-      Every figure is fabricated, and §3's ruling on this frame is literal:
-      "The reference's scale must not be matched; the reference's composition
-      must. Design the panels for two-digit counts."
-
-      Six slots, six real counts, each one a `length` over a collection or a
-      directory in this repository. The trends are drawn empty because no series
-      is kept — which is the honest shape of a count that is recomputed at every
-      build rather than sampled over time.
+      THE STAT BAR. The reference's CASES ARCHIVED 7,842 · ARTIFACTS 128K ·
+      VERIFIED 99.98% are fabricated; §3's ruling is to match the composition,
+      not the scale. Six real counts, each a `length` over a collection or a
+      directory in this repository.
     */
   }
-  <Panel x={33} y={6} w={63} title="The archive" note="counted at build time">
+  <Panel x={24} y={2.5} w={72} title="The archive" note="counted at build time" dense>
     <div class="proof__bar">
       {ARCHIVE.map((a) => <MetricCard label={a.label} value={String(a.value)} flat />)}
       <MetricCard label="Migrations" value="4" flat />
     </div>
-    <p class="note">
-      Two-digit numbers, and that is the correct outcome. The drawer labelled DECISIONS opens onto
-      {' '}{counts.decisions} decisions a person actually wrote, each readable in full beside the document
-      it came from.
-    </p>
   </Panel>
 
+  {/* The door's index and the drawers' counts, on the slots the artwork draws. */}
   {
-    /*
-      EVIDENCE OVERVIEW.
-
-      The reference's donut totals 3.62M across Logs / Tests / Decisions /
-      Metrics / Documents. The ring is real; the total is what this repository
-      actually holds, and the slices are its real record types.
-    */
+    DRAWERS.map((d, i) => (
+      <>
+        <p class="arc__door" style={`--y:${(31.9 + 3.12 * i).toFixed(2)}%`}>
+          <span class="arc__num">{String(i + 1).padStart(2, '0')}</span>
+          {d.name}
+        </p>
+        <p class="arc__drawer" style={`--y:${(29.7 + 3.15 * i).toFixed(2)}%`}>
+          <span class="arc__count">{d.count}</span>
+          {d.unit}
+        </p>
+      </>
+    ))
   }
-  <Panel x={4.8} y={44} w={26} title="Evidence overview" note="by record type">
-    <div class="ring">
-      <Donut slices={RECORD_MIX} caption="records" size={132} />
+
+  <Panel x={4.8} y={52} w={18.5} title="Evidence overview" note="by type" dense>
+    <div class="ring ring--stack">
+      <Donut slices={RECORD_MIX} caption="records" size={112} />
       <Legend rows={RECORD_MIX} />
     </div>
   </Panel>
 
-  {
-    /*
-      WHERE THE REFERENCE PUTS EVIDENCE QUALITY 98.7%.
-
-      No such metric exists — nothing in this repository scores its own evidence
-      — so §3 cut it. Cutting it is what left this corner of the frame empty.
-      A panel of equal weight carrying a true statement takes its place, which is
-      the pattern the site already uses well.
-    */
-  }
-  <Panel x={4.8} y={68.5} w={26} title="What is not here" status="fault" dense>
-    <p>
-      No confidence score, no evidence-quality percentage, no flow health. The reference prints
-      three of them and this frame had space for all three. None of those metrics exists here, so
-      there is nothing to plot — and a gauge with an invented needle would undo everything the rest
-      of this page is for.
-    </p>
+  <Panel x={4.8} y={78.5} w={18.5} title="Top records" note="by count" dense>
+    <RankedList rows={TOP_RECORDS.slice(0, 4)} />
   </Panel>
 
   {
     /*
-      TOP ARTIFACTS — the reference's ranked list, with bars proportional to the
-      largest real row rather than to an invented 1.0M.
+      EVIDENCE TIMELINE → the real verification chain: the gates that run on
+      every push, in order. No timestamps, because none are kept.
     */
   }
-  <Panel x={33} y={66} w={29} title="Top records" note="by count">
-    <RankedList rows={TOP_RECORDS} />
-  </Panel>
-
-  {
-    /*
-      EVIDENCE TIMELINE.
-
-      The reference draws COLLECT → NORMALIZE → CORRELATE → ANALYZE → ARCHIVE →
-      VERIFY with a clock time under each. There is no such pipeline, and no
-      per-stage timings are recorded anywhere a reader could check.
-
-      There IS a real verification chain with named, ordered, independently
-      checkable stages: the gates that run on every push. A reader can open the
-      workflow and watch them. No timestamps are shown, because none are kept.
-    */
-  }
-  <Panel x={33} y={84} w={63} title="How this is verified" note="every push">
+  <Panel x={25.5} y={78.5} w={41.5} title="How this is verified" note="every push">
     <StageTimeline
       stages={GATES}
-      caption="These run in CI on every push, in this order. No per-stage timings are published because none are recorded."
+      caption="Run in CI on every push, in this order. No per-stage timings are published because none are recorded."
       summary="9 of 9 passing"
     />
   </Panel>
 
-  {
-    /*
-      EVIDENCE FLOW.
-
-      The reference runs seven invented sources through a database into seven
-      invented destinations. The SHAPE is true of something real and more
-      interesting: this site's provenance chain, which is its central promise and
-      which had only ever been stated in prose.
-    */
-  }
-  <Panel x={66} y={30} w={30} title="Evidence flow" note="source to page">
+  {/* EVIDENCE FLOW — this site's provenance chain, source to page. */}
+  <Panel x={69.5} y={17.5} w={27.5} title="Evidence flow" note="source to page" dense>
     <FlowDiagram
       hub="Content"
       sourcesTitle="Sources"
@@ -1616,25 +1599,10 @@ const MAP = [
         { label: 'profile.json', tone: 'signal' },
       ]}
     />
-    <p class="note">
-      Every published claim traces back along one of these lines. Two CI gates assert it: one
-      compares confidential statements against the CV verbatim, the other reconciles the machine
-      layer against the pages.
-    </p>
   </Panel>
 
-  {
-    /*
-      DECISION INSIGHT — the one component this repository fills better than the
-      reference imagined it.
-
-      The reference invents a Tenant Isolation Strategy with three options and
-      five criteria. This site keeps a real record of exactly that decision, and
-      it carries the field most architecture records leave out: what the choice
-      costs. That field gets its own row rather than being dropped.
-    */
-  }
-  <Panel x={66} y={62} w={30} title="Decision insight" note={`1 of ${counts.decisions}`}>
+  {/* DECISION INSIGHT — a real record of the reference's own example. */}
+  <Panel x={69.5} y={47} w={27.5} title="Decision insight" note={`1 of ${counts.decisions}`} dense>
     <DecisionTree
       decision={FEATURED.title}
       href={`/engineering#decisions`}
@@ -1667,6 +1635,14 @@ const MAP = [
     />
   </Panel>
 
+  {/* Where the reference puts SYSTEM CONFIDENCE 99.98% — a score that does not exist. */}
+  <Panel x={69.5} y={86} w={27.5} title="What is not here" status="fault" dense>
+    <p>
+      No confidence score, evidence-quality percentage or flow health. None of those metrics exists
+      here, so there is nothing to plot.
+    </p>
+  </Panel>
+
   <div slot="mobile" class="m">
     <p class="m__eyebrow">09 / Proof</p>
     <h2 class="m__claim">Inspect. Understand. Prove.</h2>
@@ -1691,25 +1667,28 @@ const MAP = [
 
 {/* ══ 10 END ═══════════════════════════════════════════════════════ */}
 <Stage id="end" depth={0.9} plate={0.95} grid={false} labelledby="st-end">
-  <div class="col col--wide">
+  <div class="col end__col">
     <p class="eyebrow">10 / End</p>
-    <h2 class="claim" id="st-end">
+    <h2 class="claim end__claim" id="st-end">
       <span>What's next?</span>
       <span><em>Let's find out.</em></span>
     </h2>
+    <span class="end__rule" aria-hidden="true"></span>
     <p class="lede">
       Good systems solve today's problem. Great engineering keeps asking what comes after.
     </p>
-    <a class="cta" href="/cv">Read the CV <span aria-hidden="true">→</span></a>
+    <a class="cta" href={`mailto:${SITE.email}`}>
+      Start a conversation <span aria-hidden="true">→</span>
+    </a>
 
     <dl class="endstate">
       <div>
         <dt>System</dt>
-        <dd data-live-value="state">not yet measured</dd>
+        <dd>[ <span data-live-value="state">not yet measured</span> ]</dd>
       </div>
       <div>
         <dt>Next problem</dt>
-        <dd class="endstate__unknown">unknown</dd>
+        <dd class="endstate__unknown">[ unknown ]</dd>
       </div>
     </dl>
   </div>
@@ -1720,7 +1699,18 @@ const MAP = [
     ))
   }
 
-  <Panel x={4.8} y={52} w={30} title="Where to go from here" note="four routes out">
+  {/* Beside the tower, where the reference names THE NEXT SYSTEM. */}
+  <Callout
+    x={79}
+    y={25}
+    side="left"
+    label="The next system"
+    lines={['Awaiting the right problem']}
+    tone="pending"
+    w={13}
+  />
+
+  <Panel x={4.8} y={70} w={33} title="Where to go from here" note="four routes out" dense>
     <Feed entries={ROUTES} wrap cols={2} />
   </Panel>
 
@@ -1905,6 +1895,89 @@ const MAP = [
       linear-gradient(rgb(14 14 26 / 0.94), rgb(14 14 26 / 0.94)) padding-box,
       var(--brand-ramp) border-box;
     box-shadow: 0 0 calc(24 * var(--u)) rgb(139 108 246 / 0.28);
+  }
+
+  /* ── 09's composition ──────────────────────────────────────────── */
+
+  .proof__col {
+    top: 17%;
+    width: 18.5%;
+  }
+
+  .ring--stack {
+    flex-direction: column;
+    align-items: stretch;
+    gap: calc(14 * var(--u));
+  }
+
+  .ring--stack :global(svg) {
+    align-self: center;
+  }
+
+  .arc__door,
+  .arc__drawer {
+    position: absolute;
+    top: var(--y);
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: calc(8 * var(--u));
+    font-family: var(--font-mono);
+    font-size: calc(14 * var(--u));
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--text);
+    pointer-events: none;
+    text-shadow:
+      0 0 calc(3 * var(--u)) rgb(3 5 10 / 0.95),
+      0 0 calc(9 * var(--u)) rgb(3 5 10 / 0.85);
+  }
+
+  /* The door's slots rise to the right; the drawers fall. Angles measured. */
+  .arc__door {
+    left: 27.7%;
+    transform: translateY(-50%) rotate(-6deg);
+    transform-origin: left center;
+  }
+
+  .arc__drawer {
+    left: 40.6%;
+    transform: translateY(-50%) rotate(9deg);
+    transform-origin: left center;
+    font-size: calc(13 * var(--u));
+  }
+
+  .arc__num {
+    color: var(--hue-blue);
+  }
+
+  .arc__count {
+    font-size: calc(17 * var(--u));
+    font-weight: 600;
+  }
+
+  /* ── 10's composition ──────────────────────────────────────────── */
+
+  .end__col {
+    top: 16%;
+    width: 29%;
+  }
+
+  .end__claim {
+    font-size: calc(92 * var(--u));
+  }
+
+  .end__col .endstate {
+    max-width: calc(560 * var(--u));
+  }
+
+  .end__rule {
+    display: block;
+    width: calc(64 * var(--u));
+    height: 1px;
+    margin: calc(36 * var(--u)) 0 calc(4 * var(--u));
+    background: var(--brand-ramp);
   }
 
   /* ── 07's composition ──────────────────────────────────────────── */
@@ -2892,13 +2965,14 @@ const MAP = [
     font-size: calc(13 * var(--u));
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--text-faint);
+    /* Muted, not faint: on the plate it measured 4.51:1, too close to the line. */
+    color: var(--text-muted);
   }
 
   .endstate dd {
-    margin: calc(8 * var(--u)) 0 0;
+    margin: calc(10 * var(--u)) 0 0;
     font-family: var(--font-mono);
-    font-size: calc(19 * var(--u));
+    font-size: calc(26 * var(--u));
     letter-spacing: 0.06em;
     color: var(--text);
   }

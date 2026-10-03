@@ -1,60 +1,223 @@
 ---
 import { SITE } from '../config/site';
+
+/*
+ * THE FOOTER, IN THE SAME LANGUAGE AS THE HEADER.
+ *
+ * It was a centred column of three plain links and a credit line — the one
+ * piece of chrome still in the site's old voice, sitting directly under the
+ * home page's final frame like a different website's footer. Reference 10
+ * closes on one bar: the mark and the name on the left, a single line of
+ * intent in the middle, the ways to reach the person on the right.
+ *
+ * Every value is SITE's, so it cannot drift from the header or the CV. The
+ * middle line is a statement of method, not a claim of fact.
+ */
+const links = [
+  {
+    label: 'GitHub',
+    href: SITE.github,
+    rel: 'me noopener',
+    icon: 'M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.5 9.5 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2Z',
+  },
+  {
+    label: 'LinkedIn',
+    href: SITE.linkedin,
+    rel: 'me noopener',
+    icon: 'M4.98 3.5A2.5 2.5 0 1 1 5 8.5a2.5 2.5 0 0 1-.02-5ZM3 9.75h4V21H3V9.75Zm6.5 0h3.83v1.54h.06c.53-1 1.84-2.06 3.79-2.06 4.05 0 4.8 2.66 4.8 6.13V21h-4v-5.05c0-1.2-.02-2.75-1.68-2.75-1.68 0-1.94 1.31-1.94 2.66V21h-4V9.75Z',
+  },
+  {
+    label: 'Email',
+    href: `mailto:${SITE.email}`,
+    rel: undefined,
+    icon: 'M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm1.4 2 7.6 5.3L19.6 7H4.4ZM20 8.75l-7.43 5.17a1 1 0 0 1-1.14 0L4 8.75V17h16V8.75Z',
+  },
+];
 ---
 
 <footer class="site-footer">
-  <div class="container footer-inner">
+  <div class="footer-bar">
+    <a class="footer-brand" href="/">
+      <span class="footer-mark" aria-hidden="true">KT</span>
+      <span class="footer-who">
+        <span class="footer-name">{SITE.name}</span>
+        <span class="footer-role">{SITE.role}</span>
+      </span>
+    </a>
+
+    <p class="footer-motto">Show the system. Show the decision. Show the evidence.</p>
+
     <ul class="footer-links">
-      <li><a href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
-      <li><a href={SITE.linkedin} rel="me noopener">LinkedIn</a></li>
-      <li><a href={SITE.github} rel="me noopener">GitHub</a></li>
+      {
+        links.map((l) => (
+          <li>
+            <a href={l.href} rel={l.rel}>
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d={l.icon} fill="currentColor" />
+              </svg>
+              {l.label}
+            </a>
+          </li>
+        ))
+      }
     </ul>
-    <p class="footer-note">
-      Built and operated by {SITE.name} — <a href={SITE.repo} rel="noopener">source on GitHub</a>
-    </p>
   </div>
+
+  <p class="footer-note">
+    Built and operated by {SITE.name} — <a href={SITE.repo} rel="noopener">source on GitHub</a>
+    <span class="footer-sep" aria-hidden="true">·</span>
+    <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+  </p>
 </footer>
 
 <style>
   .site-footer {
-    border-block-start: var(--border-width) solid var(--border);
-    padding-block: var(--space-8);
+    position: relative;
     margin-block-start: var(--space-24);
+    padding: var(--space-8) clamp(1rem, 4.8vw, 7rem) var(--space-6);
+    background: var(--bg);
   }
 
-  .footer-inner {
+  /* The brand ramp as a hairline across the top, fading at both ends — the
+     same mark that runs under the header, so the page opens and closes on it. */
+  .site-footer::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 0;
+    height: 1px;
+    background: var(--brand-ramp);
+    opacity: 0.5;
+    mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+  }
+
+  .footer-bar {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--space-6);
+  }
+
+  .footer-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.85rem;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .footer-mark {
+    display: inline-grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border: 1px solid transparent;
+    border-radius: 0.7rem;
+    background:
+      linear-gradient(rgb(12 14 24), rgb(12 14 24)) padding-box,
+      var(--brand-ramp) border-box;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .footer-who {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: 0.15rem;
   }
 
-  /*
-   * WCAG 2.2 AA, SC 2.5.8 Target Size (Minimum): a control that is not inline
-   * in a sentence needs a 24x24 CSS-pixel target. These links sit on a ~19px
-   * line box, so the hit area is grown with padding and the padding is undone
-   * with an equal negative margin — the target grows, the layout does not move
-   * by a pixel. Links that genuinely sit inside a sentence are exempt under the
-   * same criterion and are left alone.
-   */
-  .footer-links li a {
-    display: inline-block;
-    padding-block: 3px;
-    margin-block: -3px;
+  .footer-name {
+    font-size: 1.05rem;
+    font-weight: var(--weight-semibold);
+  }
+
+  .footer-role {
+    font-size: var(--text-sm);
+    color: var(--hue-blue);
+  }
+
+  .footer-motto {
+    justify-self: center;
+    margin: 0;
+    padding: 0.7rem 1.4rem;
+    border: 1px solid transparent;
+    border-radius: 0.7rem;
+    background:
+      linear-gradient(rgb(10 12 20), rgb(10 12 20)) padding-box,
+      linear-gradient(90deg, rgb(76 134 255 / 0.55), rgb(139 108 246 / 0.4), rgb(242 135 92 / 0.55))
+        border-box;
+    font-size: var(--text-sm);
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+    text-align: center;
   }
 
   .footer-links {
-    list-style: none;
     display: flex;
-    flex-wrap: wrap;
     gap: var(--space-6);
     margin: 0;
     padding: 0;
-    font-family: var(--font-mono);
+    list-style: none;
+  }
+
+  /* SC 2.5.8: standalone controls, so each clears 24px on its own. */
+  .footer-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 24px;
     font-size: var(--text-sm);
+    color: var(--text);
+    text-decoration: none;
+    transition: color var(--duration-micro) var(--ease-out);
+  }
+
+  .footer-links a:hover {
+    color: var(--hue-violet);
   }
 
   .footer-note {
+    margin: var(--space-6) 0 0;
+    font-size: var(--text-xs);
     color: var(--text-muted);
-    font-size: var(--text-sm);
+    text-align: right;
+  }
+
+  .footer-sep {
+    margin-inline: 0.5em;
+  }
+
+  .footer-note a {
+    color: var(--text-muted);
+  }
+
+  .footer-note a:hover {
+    color: var(--text);
+  }
+
+  @media (max-width: 899px) {
+    .footer-bar {
+      grid-template-columns: 1fr;
+      justify-items: start;
+    }
+
+    .footer-motto {
+      justify-self: stretch;
+    }
+
+    .footer-links {
+      flex-wrap: wrap;
+    }
+
+    .footer-note {
+      text-align: left;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .footer-links a {
+      transition: none;
+    }
   }
 </style>
