@@ -51,7 +51,8 @@
     "assets:benchmark": "node scripts/optimize-visual-world.mjs --benchmark",
     "assets:optimize": "node scripts/optimize-visual-world.mjs",
     "audit:prod": "node scripts/audit-check.mjs",
-    "assets:upload": "node scripts/upload-visual-world.mjs"
+    "assets:upload": "node scripts/upload-visual-world.mjs",
+    "assets:previews": "node scripts/visual-world-previews.mjs"
   },
   "devDependencies": {
     "html-validate": "^10.0.0",

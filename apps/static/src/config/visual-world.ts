@@ -25,6 +25,7 @@
  */
 
 import manifest from './visual-world-manifest.json';
+import previews from './visual-world-previews.json';
 
 /**
  * Where the production plates are served from. ONE value, and the only string
@@ -223,6 +224,29 @@ function srcset(rungs: Record<string, string> | undefined): string {
     .sort((a, b) => a - b);
   if (widths.length === 0) return '';
   return widths.map((w) => `${PLATE_BASE}/${rungs[String(w)]} ${w}w`).join(', ');
+}
+
+/**
+ * A plate's AVIF srcset without the rungs wider than `max` — for screens that
+ * are themselves no wider than `max`. On a 1700px screen at 1.5× the full set
+ * selects the 2528px file (222KB for plate 01); capped at 1920 it selects the
+ * 1920px one (154KB), still 1.1 file pixels per CSS pixel of a full-bleed
+ * frame. Measured: about a third less artwork for the whole home page.
+ */
+export function plateAvifUpTo(id: StationId, max: number): string {
+  const rungs = MANIFEST[manifestKey(id)]?.avif ?? {};
+  return srcset(Object.fromEntries(Object.entries(rungs).filter(([w]) => Number(w) <= max)));
+}
+
+/**
+ * The key of the plate's instant preview (scripts/visual-world-previews.mjs):
+ * set as `data-preview` on the plate's <img>, it selects a ~250-byte blurred
+ * copy of the artwork from styles/plate-previews.css as the image's own
+ * background, so a frame shows its scene before the artwork has arrived.
+ */
+export function platePreview(id: StationId): string | undefined {
+  const key = manifestKey(id);
+  return key in (previews as Record<string, unknown>) ? key : undefined;
 }
 
 /** The widest rung, used as the <img> intrinsic width so the ratio is known. */

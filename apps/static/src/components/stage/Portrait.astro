@@ -16,7 +16,9 @@
  * is about — so it carries real alt text rather than the plate layer's empty
  * one.
  */
+import '../../styles/plate-previews.css';
 import {
+  platePreview,
   plateSources,
   plateExists,
   PLATE_INTRINSIC_WIDTH,
@@ -34,6 +36,7 @@ interface Props {
 const { id, alt, focus } = Astro.props;
 const has = plateExists(id);
 const src = has ? plateSources(id) : null;
+const preview = platePreview(id);
 ---
 
 {
@@ -47,6 +50,7 @@ const src = has ? plateSources(id) : null;
           width={PLATE_INTRINSIC_WIDTH}
           height={PLATE_INTRINSIC_HEIGHT}
           alt={alt}
+          data-preview={preview}
           loading="lazy"
           decoding="async"
         />
@@ -75,5 +79,8 @@ const src = has ? plateSources(id) : null;
     height: 100%;
     object-fit: cover;
     object-position: var(--focus);
+    background-size: cover;
+    background-position: var(--focus);
+    background-repeat: no-repeat;
   }
 </style>

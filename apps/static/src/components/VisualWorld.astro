@@ -38,7 +38,10 @@
  * If the plate is missing or slow, the graphite ground and its gradients remain
  * and the station is still complete. Nothing readable was ever in the image.
  */
+import '../styles/plate-previews.css';
 import {
+  plateAvifUpTo,
+  platePreview,
   plateSources,
   plateExists,
   station,
@@ -75,6 +78,7 @@ const next = nextStation(id);
  * build with no other change.
  */
 const hasPlate = plateExists(id);
+const preview = platePreview(id);
 const nextHasPlate = next ? plateExists(next.id) : false;
 ---
 
@@ -98,10 +102,18 @@ const nextHasPlate = next ? plateExists(next.id) : false;
   {
     hasPlate && (
       <picture>
+        {/* Screens up to 1920px wide never need the 2528px file (see plateAvifUpTo). */}
+        <source
+          type="image/avif"
+          media="(max-width: 1920px)"
+          srcset={plateAvifUpTo(id, 1920)}
+          sizes={PLATE_SIZES}
+        />
         <source type="image/avif" srcset={src.avif} sizes={PLATE_SIZES} />
         <source type="image/webp" srcset={src.webp} sizes={PLATE_SIZES} />
         <img
           class="vw__plate"
+          data-preview={preview}
           src={src.webp.split(' ')[0]}
           width={PLATE_INTRINSIC_WIDTH}
           height={PLATE_INTRINSIC_HEIGHT}
@@ -214,6 +226,11 @@ const nextHasPlate = next ? plateExists(next.id) : false;
     height: 104%;
     object-fit: cover;
     object-position: center center;
+    /* The instant preview (set inline), framed as the artwork is, until the
+       artwork arrives and paints over it. */
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
     opacity: var(--plate-strength, 1);
     will-change: transform;
     /* --plate-x is a placement, not motion: it is set per station so the
@@ -428,6 +445,7 @@ const nextHasPlate = next ? plateExists(next.id) : false;
          plate's edge. The narrow composition has no labels on the art. */
       --plate-x: 0%;
       object-position: 62% 38%;
+      background-position: 62% 38%;
       opacity: calc(var(--plate-strength, 1) * 0.85);
     }
 

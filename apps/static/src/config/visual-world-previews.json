@@ -1,0 +1,42 @@
+{
+  "01-enter": {
+    "from": "01-enter-768.cd2bec38.webp",
+    "bytes": 194
+  },
+  "02-systems": {
+    "from": "02-systems-768.40286707.webp",
+    "bytes": 246
+  },
+  "03-dissection": {
+    "from": "03-dissection-768.54586d3b.webp",
+    "bytes": 266
+  },
+  "04-data": {
+    "from": "04-data-768.ac4d3a04.webp",
+    "bytes": 288
+  },
+  "05-lab": {
+    "from": "05-lab-768.23f25e8f.webp",
+    "bytes": 254
+  },
+  "06-live": {
+    "from": "06-live-768.d36a9d84.webp",
+    "bytes": 252
+  },
+  "07-think": {
+    "from": "07-think-768.b3285dc5.webp",
+    "bytes": 232
+  },
+  "08-build": {
+    "from": "08-build-768.b66e6559.webp",
+    "bytes": 212
+  },
+  "09-proof": {
+    "from": "09-proof-768.bf4b5248.webp",
+    "bytes": 220
+  },
+  "10-end": {
+    "from": "10-end-768.c9568a85.webp",
+    "bytes": 180
+  }
+}

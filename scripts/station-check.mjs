@@ -175,6 +175,33 @@ for (const station of stations) {
   }
 }
 
+/*
+ * EVERY PLATE HAS A CURRENT PREVIEW.
+ *
+ * The instant previews (scripts/visual-world-previews.mjs) are what a frame
+ * shows before its artwork arrives. Each records the published file it was
+ * made from; if a plate is re-encoded, its file name changes and the preview
+ * no longer describes it. Ship that and the frame opens on a different
+ * picture from the one that lands over it. So a missing preview, or one made
+ * from a file the manifest no longer names, fails here.
+ */
+const previews = JSON.parse(
+  readFileSync(resolve('apps/static/src/config/visual-world-previews.json'), 'utf8'),
+);
+const previewSheet = readFileSync(resolve('apps/static/src/styles/plate-previews.css'), 'utf8');
+for (const station of stations) {
+  const preview = previews[station.stem];
+  const current = manifest[station.stem]?.webp?.['768'];
+  if (!preview || !previewSheet.includes(`[data-preview='${station.stem}']`)) {
+    fail(`${station.stem} has no instant preview — run npm run assets:previews`);
+  } else if (preview.from !== current) {
+    fail(
+      `${station.stem}'s preview was made from ${preview.from}, but the plate is now ${current} ` +
+        '— run npm run assets:previews',
+    );
+  }
+}
+
 /* ---- 2. the locked hero --------------------------------------------- */
 
 const siteSource = readFileSync(resolve('apps/static/src/config/site.ts'), 'utf8');

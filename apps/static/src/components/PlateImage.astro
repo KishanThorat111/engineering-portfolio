@@ -22,7 +22,9 @@
  * 2.5 file pixels per CSS pixel of the enlarged region, at two-thirds of the
  * weight.
  */
+import '../styles/plate-previews.css';
 import {
+  platePreview,
   plateSources,
   plateExists,
   PLATE_INTRINSIC_WIDTH,
@@ -62,6 +64,7 @@ assertDeclared(Astro.url.pathname, id);
 const has = plateExists(id);
 const src = has ? plateSources(id) : null;
 const crop = cx !== undefined && cy !== undefined;
+const preview = platePreview(id);
 const style = crop ? `--cx:${cx}; --cy:${cy}; --zoom:${zoom}` : `--focus:${focus}`;
 ---
 
@@ -76,6 +79,7 @@ const style = crop ? `--cx:${cx}; --cy:${cy}; --zoom:${zoom}` : `--focus:${focus
           width={PLATE_INTRINSIC_WIDTH}
           height={PLATE_INTRINSIC_HEIGHT}
           alt={alt}
+          data-preview={preview}
           decoding="async"
           loading={priority === 'eager' ? 'eager' : 'lazy'}
           fetchpriority={priority === 'eager' ? 'high' : 'low'}
@@ -92,12 +96,16 @@ const style = crop ? `--cx:${cx}; --cy:${cy}; --zoom:${zoom}` : `--focus:${focus
     background: var(--bg-inset);
   }
 
+  /* The preview sits behind the artwork, framed exactly as it is. */
   .plate-img img {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
     object-position: var(--focus);
+    background-size: cover;
+    background-position: var(--focus);
+    background-repeat: no-repeat;
   }
 
   /*
@@ -107,6 +115,7 @@ const style = crop ? `--cx:${cx}; --cy:${cy}; --zoom:${zoom}` : `--focus:${focus
    * any box shape without knowing its height.
    */
   .plate-img--crop img {
+    background-size: 100% 100%;
     position: absolute;
     left: 50%;
     top: 50%;
