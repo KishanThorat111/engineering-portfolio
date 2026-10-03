@@ -4244,3 +4244,32 @@ and `/experience/` still `public, max-age=0, must-revalidate`, as intended.
 The home page carries all ten `data-preview` hooks; /experience/ serves the
 career line. `/`, `/systems/`, `/about/`, `/cv/`, `/cv.pdf`, `/live/` and
 `/api/profile.json` return 200. CI 28/28 at step level.
+
+## S14 — The pointer and the favicon · 4 October 2026
+
+**The pointer.** The owner found the pointer light unconvincing. It was one
+54vmax disc of blue haze tracking the pointer one-to-one — a fog that lit
+nothing in particular. Replaced by `scripts/pointer.ts` and
+`components/Pointer.astro`, on every page: a trailing ring beside the
+system cursor (never hidden), and on the art a lamp — a small bright pool,
+the scene falling away around it, and the drafting grid lighting up in
+violet near the pointer — all driven by one eased position. Mouse only, off
+under reduced motion and forced colours, and the loop idles at 0 frames.
+
+The light is the one thing on the page that moves behind text, so it was
+held to the contrast floor with the light directly behind each of 795 text
+blocks at four widths. The first strength failed (worst 3.71:1); the probe
+separated the causes (an over-bright pool; lit grid lines behind small
+labels — 3.98 with, 5.48 without), and the final light passes everywhere,
+worst 4.56:1 against the old light's 4.50. The opening's reading labels
+gained the callouts' glyph halo.
+
+A device-matrix run once flagged "08 · Build" past the screen edge at 390px;
+measured directly it sits inside its card at every device pixel ratio, and
+three repeat runs were clean — a reading taken before that deferred section
+had laid out, not a defect. Recorded rather than dropped.
+
+**The favicon.** It was still green and set as font text. Now the header's
+KT mark drawn as strokes — dark tile, brand-ramp ring — with ICO, Apple
+touch and manifest icons rendered from it by `scripts/make-icons.mjs`, and
+a `site.webmanifest`. /live/ uses /favicon.svg already and was not touched.
