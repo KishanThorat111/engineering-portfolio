@@ -49,6 +49,7 @@ const { x, y, label, quiet = false } = Astro.props;
      * be worth anything, and too small to read if it does.
      */
     background: var(--plate-scrim-solid);
+    -webkit-backdrop-filter: blur(calc(10 * var(--u)));
     backdrop-filter: blur(calc(10 * var(--u)));
     font-family: var(--font-mono);
     font-size: calc(14 * var(--u));

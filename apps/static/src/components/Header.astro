@@ -130,13 +130,15 @@ const isCurrent = (href: string) => {
     top: 0;
     z-index: 40;
     background: rgb(10 14 21 / 0.84);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
     backdrop-filter: blur(18px) saturate(150%);
     border-block-end: 1px solid rgb(255 255 255 / 0.06);
   }
 
   /* No backdrop blur means no translucency: the ground goes solid so the links
-     never lose contrast over a bright plate scrolling beneath. */
-  @supports not (backdrop-filter: blur(1px)) {
+     never lose contrast over a bright plate scrolling beneath. Safari before
+     18 has the blur under its prefix only, so either spelling counts. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .site-header {
       background: var(--bg);
     }

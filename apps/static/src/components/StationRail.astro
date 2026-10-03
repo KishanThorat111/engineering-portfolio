@@ -7,7 +7,16 @@
  * they wanted. The references number every frame ("01 / ENTER", "02 /
  * SYSTEMS"…) along their top edge; the site header is the site's own
  * navigation and stays that way, so the station index lives here instead: a
- * slim rail on the right edge, wide composition only.
+ * slim rail on the left edge, wide composition only.
+ *
+ * LEFT, AND ONLY AS WIDE AS ITS TICKS. It sat on the right edge first, where
+ * station 01 and station 04 hang labels to within a few pixels of the frame:
+ * its ticks drew across "Redis 7" and "Row-level security", and each link's
+ * box — tick, number and an invisible name, about 100px wide — caught the
+ * pointer over those labels and opened a station name on top of them. Every
+ * frame's left 4.8% is margin, so the rail lives there, its links are the
+ * tick zone alone, and the number and name are drawn beside it only on
+ * hover or keyboard focus, never taking space or a pointer.
  *
  * It is plain links to each station's anchor, so it works with no script at
  * all. The motion script marks the station in view (`aria-current="location"`,
@@ -33,9 +42,11 @@ const STATIONS = [
       STATIONS.map((s, i) => (
         <li>
           <a href={`#${s.id}`} data-chapter={s.id}>
-            <span class="chapters__name">{s.name}</span>
-            <span class="chapters__num">{String(i + 1).padStart(2, '0')}</span>
             <span class="chapters__tick" aria-hidden="true" />
+            <span class="chapters__label">
+              <span class="chapters__num">{String(i + 1).padStart(2, '0')}</span>
+              <span class="chapters__name">{s.name}</span>
+            </span>
           </a>
         </li>
       ))
@@ -53,7 +64,7 @@ const STATIONS = [
       display: block;
       position: fixed;
       z-index: 30;
-      right: clamp(8px, 1vw, 18px);
+      left: clamp(8px, 1vw, 18px);
       top: 50%;
       translate: 0 -50%;
       --done: 0;
@@ -73,7 +84,7 @@ const STATIONS = [
     .chapters ol::after {
       content: '';
       position: absolute;
-      right: 7px;
+      left: 7px;
       top: 12px;
       width: 1px;
       height: calc(100% - 24px);
@@ -87,18 +98,13 @@ const STATIONS = [
       transition: scale 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
+    /* The link is the tick zone and nothing more: 32 × 26px, clear of 2.5.8. */
     .chapters a {
       position: relative;
       display: flex;
       align-items: center;
-      justify-content: flex-end;
-      gap: 10px;
+      width: 32px;
       min-height: 26px;
-      padding-right: 1px;
-      font-family: var(--font-mono);
-      font-size: 0.68rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
       text-decoration: none;
       background-image: none;
       color: var(--text-muted);
@@ -115,36 +121,38 @@ const STATIONS = [
         background 0.35s ease;
     }
 
-    .chapters__num,
-    .chapters__name {
+    /* Drawn beside the tick on hover or focus; takes no space and no pointer. */
+    .chapters__label {
+      position: absolute;
+      left: 34px;
+      top: 50%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 3px 9px;
+      border-radius: 4px;
+      background: rgb(10 14 21 / 0.9);
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      pointer-events: none;
       opacity: 0;
-      translate: 6px 0;
+      translate: -6px -50%;
       transition:
         opacity 0.3s ease,
         translate 0.3s ease;
-      white-space: nowrap;
-      text-shadow: 0 0 8px rgb(3 5 10 / 0.95);
     }
 
     .chapters__name {
-      padding: 3px 8px;
-      border-radius: 4px;
-      background: rgb(10 14 21 / 0.86);
       color: var(--text);
     }
 
-    /* The station in view shows its number; hover or focus shows its name. */
-    .chapters a[aria-current='location'] .chapters__num,
-    .chapters a:hover .chapters__num,
-    .chapters a:focus-visible .chapters__num,
-    .chapters a:hover .chapters__name,
-    .chapters a:focus-visible .chapters__name {
+    .chapters a:hover .chapters__label,
+    .chapters a:focus-visible .chapters__label {
       opacity: 1;
-      translate: 0 0;
-    }
-
-    .chapters a[aria-current='location'] {
-      color: var(--text);
+      translate: 0 -50%;
     }
 
     .chapters a[aria-current='location'] .chapters__tick {

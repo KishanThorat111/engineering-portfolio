@@ -75,4 +75,22 @@ export default defineConfig({
       filter: (page) => !page.includes('/dev/'),
     }),
   ],
+
+  /*
+   * THE BROWSERS THE CSS IS WRITTEN FOR, STATED.
+   *
+   * Astro minifies CSS with Lightning CSS but did not hand it a target list,
+   * and with no targets Lightning CSS treats every vendor prefix as dead and
+   * drops it. Measured: `-webkit-backdrop-filter` was written in four places
+   * and shipped in none, so on iPhones before iOS 18 the frosted header and
+   * panels lost their blur. These are Vite's own "baseline widely available"
+   * targets — the same floor the JavaScript is already built for — and with
+   * them the prefix is kept where those browsers need it, added where it was
+   * missing, and nothing else changes.
+   */
+  vite: {
+    build: {
+      cssTarget: ['chrome111', 'edge111', 'firefox114', 'safari16.4', 'ios16.4'],
+    },
+  },
 });

@@ -3916,3 +3916,97 @@ condition re-verifies on each run. Proved by injection, each reverted: remote
 images enabled → fail; review date passed → fail; another dependent → fail;
 exceptions list emptied → fail (plain audit strictness); a patched version
 published (simulated) → fail with "upgrade instead". Review by 31 Dec 2026.
+
+## S9 — The home page on every screen size · 3 October 2026
+
+The owner asked for the page to look right on every phone, tablet, laptop and
+desktop. Measured first, at real device widths, before changing anything.
+
+**What the measurement found.** Phones (320–430), landscape phones and tablets
+(768–1024) were already sound: no sideways scroll, nothing clipped at the
+edge, smallest text 10.6px, no control under 24px. The fault was laptops. At
+1280–1536px — the widths most 13–15" laptops run at — 66–78% of the text
+inside the station frames rendered under 9px, some at 4px, because each frame
+is composed in reference pixels of a 2528px-wide image and scales with the
+screen.
+
+**Laptops, 1025–1599px: the scene, then its detail.** Each station keeps its
+scene exactly as composed — artwork, headline, every label pinned to the art,
+the stat strips — with readable minimum sizes on what stays on the art. Its
+panels step out into a six-track grid directly beneath, at the size they were
+designed at; each station's panels are given a share of the row (third, half,
+two-thirds, full, two rows deep) so its rows line up. Where larger labels met a
+neighbour, each case was measured and given the room it needed (01 readout and
+trace become two full-width instrument strips; 02 core label; 03 slab labels;
+04 lede and call to action; 08 tag inside its drawn box). The narrow end,
+1025–1179px (iPads in landscape), sets labels a pixel smaller and never below
+10px.
+
+**1600px and up is the owner's approved composition and is unchanged**: 206 of
+208 overlay boxes match the earlier baseline to 0.1px; the other two are the
+trace-caption fix below.
+
+**Ultrawide (wider than 2:1).** A frame's height follows the screen's width,
+so on 21:9 and 32:9 monitors a station was 1.6–2.4 screens tall. Past 2:1 the
+frame is capped at twice the screen's height — what a 16:9 monitor shows — and
+centred, its artwork fading at the sides; the header and footer take the same
+measure. 16:9 and 16:10 screens are not affected.
+
+**Tablets and landscape phones.** The system cards sit three across when each
+can keep a 14rem measure; prose keeps a 62ch measure; a phone on its side no
+longer spends a quarter of its height on top padding.
+
+**Defects found on the way, and fixed:**
+
+- *Safari before 18 lost every backdrop blur.* Astro minified CSS with
+  Lightning CSS but passed it no browser targets, and with none it drops every
+  vendor prefix: `-webkit-backdrop-filter` was written in four places and
+  shipped in none. `vite.build.cssTarget` now states Vite's own baseline
+  (Safari/iOS 16.4 and peers); the prefix ships, and overlay positions are
+  unchanged to 0.00px.
+- *The chapter rail sat on labels.* On the right edge its ticks drew across
+  station 01's and 04's right-hand labels, and each link's ~100px box (tick,
+  number, invisible name) caught the pointer over them and opened a station
+  name on top. It now lives in the frames' left margin, each link is its 32×26
+  tick zone, and the number and name appear beside it only on hover or focus.
+  Measured: no station or footer text under it at 1280 or 1920.
+- *The trace caption sat on the stops.* `.pnl__body p` outranked the
+  caption's own margin at every width; child-qualified.
+- *Laptop-width label halos were thinner than the labels.* The halo and the
+  lede shadow are sized in frame units; with the labels held above frame size
+  the pointer lamp could light the art between glyphs. Sized to the text in
+  that range.
+
+**Not changed, and put to the owner.** At 1600–1919px the full composition's
+panel text is small (55–72% under 10px); the laptop layout would fix it but
+would change the owner's own view of the page, which is theirs to decide.
+
+### Verified
+
+- **Device matrix**, 22 viewports from 320×568 to 3440×1440 including
+  landscape phones and iPads both ways: sideways overflow 0, text clipped at a
+  screen edge 0, header fits at every size; phones and tablets smallest text
+  10.6px and no control under 24px. Four standalone links in wide panels are
+  17–21px tall and pass WCAG 2.2 SC 2.5.8 under its spacing exception (no
+  other target within 24px). Both checks proven by injection (an unbroken
+  headline; a squeezed button), reverted.
+- **Text on text**, 12 widths 1025–3440: 0 from 1060px up. At 1025, two line
+  boxes touch at a corner with no glyph contact; the proof drawers' tilted
+  label boxes overlap as rectangles, not as text (checked by eye).
+- **Text past a panel edge**, nine widths 1025–1920: 0. The old probe looked
+  for a class that no longer exists and could not fail; rebuilt, and proven by
+  injecting a squeezed panel.
+- **Contrast with the pointer lamp behind every text block on the art**:
+  worst 5.07:1 at 1025, 4.90 at 1280, 4.83 at 1440, 4.62 at 1600, 4.50 at
+  1920. The 1920 case ("Isolation layers") measures 4.50 in the previous
+  build too, so it predates this work. That previous build, measured the same
+  way, scores **1.75:1** at 1920 and 2.29 at 1600 on station 01's right-hand
+  labels — the chapter rail shipped in 6f5ea23 sitting on them — which is the
+  rail defect above, now fixed.
+- At 1600px: 206 of 208 overlay boxes at their earlier positions, and all 208
+  unchanged by the CSS-target change.
+- Motion suite all 0 (reduced motion, JavaScript off, scroll-through at 1600,
+  1280, 834 and 390, End-key jump, keyboard focus).
+- `verify` 0, render 35/35, `audit:prod` OK, Lighthouse home mobile
+  0.99/1/0.96/1 and desktop (1350px, the laptop layout) 1/1/0.96/1, CLS 0.
+  Home is ~44KB gzip HTML+CSS, no external JS. /live/ untouched.

@@ -3054,6 +3054,22 @@ const MAP = [
     gap: 0.75rem;
   }
 
+  /*
+   * Tablets: the cards sit side by side once each can keep a 14rem measure —
+   * three across on an iPad in portrait, one per row on a phone. Prose keeps
+   * a reading measure rather than running the full width of a 1024px screen.
+   */
+  @media (min-width: 720px) {
+    .m__cards {
+      grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    }
+
+    .m__lede,
+    .m__note {
+      max-width: 62ch;
+    }
+  }
+
   .m__cards li {
     padding: 0.9rem 1rem;
     border: 1px solid var(--plate-edge);

@@ -245,4 +245,14 @@ const {
       padding-inline: var(--space-6);
     }
   }
+
+  /*
+   * A phone on its side is 320–430px tall. The top padding is sized from the
+   * width, so there it spent a quarter of the screen above the eyebrow.
+   */
+  @media (max-width: 1024px) and (max-height: 500px) {
+    .stage__mobile {
+      padding-top: var(--space-8);
+    }
+  }
 </style>
