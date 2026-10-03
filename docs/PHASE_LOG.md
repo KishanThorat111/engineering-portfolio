@@ -4010,3 +4010,19 @@ would change the owner's own view of the page, which is theirs to decide.
 - `verify` 0, render 35/35, `audit:prod` OK, Lighthouse home mobile
   0.99/1/0.96/1 and desktop (1350px, the laptop layout) 1/1/0.96/1, CLS 0.
   Home is ~44KB gzip HTML+CSS, no external JS. /live/ untouched.
+
+### Addendum — the deploy has not followed since 7d6c865
+
+Remote CI is green at step level for ba94126 (Build & truth gates 19/19,
+Lighthouse enforcing 9/9). The deployed origin is not: a fetch of
+`https://kishanthorat.com/` carries aa0ebad's markers (`vw__sweep`,
+`vw__light`) and none from 6f5ea23 or later (`vw__grain`, `data-chapters`,
+`data-band` all 0). Cloudflare's own check on GitHub reports **Workers Builds:
+portfolio — failure** for 7d6c865 and 6f5ea23, and no build at all for
+ba94126 forty minutes after its push. The first failing build added only an
+audit script, its exceptions file and CI workflow changes — nothing
+`npm run build` executes — and every one of these commits builds on GitHub's
+runner, so the cause is on the Cloudflare side and its log is in a dashboard
+this repository cannot read. OWNER-INPUT: open the failed build in the
+Cloudflare dashboard (Workers → portfolio → Builds) and either retry it or
+share its log.
