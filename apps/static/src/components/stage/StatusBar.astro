@@ -68,7 +68,7 @@ const { fields, note, class: className } = Astro.props;
     }
     <span class="sb__word sb__word--unknown">not yet checked</span>
     <span class="sb__word sb__word--live">answering</span>
-    <span class="sb__word sb__word--down">no answer</span>
+    <span class="sb__word sb__word--down">offline</span>
   </p>
 
   <dl class="sb__fields">
@@ -132,7 +132,7 @@ const { fields, note, class: className } = Astro.props;
   }
 
   :global(:root[data-liveness='down']) .sb__dot {
-    background: var(--fault);
+    background: var(--pending);
   }
 
   /* Exactly one word is shown, and the served default is the honest one. */
@@ -157,7 +157,7 @@ const { fields, note, class: className } = Astro.props;
 
   :global(:root[data-liveness='down']) .sb__word--down {
     display: inline;
-    color: var(--fault);
+    color: var(--pending);
   }
 
   .sb__fields {

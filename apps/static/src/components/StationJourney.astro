@@ -749,7 +749,7 @@ const MAP = [
 
   <div slot="mobile" class="m">
     <p class="m__eyebrow">02 / Systems</p>
-    <h2 class="m__claim">Explore the systems I build.</h2>
+    <h2 class="m__claim">Explore the <em>systems</em> I build.</h2>
     <p class="m__lede">
       Each one discloses the thing it does worst, before you read anything else about it.
     </p>
@@ -867,7 +867,7 @@ const MAP = [
 
   <div slot="mobile" class="m">
     <p class="m__eyebrow">03 / Dissection</p>
-    <h2 class="m__claim">How the system actually works.</h2>
+    <h2 class="m__claim">How the system actually <em>works</em>.</h2>
     <p class="m__lede">Open the architecture. Follow the data. Understand the decisions.</p>
     <ol class="m__layers">
       {
@@ -967,7 +967,7 @@ const MAP = [
 
   <div slot="mobile" class="m">
     <p class="m__eyebrow">04 / Request trace</p>
-    <h2 class="m__claim">Follow a request through the system.</h2>
+    <h2 class="m__claim">Follow a <em>request</em> through the system.</h2>
     <p class="m__lede">
       One request crosses boundaries, services and data layers before a response reaches you.
     </p>
@@ -1101,7 +1101,7 @@ const MAP = [
 
   <div slot="mobile" class="m">
     <p class="m__eyebrow">05 / Lab</p>
-    <h2 class="m__claim">Not everything ships. Everything teaches.</h2>
+    <h2 class="m__claim">Not everything ships. <em>Everything</em> teaches.</h2>
     <ul class="m__cards">
       {
         lessons.slice(0, 2).map((lesson) => (
@@ -1213,7 +1213,7 @@ const MAP = [
   <Panel x={4.8} y={47} w={14.6} title="Event stream" note="control plane" band="third">
     <Feed
       entries={[]}
-      emptyNote="No events. This feed fills from the control plane's own record; the plane is not answering, so it stays empty rather than replaying an older session."
+      emptyNote="No events shown. This page never replays an older session's record in place of a live one."
     />
   </Panel>
 
@@ -1289,11 +1289,11 @@ const MAP = [
 
   <div slot="mobile" class="m">
     <p class="m__eyebrow">06 / Live</p>
-    <h2 class="m__claim">The control room.</h2>
+    <h2 class="m__claim">The control <em>room</em>.</h2>
     <p class="m__lede">Observe what is happening. Nothing here is simulated for appearance.</p>
     <p class="m__note">
-      The lit continents in the artwork behind this are illustration. This system runs in one
-      region, on one virtual machine.
+      The lit continents in the artwork above are illustration. This system runs in one region, on
+      one virtual machine.
     </p>
     <p class="m__note">
       Control plane: <span data-live-value="state">—</span>. Round trip
@@ -1304,7 +1304,7 @@ const MAP = [
 </Stage>
 
 {/* ══ 07 THINK ═════════════════════════════════════════════════════ */}
-<Stage id="think" depth={1} plate={0.95} labelledby="st-think">
+<Stage id="think" depth={1} plate={0.95} labelledby="st-think" mobileArt="none">
   {
     /*
       THE SET'S ONE SERIF, AND THE FIGURE IT WAS COMPOSED AROUND.
@@ -1388,7 +1388,7 @@ const MAP = [
     <Portrait id="think" alt="Kishan Thorat at his desk" focus="74% 30%" />
     <p class="m__eyebrow">07 / Think</p>
     <h2 class="m__claim m__claim--serif">
-      Systems are only half the story. The other half is judgment.
+      Systems are only half the story. The other half is <em>judgment</em>.
     </h2>
     <p class="m__lede m__lede--serif">
       Knowing what to build, what not to build, what to measure, and when a simpler system is the
@@ -1412,7 +1412,7 @@ const MAP = [
 </Stage>
 
 {/* ══ 08 BUILD ═════════════════════════════════════════════════════ */}
-<Stage id="build" anchor="contact" depth={1} plate={0.95} labelledby="st-build">
+<Stage id="build" anchor="contact" depth={1} plate={0.95} labelledby="st-build" mobileArt="none">
   {
     /*
       Shown whole, with the owner on the right looking out over the city
@@ -1496,7 +1496,9 @@ const MAP = [
   <div slot="mobile" class="m">
     <Portrait id="build" alt="Kishan Thorat looking out over the city" focus="80% 32%" />
     <p class="m__eyebrow">08 / Build</p>
-    <h2 class="m__claim">Have a difficult system? Let's build something worth operating.</h2>
+    <h2 class="m__claim">
+      Have a difficult system? <em>Let's build something</em> worth operating.
+    </h2>
     <p class="m__lede">
       Good engineering starts with the right problem. Bring the constraint. We'll find the system.
     </p>
@@ -1653,7 +1655,7 @@ const MAP = [
 
   <div slot="mobile" class="m">
     <p class="m__eyebrow">09 / Proof</p>
-    <h2 class="m__claim">Inspect. Understand. Prove.</h2>
+    <h2 class="m__claim">Inspect. Understand. <em>Prove</em>.</h2>
     <p class="m__lede">Every decision leaves a trace, published with the document it came from.</p>
     <dl class="m__stats">
       {
@@ -1732,7 +1734,7 @@ const MAP = [
 
   <div slot="mobile" class="m">
     <p class="m__eyebrow">10 / End</p>
-    <h2 class="m__claim">What's next? Let's find out.</h2>
+    <h2 class="m__claim">What's next? <em>Let's find out.</em></h2>
     <p class="m__lede">
       Good systems solve today's problem. Great engineering keeps asking what comes after.
     </p>
@@ -1838,13 +1840,15 @@ const MAP = [
    * clears 5:1 on the ground. Forced-colours mode restores the system colour,
    * because a clipped background would otherwise take the word with it.
    */
-  .claim em {
+  .claim em,
+  .m__claim em {
     font-style: normal;
     color: var(--hue-violet);
   }
 
   @supports ((-webkit-background-clip: text) or (background-clip: text)) {
-    .claim em {
+    .claim em,
+    .m__claim em {
       background-image: var(--brand-ramp);
       -webkit-background-clip: text;
       background-clip: text;
@@ -1855,7 +1859,8 @@ const MAP = [
   }
 
   @media (forced-colors: active) {
-    .claim em {
+    .claim em,
+    .m__claim em {
       background: none;
       -webkit-text-fill-color: CanvasText;
       color: CanvasText;

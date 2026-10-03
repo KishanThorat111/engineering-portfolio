@@ -765,6 +765,19 @@ html[data-reveal-ready] .stage[data-in]:not(.enter) .vw__sweep {
   }
 }
 
+/* ----------------------------------------------------------------------
+ * OFFLINE, EVERYWHERE ELSE A STATE WORD APPEARS.
+ *
+ * The station strips, the control room's metrics, its status sentence and
+ * the closing frame each carry the one state reading. When the live system
+ * cannot be reached it reads "offline" in the register's amber — the colour
+ * this design gives "cannot reach the plane" (tokens.css, contrast gate) —
+ * rather than in the red that means a fault or a disclosed limitation.
+ * ---------------------------------------------------------------------- */
+:root[data-liveness='down'] .stage [data-live-value='state'] {
+  color: var(--pending);
+}
+
 /* ======================================================================
  * LAPTOP WIDTHS (1025–1599px): THE SCENE, THEN ITS DETAIL.
  *

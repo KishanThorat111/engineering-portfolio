@@ -80,6 +80,13 @@ interface Props {
   /** Anchor for deep links. Defaults to the station id. */
   anchor?: string;
   class?: string;
+  /**
+   * What the artwork is on a phone or tablet. `card`: a framed picture at the
+   * top of the section, at full strength. `backdrop`: full-bleed behind the
+   * text (the opening frame). `none`: not drawn, because the section shows the
+   * same plate as content of its own (07 and 08's portraits of the owner).
+   */
+  mobileArt?: 'card' | 'backdrop' | 'none';
 }
 
 const {
@@ -92,11 +99,17 @@ const {
   labelledby,
   anchor,
   class: className,
+  mobileArt = 'card',
 } = Astro.props;
 ---
 
 <section
-  class:list={['stage', className, priority !== 'eager' && 'stage--deferred']}
+  class:list={[
+    'stage',
+    className,
+    priority !== 'eager' && 'stage--deferred',
+    `stage--m-${mobileArt}`,
+  ]}
   id={anchor ?? id}
   aria-labelledby={labelledby}
   data-station={id}
@@ -243,6 +256,78 @@ const {
   @media (min-width: 768px) and (max-width: 1024px) {
     .stage__mobile {
       padding-inline: var(--space-6);
+    }
+  }
+
+  /*
+   * THE ARTWORK AS A PICTURE, NOT A BACKDROP.
+   *
+   * On a phone the plate sat behind the stacked text under a scrim dark enough
+   * to read paragraphs over — so every section opened on a dim, empty band
+   * and the scenes that carry the wide composition were mostly lost. Stations
+   * 07 and 08 already showed theirs as a framed picture above the text, and
+   * read best. Every station after the opening one now does: the same plate
+   * file (no extra download), at full strength, framed, with the text below
+   * it on the page's own ground. The plate keeps a few pixels of bleed inside
+   * the frame so its scroll drift moves the scene within the frame.
+   */
+  @media (max-width: 1024px) {
+    .stage--m-card,
+    .stage--m-none {
+      display: block;
+      min-height: 0;
+    }
+
+    .stage--m-card {
+      padding-top: clamp(3rem, 12vw, 5rem);
+    }
+
+    .stage.stage--m-card > :global(.vw) {
+      position: relative;
+      inset: auto;
+      /* An explicit width, so a short landscape screen gets a wider crop of
+         the scene rather than a narrower card. */
+      width: calc(100% - 2 * var(--space-4));
+      margin-inline: auto;
+      aspect-ratio: 3 / 2;
+      max-height: 72svh;
+      border: 1px solid rgb(255 255 255 / 0.09);
+      border-radius: 14px;
+      overflow: hidden;
+      isolation: isolate;
+      box-shadow:
+        0 30px 60px -34px rgb(0 0 0 / 0.95),
+        0 0 0 1px rgb(124 146 255 / 0.05);
+    }
+
+    .stage.stage--m-card > :global(.vw) :global(.vw__plate) {
+      top: -5%;
+      height: 110%;
+      opacity: var(--plate-strength, 1);
+    }
+
+    /* Nothing is read over the picture, so it needs no floor — only a soft
+       fall-off at its foot. */
+    .stage.stage--m-card > :global(.vw) :global(.vw__scrim) {
+      background: linear-gradient(to bottom, transparent 62%, rgb(8 10 16 / 0.38));
+    }
+
+    .stage--m-card > .stage__mobile {
+      padding-top: var(--space-6);
+    }
+
+    .stage.stage--m-none > :global(.vw) {
+      display: none;
+    }
+
+    .stage--m-none > .stage__mobile {
+      padding-top: clamp(3rem, 12vw, 5rem);
+    }
+  }
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    .stage.stage--m-card > :global(.vw) {
+      width: calc(100% - 2 * var(--space-6));
     }
   }
 

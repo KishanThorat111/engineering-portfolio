@@ -136,8 +136,14 @@ const { rows, action, class: className } = Astro.props;
   }
 
   /* A live row follows the measurement's state, like every other readout. */
-  :global(:root[data-liveness='down']) .insp__value:has([data-live-value]) {
-    color: var(--fault);
+  /* Offline: the state in the register's "cannot reach it" amber, the
+     reading that could not be taken as a quiet dash. */
+  :global(:root[data-liveness='down']) .insp__value:has([data-live-value='state']) {
+    color: var(--pending);
+  }
+
+  :global(:root[data-liveness='down']) .insp__value:has([data-live-value='rtt']) {
+    color: var(--text-muted);
   }
 
   :global(:root[data-liveness='live']) .insp__value:has([data-live-value]) {

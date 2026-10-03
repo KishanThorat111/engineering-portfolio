@@ -206,6 +206,11 @@ const { hops, request, class: className } = Astro.props;
     box-shadow: 0 0 calc(10 * var(--u)) var(--record);
   }
 
+  /* Down: the total says "offline" in the register's "cannot reach it" amber. */
+  [data-trace][data-state='down'] [data-trace-total] {
+    color: var(--pending);
+  }
+
   /* Down: the rings dim. What failed is stated in words beside them. */
   [data-trace][data-state='down'] .trace__dot {
     border-color: color-mix(in srgb, var(--dot, var(--structure)) 40%, var(--plate-edge));

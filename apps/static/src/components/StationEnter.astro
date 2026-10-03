@@ -184,6 +184,7 @@ const HOPS: Hop[] = [
   plateX={2}
   labelledby="claim"
   class="enter"
+  mobileArt="backdrop"
 >
   {/* ── Left column ─────────────────────────────────────────────── */}
   <div class="enter__col">
@@ -278,7 +279,7 @@ const HOPS: Hop[] = [
   <div class="enter__readout">
     <p class="enter__state">
       <span class="enter__state-dot" aria-hidden="true"></span>
-      <span data-live-value="state-line">Control plane — not yet measured</span>
+      <span data-live-value="state-line">Live system — not yet checked</span>
     </p>
 
     <dl class="enter__stats">
@@ -372,7 +373,7 @@ const HOPS: Hop[] = [
   {/* ── The mobile composition ──────────────────────────────────── */}
   <div slot="mobile" class="enterM">
     <p class="enterM__eyebrow">01 / Enter</p>
-    <h1 class="enterM__claim">{SITE.claim}</h1>
+    <h1 class="enterM__claim">{CLAIM_LINES.join(' ')} <em>{CLAIM_TAIL}</em></h1>
     <p class="enterM__lede">{SITE.subline}</p>
     <ul class="enterM__chips">
       {STATUS_CHIPS.map((chip) => <li>{chip}</li>)}
@@ -473,13 +474,15 @@ const HOPS: Hop[] = [
    * single line does. In forced-colours mode a clipped background vanishes and
    * would take the text with it, so the system colour is restored there.
    */
-  .enter__claim em {
+  .enter__claim em,
+  .enterM__claim em {
     font-style: normal;
     color: var(--hue-violet);
   }
 
   @supports ((-webkit-background-clip: text) or (background-clip: text)) {
-    .enter__claim em {
+    .enter__claim em,
+    .enterM__claim em {
       background-image: var(--brand-ramp);
       -webkit-background-clip: text;
       background-clip: text;
@@ -490,7 +493,8 @@ const HOPS: Hop[] = [
   }
 
   @media (forced-colors: active) {
-    .enter__claim em {
+    .enter__claim em,
+    .enterM__claim em {
       background: none;
       -webkit-text-fill-color: CanvasText;
       color: CanvasText;
@@ -699,11 +703,11 @@ const HOPS: Hop[] = [
   /*
    * The words stay white in every state and the DOT carries it, as in the
    * reference's "● SYSTEM ONLINE". Nothing honest is lost: the sentence itself
-   * reads "not answering" when that is the truth, and the dot is red.
+   * reads "offline" when that is the truth, and the dot takes the register's
+   * "cannot reach it" amber — unlit, because nothing was measured.
    */
   :global(:root[data-liveness='down']) .enter__state-dot {
-    background: var(--fault);
-    box-shadow: 0 0 calc(10 * var(--u)) var(--fault);
+    background: var(--pending);
   }
 
   .enter__stats {
@@ -872,9 +876,14 @@ const HOPS: Hop[] = [
    * Matching only the first coloured one reading and not the other, which is
    * worse than colouring neither.
    */
-  :global(:root[data-liveness='down']) .enterM__stats dd[data-live-value],
-  :global(:root[data-liveness='down']) .enterM__stats dd:has([data-live-value]) {
-    color: var(--fault);
+  /* Offline: the state word in amber; the round trip that could not be
+     taken stays a quiet dash rather than a coloured one. */
+  :global(:root[data-liveness='down']) .enterM__stats dd[data-live-value='state'] {
+    color: var(--pending);
+  }
+
+  :global(:root[data-liveness='down']) .enterM__stats dd:has([data-live-value='rtt']) {
+    color: var(--text-muted);
   }
 
   :global(:root[data-liveness='live']) .enterM__stats dd[data-live-value],

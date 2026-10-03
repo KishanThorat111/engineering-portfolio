@@ -56,12 +56,17 @@ const src = has ? plateSources(id) : null;
 }
 
 <style>
+  /* The same frame as every station's picture on a phone (Stage.astro). */
   .portrait-m {
     margin: 0 0 1.5rem;
-    border-radius: 0.75rem;
+    border-radius: 14px;
     overflow: hidden;
-    border: 1px solid rgb(255 255 255 / 0.08);
+    border: 1px solid rgb(255 255 255 / 0.09);
     aspect-ratio: 4 / 3;
+    max-height: 72svh;
+    box-shadow:
+      0 30px 60px -34px rgb(0 0 0 / 0.95),
+      0 0 0 1px rgb(124 146 255 / 0.05);
   }
 
   .portrait-m img {

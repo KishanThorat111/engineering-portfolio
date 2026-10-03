@@ -75,7 +75,7 @@ export function initLiveness(): void {
        * shove the strip two lines taller.
        */
       fill('state', 'live');
-      fill('state-line', 'Control plane — responding');
+      fill('state-line', 'Live system — responding');
       for (const node of document.querySelectorAll<HTMLElement>('[data-trace-total]')) {
         node.textContent = `${rtt}ms`;
       }
@@ -107,17 +107,24 @@ export function initLiveness(): void {
         /* Left as the dash. An unread count is unread, not zero. */
       }
     } catch {
+      /*
+       * OFFLINE, SAID ONCE AND PLAINLY. It read "no answer" in alarm red in
+       * seven places, which a visitor took for the page being broken. The
+       * state is the same and still stated on every instrument that would
+       * have shown a reading — one calm word, in the register's "cannot reach
+       * it" amber, and a sentence saying when it was checked.
+       */
       setState('down');
-      fill('state', 'no answer');
-      fill('state-line', 'Control plane — not answering');
+      fill('state', 'offline');
+      fill('state-line', 'Live system offline — checked just now');
       for (const node of document.querySelectorAll<HTMLElement>('[data-trace-total]')) {
-        node.textContent = 'no answer';
+        node.textContent = 'offline';
       }
       for (const node of document.querySelectorAll<HTMLElement>('[data-trace-caption]')) {
         node.textContent =
-          'The control plane did not answer, so nothing here is a measurement. ' +
-          'The demonstrations it hosts are unavailable until it is back; this page ' +
-          'says so rather than showing a number from a previous visit.';
+          'The live system is offline right now, so nothing on this panel is a ' +
+          'measurement. Your browser checks it on every visit, and no figure from an ' +
+          'earlier visit is ever shown in its place.';
       }
     }
   })();
