@@ -98,7 +98,8 @@ const { rows, action, class: className } = Astro.props;
     font-size: calc(10 * var(--u, 1px));
     letter-spacing: 0.13em;
     text-transform: uppercase;
-    color: var(--text-faint);
+    /* Muted, not faint: under a lit panel the faint tone fell to 3.9:1. */
+    color: var(--text-muted);
     white-space: nowrap;
   }
 

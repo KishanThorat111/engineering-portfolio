@@ -3834,3 +3834,62 @@ Both frames were recomposed against grid measurements of the full plates, with
 every panel kept below the owner's shoulders on 07 and clear of him on 08. On a
 phone the plate sat dimmed behind text, so the narrow composition of each now
 opens with the same image as a real, captioned picture cropped to him.
+
+---
+
+## S8 — Motion on the home page · 3 October 2026
+
+**On the owner's direction, and recorded because it touches a dossier ruling.**
+§16.3 rejects "parallax, scroll-jacking, typewriter effects, particle
+backgrounds" and §10 says motion is measurement. The home page already shipped a
+layered scroll parallax (S2), and the owner asked for the motion and depth to be
+taken much further. The owner's instruction is followed for the static image
+world; the rest of §16.3 still holds and was applied: **no particles, no
+scroll-jacking, no typewriter text**, and no animation library (CSS plus one
+~3KB inline module). Every animation is decoration over a page that is complete
+without it, except one, which is a measurement:
+
+- **The trace pulse is motion-is-measurement.** When the liveness probe gets an
+  answer, one point of light crosses the trace rail in the measured round trip
+  ×25 (linear, once per measurement, never looped), and the caption states the
+  factor. It never runs when the plane did not answer.
+
+What shipped:
+
+- **Arrival.** A station that starts off screen is assembled as it arrives, in
+  reading order: headline line by line, labels sliding out from their dots,
+  panels rising. Only `opacity` and the individual `translate`/`scale`
+  properties move, so the `transform` that pins each label to the artwork is
+  never replaced. Station 01 powers on in pure CSS from first paint (labels
+  firing down the pointer column, then readout and trace); its headline, lede
+  and CTA are not animated.
+- **Light.** A one-time sweep across each plate on arrival; a lamp that follows
+  a real pointer; panel edges that catch it; a sheen across the calls to action
+  on hover. Haze and grid move against the pointer at their own depths.
+- **Cuts between stations.** A veil of the page ground dims a station as it
+  leaves the centre of the screen and lifts as the next arrives (wide
+  composition only).
+- **The labels now ride with the artwork.** The plate's scroll drift had been
+  moving the artwork up to 9px under labels that stayed put; the overlay now
+  takes the same drift, so labels are on their pointers at every scroll
+  position, not only when a station is centred.
+- **A layout-cost fix found on the way.** The parallax loop read the plate
+  layer's box every frame, which forces layout inside `content-visibility:
+  auto` stations; it now reads the section's own box.
+- The "scroll to explore" cue is removed, as asked.
+
+### Verified
+
+- Every one of 208 overlay elements settles at **0.00px** from its pre-change
+  position, with motion and with reduced motion; label/plate drift mismatch 0.
+- Reduced motion, by execution: nothing held, nothing moved, light layers not
+  rendered. JavaScript off: nothing held. Scroll-through at 1600, 1280, 834 and
+  390: nothing left hidden. End-key jump: the last station arrives. Keyboard:
+  31 focus stops inside stations, none invisible.
+- Contrast with the lamp centred behind each of 218 text blocks: worst
+  **4.69:1** (Inspector labels moved from faint to muted to get there);
+  settled sweep of 259 blocks: worst 4.72:1.
+- Lighthouse, home, served gzip-compressed as CI serves it: mobile **0.99**
+  (LCP 2105–2180ms against 2106ms before), desktop **1.0**, CLS 0, TBT 0.
+- Home still loads **no JS files**: three inline modules, ~3.7KB gz total.
+- `verify` 0, render harness 35/35. /live/ untouched.

@@ -147,6 +147,18 @@ const ordinal = (index: number) => String(index + 1).padStart(2, '0');
     initVisualWorld();
     initLiveness();
   </script>
+
+  {
+    /*
+      The arrival choreography and the pointer light, as their own module so
+      each inline script stays under the size at which the build would split it
+      into a separate file — the home page loads no JavaScript files (§11).
+    */
+  }
+  <script>
+    import { initStageMotion } from '../scripts/stage-motion';
+    initStageMotion();
+  </script>
 </BaseLayout>
 
 <style>

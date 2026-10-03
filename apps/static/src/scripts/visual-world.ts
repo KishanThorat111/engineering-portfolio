@@ -33,22 +33,35 @@
 
 type Layer = {
   root: HTMLElement;
+  /** The station section: the box whose position is read every frame. */
+  frame: HTMLElement;
   plate: HTMLElement | null;
+  /** The overlay of labels and panels, which must travel with the plate. */
+  overlay: HTMLElement | null;
   atmosphere: HTMLElement | null;
   grid: HTMLElement | null;
+  veil: HTMLElement | null;
   depth: number;
 };
 
 const REDUCED = '(prefers-reduced-motion: reduce)';
+/* The wide composition, where labels sit on the artwork. */
+const WIDE = '(min-width: 1025px)';
 
 function collect(): Layer[] {
-  return Array.from(document.querySelectorAll<HTMLElement>('.vw')).map((root) => ({
-    root,
-    plate: root.querySelector<HTMLElement>('.vw__plate'),
-    atmosphere: root.querySelector<HTMLElement>('.vw__atmosphere'),
-    grid: root.querySelector<HTMLElement>('.vw__grid'),
-    depth: Number(root.dataset['depth'] ?? '1') || 1,
-  }));
+  return Array.from(document.querySelectorAll<HTMLElement>('.vw')).map((root) => {
+    const frame = root.closest<HTMLElement>('.stage') ?? root;
+    return {
+      root,
+      frame,
+      plate: root.querySelector<HTMLElement>('.vw__plate'),
+      overlay: frame.querySelector<HTMLElement>('.stage__layer'),
+      atmosphere: root.querySelector<HTMLElement>('.vw__atmosphere'),
+      grid: root.querySelector<HTMLElement>('.vw__grid'),
+      veil: root.querySelector<HTMLElement>('.vw__veil'),
+      depth: Number(root.dataset['depth'] ?? '1') || 1,
+    };
+  });
 }
 
 export function initVisualWorld(): void {
@@ -57,6 +70,7 @@ export function initVisualWorld(): void {
 
   /* --- parallax ------------------------------------------------------- */
   let motionOn = !matchMedia(REDUCED).matches;
+  const wide = matchMedia(WIDE);
   let ticking = false;
 
   const frame = () => {
@@ -65,7 +79,17 @@ export function initVisualWorld(): void {
 
     const viewport = window.innerHeight;
     for (const layer of layers) {
-      const rect = layer.root.getBoundingClientRect();
+      /*
+       * THE SECTION'S BOX, NOT THE PLATE LAYER'S.
+       *
+       * Stations below the fold are `content-visibility: auto`, so their
+       * contents are not laid out. Asking a descendant for its rect forces
+       * that layout — on every scroll frame, for all ten stations — and quietly
+       * undoes the optimisation. The section itself is always laid out, and
+       * the plate layer fills it exactly, so its box is the same answer for
+       * free.
+       */
+      const rect = layer.frame.getBoundingClientRect();
       // Skip anything comfortably off screen — no work for stations nobody
       // is looking at.
       if (rect.bottom < -viewport || rect.top > viewport * 2) continue;
@@ -90,7 +114,18 @@ export function initVisualWorld(): void {
          * one of them. The plate was always meant to be the slowest thing in
          * the frame.
          */
-        layer.plate.style.setProperty('--vw-plate-y', `${(progress * 9 * d).toFixed(2)}px`);
+        const drift = `${(progress * 9 * d).toFixed(2)}px`;
+        layer.plate.style.setProperty('--vw-plate-y', drift);
+        /*
+         * THE LABELS RIDE WITH THE ARTWORK.
+         *
+         * The plate drifting on its own meant every label was up to 9px off
+         * its pointer except at the exact moment a station was centred. The
+         * overlay now takes the same drift, so a label stays on the thing it
+         * names at every scroll position — and the depth comes from the haze,
+         * grid and light layers moving at their own rates around the scene.
+         */
+        if (layer.overlay && wide.matches) layer.overlay.style.translate = `0 ${drift}`;
         /*
          * NO SCALE. It used to swell the plate by up to 2% as a station
          * centred, which moves every point of the artwork away from the centre
@@ -103,6 +138,22 @@ export function initVisualWorld(): void {
       }
       layer.atmosphere?.style.setProperty('--vw-atmos-y', `${(progress * 62 * d).toFixed(2)}px`);
       layer.grid?.style.setProperty('--vw-grid-y', `${(progress * 96 * d).toFixed(2)}px`);
+
+      /*
+       * THE STATION YOU ARE ON IS THE ONE THAT IS LIT.
+       *
+       * The veil is the page ground over the artwork (never over the text),
+       * at zero while a station holds the middle of the screen and rising to
+       * 0.6 as it moves a full screen away — so each frame brightens as it
+       * arrives and dims as it leaves, and the seam between two stations
+       * reads as a cut between shots. Wide composition only: a phone reads a
+       * station top to bottom over several screens, and dimming its artwork
+       * mid-read would be wrong.
+       */
+      if (layer.veil) {
+        const away = Math.min(Math.max((Math.abs(progress) - 0.35) / 0.65, 0), 1);
+        layer.veil.style.opacity = wide.matches ? (away * 0.6).toFixed(3) : '0';
+      }
     }
   };
 
@@ -122,7 +173,8 @@ export function initVisualWorld(): void {
       // Clear every offset so nothing is left mid-drift.
       for (const layer of layers) {
         layer.plate?.style.removeProperty('--vw-plate-y');
-        layer.plate?.style.removeProperty('--vw-plate-scale');
+        layer.overlay?.style.removeProperty('translate');
+        layer.veil?.style.removeProperty('opacity');
         layer.atmosphere?.style.removeProperty('--vw-atmos-y');
         layer.grid?.style.removeProperty('--vw-grid-y');
       }

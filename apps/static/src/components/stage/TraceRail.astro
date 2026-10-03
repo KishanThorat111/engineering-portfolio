@@ -44,7 +44,7 @@ interface Props {
 const { hops, request, class: className } = Astro.props;
 ---
 
-<div class:list={['trace', className]} data-trace>
+<div class:list={['trace', className]} data-trace style={`--hops:${hops.length}`}>
   <div class="trace__head">
     <p class="trace__request">{request}</p>
     <p class="trace__total">
@@ -109,6 +109,7 @@ const { hops, request, class: className } = Astro.props;
   }
 
   .trace__rail {
+    position: relative;
     display: flex;
     margin: 0;
     padding: 0;
@@ -208,6 +209,66 @@ const { hops, request, class: className } = Astro.props;
   /* Down: the rings dim. What failed is stated in words beside them. */
   [data-trace][data-state='down'] .trace__dot {
     border-color: color-mix(in srgb, var(--dot, var(--structure)) 40%, var(--plate-edge));
+  }
+
+  /*
+   * MOTION IS MEASUREMENT: THE PULSE CROSSES AT THE SPEED OF YOUR ROUND TRIP.
+   *
+   * When the liveness probe gets an answer it writes the measured round trip
+   * to `--trace-ms`, and one point of light crosses the rail from the first
+   * hop to the last in that time scaled by 25 — the real figure is a few tens
+   * of milliseconds, too fast to see, so it is slowed by a fixed factor the
+   * caption states. Linear, because the easing would otherwise be inventing a
+   * shape the measurement does not have. One crossing per measurement, never a
+   * loop: a repeating pulse would claim traffic that is not happening.
+   *
+   * It never runs when the plane did not answer, and never under reduced
+   * motion, where the caption still states the time.
+   */
+  .trace__rail::after {
+    content: '';
+    position: absolute;
+    top: calc(8 * var(--u) - 6px);
+    left: calc(100% / var(--hops, 6) / 2 - 6px);
+    width: calc(100% * (var(--hops, 6) - 1) / var(--hops, 6));
+    height: 12px;
+    background: radial-gradient(
+      circle 6px at 6px 50%,
+      #fff 0 2px,
+      var(--hue-blue) 3px,
+      transparent 6px
+    );
+    filter: drop-shadow(0 0 6px var(--hue-blue));
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @keyframes trace-pulse {
+    0% {
+      translate: 0 0;
+      opacity: 1;
+    }
+
+    96% {
+      opacity: 1;
+    }
+
+    100% {
+      translate: 100% 0;
+      opacity: 0;
+    }
+  }
+
+  :global(.stage[data-in])
+    [data-trace][data-state='live'][style*='--trace-ms']
+    .trace__rail::after {
+    animation: trace-pulse calc(var(--trace-ms) * 25ms) linear 0.4s 1 both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .trace__rail::after {
+      display: none;
+    }
   }
 
   .trace__name {

@@ -62,6 +62,12 @@ interface Props {
    * that leads into the slab it names.
    */
   rule?: boolean;
+  /**
+   * Position in a firing sequence. Station 01 lights its labels one after
+   * another on arrival; the order is set here because that frame animates from
+   * first paint, before any script has run to compute one.
+   */
+  seq?: number;
 }
 
 const {
@@ -74,12 +80,13 @@ const {
   tone = 'structure',
   w = 15,
   rule = false,
+  seq,
 } = Astro.props;
 ---
 
 <div
   class:list={['cal', `cal--${side}`, rule && 'cal--rule']}
-  style={`--x:${x}%; --y:${y}%; --lead:${lead}%; --w:${w}%; --tone:var(--${tone})`}
+  style={`--x:${x}%; --y:${y}%; --lead:${lead}%; --w:${w}%; --tone:var(--${tone})${seq === undefined ? '' : `; --i:${seq}`}`}
 >
   <span class="cal__dot" aria-hidden="true"></span>
   {lead > 0 && <span class="cal__lead" aria-hidden="true" />}

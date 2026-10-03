@@ -309,8 +309,9 @@ const HOPS: Hop[] = [
       No lead stub: the artwork already draws each pointer line from its dot to
       the structure, so ours only added a stray hairline beside it.
     */
-    PATH.map((item) => (
+    PATH.map((item, i) => (
       <Callout
+        seq={i}
         x={32.2}
         y={item.y - LABEL_ROW}
         side="left"
@@ -332,8 +333,9 @@ const HOPS: Hop[] = [
       reading rightwards from it. The text block is the room left between the
       dot and the frame's margin, and the longer sub-lines wrap inside it.
     */
-    ESTATE.map((item) => (
+    ESTATE.map((item, i) => (
       <Callout
+        seq={i + 1}
         x={ESTATE_DOT_X - 0.14}
         y={item.y - LABEL_ROW}
         side="left"
@@ -364,12 +366,6 @@ const HOPS: Hop[] = [
   <Panel x={39} y={76.2} w={37} title="Live request trace" note="measured here">
     <TraceRail hops={HOPS} request="GET /health" />
   </Panel>
-
-  {/* ── The scroll cue ──────────────────────────────────────────── */}
-  <p class="enter__scroll">
-    <span class="enter__scroll-icon" aria-hidden="true"></span>
-    Scroll to explore
-  </p>
 
   {/* ── The mobile composition ──────────────────────────────────── */}
   <div slot="mobile" class="enterM">
@@ -767,47 +763,6 @@ const HOPS: Hop[] = [
      rather than the number's, as the reference's figures never are. */
   :global(:root[data-liveness='down']) .enter__stats dd:has([data-live-value='state']) {
     font-size: calc(26 * var(--u));
-  }
-
-  /*
-   * The reference's position: bottom-left, under the readout. It had been moved
-   * out to 34% because a tall instrument panel occupied this corner; the panel
-   * is gone and the cue goes back where the reference draws it.
-   */
-  .enter__scroll {
-    position: absolute;
-    left: 2.7%;
-    top: 90.5%;
-    display: flex;
-    align-items: center;
-    gap: calc(30 * var(--u));
-    margin: 0;
-    font-family: var(--font-mono);
-    font-size: calc(19 * var(--u));
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-
-  .enter__scroll-icon {
-    width: calc(36 * var(--u));
-    height: calc(64 * var(--u));
-    border: 2px solid var(--text-muted);
-    border-radius: calc(18 * var(--u));
-    position: relative;
-  }
-
-  /* The wheel. */
-  .enter__scroll-icon::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: calc(12 * var(--u));
-    width: 2px;
-    height: calc(10 * var(--u));
-    transform: translateX(-50%);
-    border-radius: 1px;
-    background: var(--text-muted);
   }
 
   /* ── The mobile composition ────────────────────────────────────── */

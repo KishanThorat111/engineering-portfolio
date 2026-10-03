@@ -131,6 +131,24 @@ const nextHasPlate = next ? plateExists(next.id) : false;
       Without it, a bright region of a plate can put white type on white. */
   }
   <div class="vw__scrim"></div>
+
+  {
+    /*
+      THE LIGHT LAYERS. Three, all decorative, all transform/opacity only so
+      the compositor does the work:
+
+        sweep  one pass of light across the frame as the station arrives
+        light  a soft lamp that follows the reader's pointer over the artwork
+        veil   the page ground, faded in as a station leaves the centre of the
+               screen and out as it arrives, so each frame "lights up" in turn
+
+      None of them carries information and none is needed: without script,
+      with reduced motion, or on a touch screen they simply never show.
+    */
+  }
+  <div class="vw__sweep"></div>
+  <div class="vw__light"></div>
+  <div class="vw__veil"></div>
 </div>
 
 {
@@ -223,7 +241,13 @@ const nextHasPlate = next ? plateExists(next.id) : false;
         transparent 72%
       );
     will-change: transform;
-    transform: translate3d(0, var(--vw-atmos-y, 0), 0);
+    /* Scroll drift plus pointer depth: the haze is nearer than the artwork,
+       so it moves further against the pointer than the scene does. */
+    transform: translate3d(
+      calc(var(--vw-px, 0) * -22px),
+      calc(var(--vw-atmos-y, 0px) + var(--vw-py, 0) * -14px),
+      0
+    );
   }
 
   /*
@@ -248,7 +272,12 @@ const nextHasPlate = next ? plateExists(next.id) : false;
     background-size: 96px 96px;
     mask-image: radial-gradient(80% 70% at 50% 45%, black, transparent 78%);
     will-change: transform;
-    transform: translate3d(0, var(--vw-grid-y, 0), 0);
+    /* The grid is the nearest drafting surface: it moves furthest. */
+    transform: translate3d(
+      calc(var(--vw-px, 0) * -38px),
+      calc(var(--vw-grid-y, 0px) + var(--vw-py, 0) * -24px),
+      0
+    );
   }
 
   /*
@@ -277,12 +306,74 @@ const nextHasPlate = next ? plateExists(next.id) : false;
     );
   }
 
+  /* ── Light layers ─────────────────────────────────────────────── */
+
+  .vw__sweep {
+    position: absolute;
+    inset: -10% auto -10% 0;
+    width: 45%;
+    background: linear-gradient(
+      100deg,
+      transparent 15%,
+      rgb(124 146 255 / 0.1) 42%,
+      rgb(255 255 255 / 0.07) 50%,
+      rgb(242 135 92 / 0.05) 58%,
+      transparent 85%
+    );
+    mix-blend-mode: screen;
+    translate: -110% 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .vw__light {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 54vmax;
+    height: 54vmax;
+    border-radius: 50%;
+    background: radial-gradient(
+      closest-side,
+      rgb(124 146 255 / 0.2),
+      rgb(139 108 246 / 0.1) 42%,
+      transparent 100%
+    );
+    mix-blend-mode: screen;
+    transform: translate3d(calc(var(--vw-sx, 50%) - 50%), calc(var(--vw-sy, 50%) - 50%), 0);
+    opacity: 0;
+    transition: opacity 0.7s ease;
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  .vw[data-lit] .vw__light {
+    opacity: 1;
+  }
+
+  .vw__veil {
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    opacity: 0;
+    pointer-events: none;
+  }
+
   /*
    * REDUCED MOTION: no parallax, no scale, no drift. The plate is simply
    * placed. Nothing is hidden and no content is withheld — only the movement
    * stops, which is exactly what the preference asks for.
    */
   @media (prefers-reduced-motion: reduce) {
+    .vw__sweep,
+    .vw__light {
+      display: none;
+    }
+
+    .vw__veil {
+      opacity: 0 !important;
+    }
+
     .vw__atmosphere,
     .vw__grid {
       transform: none !important;

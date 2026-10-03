@@ -79,9 +79,14 @@ export function initLiveness(): void {
       for (const node of document.querySelectorAll<HTMLElement>('[data-trace-total]')) {
         node.textContent = `${rtt}ms`;
       }
+      // The trace pulse runs at this speed, scaled ×25 so it can be seen.
+      for (const trace of document.querySelectorAll<HTMLElement>('[data-trace]')) {
+        trace.style.setProperty('--trace-ms', String(rtt));
+      }
       for (const node of document.querySelectorAll<HTMLElement>('[data-trace-caption]')) {
         node.textContent =
           `Your browser completed this request in ${rtt}ms. ` +
+          `The light that crossed the rail took 25 times that, so it could be seen. ` +
           `Per-hop timings are not shown because they are not measured — this is one ` +
           `round trip, end to end, and you can reproduce it in your own devtools.`;
       }

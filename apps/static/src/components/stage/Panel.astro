@@ -81,6 +81,59 @@ const { x, y, w, title, note, status, dense = false, class: className } = Astro.
     backdrop-filter: blur(calc(14 * var(--u)));
   }
 
+  /*
+   * THE EDGE CATCHES THE LIGHT.
+   *
+   * Under a real pointer, the panel's border brightens in the brand ramp where
+   * the pointer is, and a faint glow sits under the content. `--mx`/`--my`
+   * come from the motion script; without it (or under reduced motion, or on a
+   * touch screen) neither layer ever becomes visible. The border is masked out
+   * of a full-size gradient, so it follows the panel's own rounded corners.
+   */
+  .pnl::before,
+  .pnl::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+
+  .pnl::before {
+    z-index: -1;
+    background: radial-gradient(
+      calc(420 * var(--u)) circle at var(--mx, 50%) var(--my, 50%),
+      rgb(124 146 255 / 0.06),
+      transparent 70%
+    );
+  }
+
+  .pnl::after {
+    padding: 1px;
+    background: radial-gradient(
+      calc(300 * var(--u)) circle at var(--mx, 50%) var(--my, 50%),
+      rgb(176 150 255 / 0.9),
+      rgb(76 134 255 / 0.35) 45%,
+      transparent 75%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+  }
+
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .pnl:hover::before,
+    .pnl:hover::after {
+      opacity: 1;
+    }
+  }
+
   .pnl--dense {
     padding: calc(14 * var(--u)) calc(16 * var(--u)) calc(15 * var(--u));
   }
