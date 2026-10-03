@@ -4099,3 +4099,80 @@ the PDF; it was restored from git after the check.
 - Lighthouse 1/1/1/1 mobile and desktop on all eight inner routes; home
   0.99/1/0.96/1 mobile, 1/1/0.96/1 desktop (unchanged).
 - `verify` 0, render 35/35.
+
+## S11 — The artwork on every page, by owner direction · 3 October 2026
+
+**A change of scope, on the owner's instruction, recorded because it reverses
+S3.** S3 returned the image world to `/` after it had leaked onto every route
+through shared files — a leak, not a choice. On 3 Oct 2026 the owner chose
+the opposite on purpose: "why dont you use those images in those other pages
+also i mean the relative one and also best suited like for about you can use
+my photo which is there already". The rule was moved to where the data now
+puts it, not dropped: `config/page-art.ts` declares which plates each route
+may show; `PlateImage` refuses to build an undeclared one; station-check fails
+the build on any undeclared plate, any declared plate a page does not show,
+any declared route with no page, and any plate reference it cannot read. The
+stage, plate layer, rail, stations stylesheet and world scripts remain `/`
+only.
+
+| page | scene |
+|---|---|
+| /systems | 02 the three islands; each system's panel shows its own island |
+| hospital / menu / electrical case studies | 03 architecture · 04 request path · 09 evidence archive; the closing cards show the other two islands |
+| /experience | 06 the globe |
+| /engineering | 07 the owner at his desk; 05 the lab over the two lessons |
+| /about | 08 the owner over the city; a portrait from 07 in the side card |
+| /cv | 01, screen only — the print rules and the PDF are untouched |
+| /404 | 10 |
+
+**The About headshot OWNER-INPUT is closed** by the owner's instruction to use
+the existing picture of him; the copy gate now reports 12 markers.
+`Headshot.astro` remains for a photograph if one is supplied.
+
+**Gate defect found and fixed.** station-check §3's three element markers —
+station rail, plate layer (`.vw`), stage shell — had their `\b` word
+boundaries stored as literal backspace bytes (0x08), so each required a
+backspace inside a class attribute and none had ever matched. Only the
+plate-path marker had been working, which is why S3's leak was caught at all.
+Proven both ways: with all three elements injected into one built page, the
+gate at the previous commit reported nothing and the repaired gate reports
+all three.
+
+### Verified
+
+- Gate, by injection, each reverted: stage shell, rail and plate layer on
+  inner pages; an undeclared plate; an unreadable plate reference; a plate on
+  an undeclared page; a declared plate missing; a declared route with no
+  page — all eight fail. A page asking `PlateImage` for an undeclared plate
+  fails the build ("plate "lab" is not declared for "/about"").
+- Opening text against the actual pixels of each scene (glyphs removed, 98th
+  percentile), 9 pages at 1440, 1100 and 390: worst 5.00:1. The probe fails
+  when the scenes' fade is removed. It found the case studies' stack tags at
+  2.4–3.2:1 over bright scene areas; they now sit in the text column on a
+  solid backing.
+- 9 routes × 10 viewports 320–2560: no overflow, clipping or small targets.
+  Nothing hidden under reduced motion, JavaScript off or after scrolling (the
+  one transparent element is the empty, aria-hidden light sweep).
+- Motion: scene scale 1.07 → 1 over the opening, drift 7% at half a screen
+  of scroll; under reduced motion, none of it.
+- CV PDF rendered from this build: byte-identical to the previous render
+  (sha256 dead3d27…).
+- `verify` 0, render 35/35, home motion suite 0.
+- Lighthouse, mobile and desktop: 1/1/1/1 on every inner page.
+
+### Budget note, measured, open
+
+The opening picture is now the largest paint on each inner page, so simulated
+mobile LCP (local Lighthouse, gzip-served) rose from 1.50s to **1.66s** on
+the hospital case study, Experience, How I work and the CV, and to **1.81s**
+on the menu and electrical case studies and About, and **1.88s** on Systems
+(1.81s with its island pictures removed) — against the §11 static budget of
+1.8s. The same harness reads the home page, recorded as meeting that budget,
+at 2.26s, so it is not the instrument the budget was set on; in Chrome under
+DevTools slow-4G throttling with 4× CPU the same pages paint their largest
+element in 0.85–1.02s. Tried and measured: a head preload of the opening
+picture (worse, 1.88s — it competes with the font preloads; reverted);
+deferring off-screen sections with `content-visibility` (no change, and a
+0.009 CLS; reverted); the 768px file on phones and low priority for every
+non-opening picture (kept). Systems at 1.88s and three pages at 1.81s are
+flagged for the owner rather than declared met.
