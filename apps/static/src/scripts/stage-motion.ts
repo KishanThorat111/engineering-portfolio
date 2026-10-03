@@ -73,43 +73,15 @@ function show(list: HTMLElement[]): void {
   });
 }
 
-/**
- * The chapter rail's "you are here". Navigation state, not motion, so it runs
- * whatever the motion preference: the station crossing the middle of the
- * screen is the current one.
- */
-function trackChapters(): void {
-  const rail = document.querySelector<HTMLElement>('[data-chapters]');
-  if (!rail || !('IntersectionObserver' in window)) return;
-  const links = Array.from(rail.querySelectorAll<HTMLAnchorElement>('[data-chapter]'));
-  const here = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        const index = links.findIndex((a) => a.dataset['chapter'] === entry.target.id);
-        if (index < 0) continue;
-        links.forEach((a, i) => {
-          if (i === index) a.setAttribute('aria-current', 'location');
-          else a.removeAttribute('aria-current');
-        });
-        rail.style.setProperty('--done', String(index));
-      }
-    },
-    { rootMargin: '-49% 0px -50% 0px' },
-  );
-  for (const a of links) {
-    const station = document.getElementById(a.dataset['chapter'] ?? '');
-    if (station) here.observe(station);
-  }
-}
-
 export function initStageMotion(): void {
-  trackChapters();
   const root = document.documentElement;
   // The layout's head script sets this only when motion is allowed.
   if (!('revealReady' in root.dataset) || !('IntersectionObserver' in window)) return;
 
   const wide = matchMedia(WIDE).matches;
+  // Laptop widths: panels sit in a grid below the scene and arrive one by one.
+  const band = wide && !matchMedia('(min-width: 1600px)').matches;
+  const below_ = (el: HTMLElement) => band && el.classList.contains('pnl');
   const stages = Array.from(document.querySelectorAll<HTMLElement>('.stage'));
 
   /* --- arrival ------------------------------------------------------- */
@@ -120,7 +92,7 @@ export function initStageMotion(): void {
         const stage = entry.target as HTMLElement;
         arrive.unobserve(stage);
         stage.dataset['in'] = '';
-        show(wideTargets(stage).filter((el) => 'rv' in el.dataset));
+        show(wideTargets(stage).filter((el) => 'rv' in el.dataset && !below_(el)));
       }
     },
     { rootMargin: '0px 0px -22% 0px' },
@@ -149,7 +121,10 @@ export function initStageMotion(): void {
       continue;
     }
     if (wide) {
-      for (const el of wideTargets(stage)) el.dataset['rv'] = kind(el);
+      for (const el of wideTargets(stage)) {
+        el.dataset['rv'] = kind(el);
+        if (below_(el)) piece.observe(el);
+      }
       // The whole frame — artwork and overlay together — settles as it arrives.
       stage.dataset['armed'] = '';
       arrive.observe(stage);

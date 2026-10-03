@@ -289,7 +289,10 @@ const { hops, request, class: className } = Astro.props;
     color: var(--text-muted);
   }
 
-  .trace__caption {
+  /* Child-qualified: inside a panel, the panel's own paragraph rule
+     (`.pnl__body p`) outranked a single class and set this gap to zero, so
+     the caption sat directly on the stops' details. */
+  .trace > .trace__caption {
     margin: calc(22 * var(--u)) 0 0;
     font-family: var(--font-sans);
     font-size: calc(14 * var(--u));

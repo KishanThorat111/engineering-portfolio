@@ -49,6 +49,9 @@ type Layer = {
 const REDUCED = '(prefers-reduced-motion: reduce)';
 /* The wide composition, where labels sit on the artwork. */
 const WIDE = '(min-width: 1025px)';
+/* Where the overlay sits on the frame as one layer (below this, on laptops,
+   it is laid out on a grid and cannot ride the plate's drift). */
+const FULL = '(min-width: 1600px)';
 
 function collect(): Layer[] {
   return Array.from(document.querySelectorAll<HTMLElement>('.vw')).map((root) => {
@@ -74,6 +77,7 @@ export function initVisualWorld(): void {
   /* --- parallax ------------------------------------------------------- */
   let motionOn = !matchMedia(REDUCED).matches;
   const wide = matchMedia(WIDE);
+  const full = matchMedia(FULL);
   let ticking = false;
 
   const frame = () => {
@@ -117,7 +121,9 @@ export function initVisualWorld(): void {
          * one of them. The plate was always meant to be the slowest thing in
          * the frame.
          */
-        const drift = `${(progress * 9 * d).toFixed(2)}px`;
+        // On laptop widths the labels cannot follow the plate, so it holds still.
+        const held = wide.matches && !full.matches;
+        const drift = `${held ? 0 : (progress * 9 * d).toFixed(2)}px`;
         layer.plate.style.setProperty('--vw-plate-y', drift);
         /*
          * THE LABELS RIDE WITH THE ARTWORK.
@@ -128,7 +134,7 @@ export function initVisualWorld(): void {
          * names at every scroll position — and the depth comes from the haze,
          * grid and light layers moving at their own rates around the scene.
          */
-        if (layer.overlay && wide.matches) layer.overlay.style.translate = `0 ${drift}`;
+        if (layer.overlay && full.matches) layer.overlay.style.translate = `0 ${drift}`;
         /*
          * The headline column is not anchored to anything in the artwork, so
          * it is free to sit nearer the reader: it moves a little further than

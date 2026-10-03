@@ -41,13 +41,20 @@ interface Props {
   /** Tightens padding for dense readouts. */
   dense?: boolean;
   class?: string;
+  /**
+   * Its share of a row at laptop widths (1025–1599px), where the panels leave
+   * the frame for a grid beneath it. Omitted: a full row from 45% wide, half
+   * a row otherwise. `tall` is half a row, two rows deep.
+   */
+  band?: 'third' | 'half' | 'two-thirds' | 'full' | 'tall';
 }
 
-const { x, y, w, title, note, status, dense = false, class: className } = Astro.props;
+const { x, y, w, title, note, status, dense = false, class: className, band } = Astro.props;
 ---
 
 <div
-  class:list={['pnl', dense && 'pnl--dense', className]}
+  class:list={['pnl', dense && 'pnl--dense', w >= 45 && 'pnl--wide', className]}
+  data-band={band}
   style={`--x:${x}%; --y:${y}%; --w:${w}%`}
 >
   {

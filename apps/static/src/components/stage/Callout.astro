@@ -68,6 +68,8 @@ interface Props {
    * first paint, before any script has run to compute one.
    */
   seq?: number;
+  /** A station's own hook for styling one group of its callouts. */
+  class?: string;
 }
 
 const {
@@ -81,11 +83,12 @@ const {
   w = 15,
   rule = false,
   seq,
+  class: extra,
 } = Astro.props;
 ---
 
 <div
-  class:list={['cal', `cal--${side}`, rule && 'cal--rule']}
+  class:list={['cal', `cal--${side}`, rule && 'cal--rule', extra]}
   style={`--x:${x}%; --y:${y}%; --lead:${lead}%; --w:${w}%; --tone:var(--${tone})${seq === undefined ? '' : `; --i:${seq}`}`}
 >
   <span class="cal__dot" aria-hidden="true"></span>

@@ -311,6 +311,7 @@ const HOPS: Hop[] = [
     */
     PATH.map((item, i) => (
       <Callout
+        class="enter__path"
         seq={i}
         x={32.2}
         y={item.y - LABEL_ROW}
@@ -335,6 +336,7 @@ const HOPS: Hop[] = [
     */
     ESTATE.map((item, i) => (
       <Callout
+        class="enter__estate"
         seq={i + 1}
         x={ESTATE_DOT_X - 0.14}
         y={item.y - LABEL_ROW}
@@ -363,7 +365,7 @@ const HOPS: Hop[] = [
   }
 
   {/* ── The trace panel ─────────────────────────────────────────── */}
-  <Panel x={39} y={76.2} w={37} title="Live request trace" note="measured here">
+  <Panel x={39} y={76.2} w={37} title="Live request trace" note="measured here" band="full">
     <TraceRail hops={HOPS} request="GET /health" />
   </Panel>
 

@@ -658,7 +658,7 @@ const MAP = [
       const place = ISLAND[system.id];
       const [x, y, w] = place?.card ?? [26, 9.5, 8.2];
       return (
-        <Panel x={x} y={y} w={w} title={`0${i + 1}`} status={TONE[system.data.status]}>
+        <Panel x={x} y={y} w={w} title={`0${i + 1}`} status={TONE[system.data.status]} band="third">
           <p class:list={['sys__name', `sys__name--${place?.hue ?? 'blue'}`]}>
             {system.data.title}
           </p>
@@ -710,7 +710,7 @@ const MAP = [
   </div>
 
   {/* ── The bottom row: three panels, as in the reference ──────────── */}
-  <Panel x={15} y={62.5} w={31} title="What each one discloses" status="fault">
+  <Panel x={15} y={62.5} w={31} title="What each one discloses" status="fault" band="tall">
     <Feed entries={DISCLOSED} wrap />
     <p class="note">
       Printed in full, in the words the case study uses. A limitation shortened to fit a panel is a
@@ -907,7 +907,7 @@ const MAP = [
       in the slot where they would have been.
     */
   }
-  <Panel x={33} y={3.6} w={40} dense>
+  <Panel x={33} y={3.6} w={40} dense band="full">
     <dl class="rq__strip">
       <div>
         <dt>Round trip</dt>
@@ -950,11 +950,18 @@ const MAP = [
     <a class="cta" href="/live/">Enter the live plane <span aria-hidden="true">→</span></a>
   </div>
 
-  <Panel x={22.5} y={77} w={54} title="Live request trace" note="measured in your browser">
+  <Panel
+    x={22.5}
+    y={77}
+    w={54}
+    title="Live request trace"
+    note="measured in your browser"
+    band="two-thirds"
+  >
     <TraceRail hops={TRACE_HOPS} request="GET /health" />
   </Panel>
 
-  <Panel x={78.5} y={71} w={18.7} title="Trace inspector" note="this page's request">
+  <Panel x={78.5} y={71} w={18.7} title="Trace inspector" note="this page's request" band="third">
     <Inspector rows={TRACE_ROWS} />
   </Panel>
 
@@ -1080,7 +1087,7 @@ const MAP = [
   }
 
   {/* Bottom right: the reference's EXPERIMENT LIFE CYCLE — the real one. */}
-  <Panel x={74.8} y={74} w={22.7} title="How a lesson is written" note="every one">
+  <Panel x={74.8} y={74} w={22.7} title="How a lesson is written" note="every one" band="full">
     <StageTimeline
       stages={[
         { name: 'Happened', detail: 'what it was', state: 'done' },
@@ -1188,6 +1195,7 @@ const MAP = [
           title={`0${i + 1}`}
           status={TONE[system.data.status]}
           dense
+          band="third"
         >
           <p class:list={['live__sys', `live__sys--${TONE[system.data.status] ?? 'plain'}`]}>
             {system.data.title}
@@ -1202,14 +1210,14 @@ const MAP = [
   }
 
   {/* Left, under the claim: the reference's request trace and tenant panels. */}
-  <Panel x={4.8} y={47} w={14.6} title="Event stream" note="control plane">
+  <Panel x={4.8} y={47} w={14.6} title="Event stream" note="control plane" band="third">
     <Feed
       entries={[]}
       emptyNote="No events. This feed fills from the control plane's own record; the plane is not answering, so it stays empty rather than replaying an older session."
     />
   </Panel>
 
-  <Panel x={4.8} y={66} w={14.6} title="The demo plane" status="isolation">
+  <Panel x={4.8} y={66} w={14.6} title="The demo plane" status="isolation" band="third">
     <p>
       A real tenant in a real multi-tenant system, yours to attack, with the layer that stopped you
       shown.
@@ -1218,7 +1226,7 @@ const MAP = [
   </Panel>
 
   {/* Right column: live metrics, the map's caption, and what the plane hosts. */}
-  <Panel x={80.5} y={5} w={17} title="Live metrics" note="derived">
+  <Panel x={80.5} y={5} w={17} title="Live metrics" note="derived" band="third">
     <dl class="rq__strip rq__strip--3">
       <div>
         <dt>Round trip</dt>
@@ -1243,14 +1251,14 @@ const MAP = [
       artwork makes it.
     */
   }
-  <Panel x={80.5} y={25} w={17} title="About this map" status="fault">
+  <Panel x={80.5} y={25} w={17} title="About this map" status="fault" band="third">
     <p>
       The lit continents are illustration. This system runs in one region, on one virtual machine.
       No global footprint or edge fleet is claimed.
     </p>
   </Panel>
 
-  <Panel x={80.5} y={46} w={17} title="What it hosts" note="five, CI-asserted">
+  <Panel x={80.5} y={46} w={17} title="What it hosts" note="five, CI-asserted" band="two-thirds">
     <ol class="demos">
       <li><span>Tenant isolation</span><span>break-out attempt</span></li>
       <li><span>Idempotent payments</span><span>double-fired activation</span></li>
@@ -1474,7 +1482,7 @@ const MAP = [
   </div>
 
   {/* How to reach a person — the point of this frame. Bottom left, clear of him. */}
-  <Panel x={4.8} y={72} w={21} title="How to reach me" note="no form, no tracker" dense>
+  <Panel x={4.8} y={72} w={21} title="How to reach me" note="no form, no tracker" dense band="full">
     <Inspector
       rows={[
         { label: 'Email', value: SITE.email, mono: true },
@@ -1572,7 +1580,7 @@ const MAP = [
       every push, in order. No timestamps, because none are kept.
     */
   }
-  <Panel x={25.5} y={78.5} w={41.5} title="How this is verified" note="every push">
+  <Panel x={25.5} y={78.5} w={41.5} title="How this is verified" note="every push" band="full">
     <StageTimeline
       stages={GATES}
       caption="Run in CI on every push, in this order. No per-stage timings are published because none are recorded."
@@ -1636,7 +1644,7 @@ const MAP = [
   </Panel>
 
   {/* Where the reference puts SYSTEM CONFIDENCE 99.98% — a score that does not exist. */}
-  <Panel x={69.5} y={86} w={27.5} title="What is not here" status="fault" dense>
+  <Panel x={69.5} y={86} w={27.5} title="What is not here" status="fault" dense band="full">
     <p>
       No confidence score, evidence-quality percentage or flow health. None of those metrics exists
       here, so there is nothing to plot.
@@ -1710,7 +1718,15 @@ const MAP = [
     w={13}
   />
 
-  <Panel x={4.8} y={70} w={33} title="Where to go from here" note="four routes out" dense>
+  <Panel
+    x={4.8}
+    y={70}
+    w={33}
+    title="Where to go from here"
+    note="four routes out"
+    dense
+    band="full"
+  >
     <Feed entries={ROUTES} wrap cols={2} />
   </Panel>
 

@@ -660,7 +660,7 @@ html[data-reveal-ready] .stage.enter .stage__layer > .pnl {
   }
 }
 
-@media (min-width: 1025px) {
+@media (min-width: 1600px) {
   html[data-reveal-ready] .stage[data-armed]:not([data-in]) :is(.vw, .stage__layer) {
     scale: 1.07;
   }
@@ -761,5 +761,320 @@ html[data-reveal-ready] .stage[data-in]:not(.enter) .vw__sweep {
     translate: none !important;
     scale: none !important;
     clip-path: none !important;
+  }
+}
+
+/* ======================================================================
+ * LAPTOP WIDTHS (1025–1599px): THE SCENE, THEN ITS DETAIL.
+ *
+ * Measured: at 1280–1536px — most 13–15" laptops — 66–78% of the text inside
+ * the wide frames rendered under 9px, some at 4px. The frames are composed in
+ * reference pixels of a 2528-wide image, and a panel's worth of paragraph
+ * text cannot be made readable inside a frame that size: at 12px it would
+ * need two to three times the panel's height.
+ *
+ * So in this range each station keeps its scene — the artwork, the headline,
+ * every label on the art, the stat strips — exactly as composed, and its
+ * panels step out of the frame into a two-column grid directly beneath it, at
+ * the reference size they were designed at (`--u: 1px`). Nothing is cut and
+ * nothing is shrunk past reading. From 1600px up the frame is unchanged.
+ *
+ * Pure CSS on a grid: the overlay becomes `display: contents`, so its labels
+ * become positioned grid children whose box is row 1 (the frame) — `grid-row:
+ * 1 / 2` with an auto column resolves to the frame's full width, padding
+ * included — while the panels flow into the rows below.
+ * ====================================================================== */
+@media (min-width: 1025px) and (max-width: 1599.98px) {
+  section.stage.stage {
+    /* Left: the headline column's own 4.8%, so the panels line up under it.
+       Right: never less than the chapter rail needs, or the station number
+       it shows sits on the panels' edge. */
+    --gutter-x: clamp(20px, 4.8vw, 76px);
+    --gutter-r: max(var(--gutter-x), 74px);
+    display: grid;
+    /* Six tracks, so a station can set its panels in halves or thirds. */
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    align-items: start;
+    column-gap: clamp(16px, 1.6vw, 24px);
+    row-gap: clamp(16px, 1.6vw, 24px);
+    padding: 0 var(--gutter-r) clamp(48px, 5vw, 80px) var(--gutter-x);
+    aspect-ratio: auto;
+    /* Sized by its content here, so it must not be skipped while off screen
+       or its height would be unknown until it is reached. */
+    content-visibility: visible;
+  }
+
+  section.stage.stage > .vw {
+    position: relative;
+    inset: auto;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    margin-inline: calc(-1 * var(--gutter-x)) calc(-1 * var(--gutter-r));
+    aspect-ratio: 2528 / 1685;
+    margin-bottom: clamp(8px, 1vw, 16px);
+  }
+
+  .stage.stage > .stage__layer {
+    display: contents;
+    /*
+     * One reference pixel of the FRAME. The frame here spans the stage's
+     * padding too (the plate bleeds into it, and the labels' box is row 1
+     * padding included), while `cqw` measures the content box inside the
+     * padding — without adding the gutters back, every size on the scene came
+     * out ~10% smaller than the artwork it is pinned to.
+     */
+    --u: calc((100cqw + var(--gutter-x) + var(--gutter-r)) / 2528);
+  }
+
+  .stage.stage > .stage__layer > :not(.pnl) {
+    grid-row: 1 / 2;
+    z-index: 2;
+  }
+
+  .stage.stage .stage__layer .pnl {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: auto;
+    z-index: 2;
+    --u: 1px;
+  }
+
+  .stage.stage .stage__layer .pnl {
+    grid-column: span 3;
+  }
+
+  .stage.stage .stage__layer :is(.pnl--wide, .pnl[data-band='full']) {
+    grid-column: 1 / -1;
+  }
+
+  .stage.stage .stage__layer .pnl[data-band='third'] {
+    grid-column: span 2;
+  }
+
+  .stage.stage .stage__layer .pnl[data-band='two-thirds'] {
+    grid-column: span 4;
+  }
+
+  .stage.stage .stage__layer .pnl[data-band='tall'] {
+    grid-row: span 2;
+  }
+
+  /* --- readable minimums for the text that stays on the scene ---------- */
+  section.stage.stage .stage__layer :is(.eyebrow, .sys__dxHead) {
+    font-size: max(11px, calc(17 * var(--u)));
+  }
+
+  section.stage.stage .stage__layer :is(.lede, .enter__lede) {
+    font-size: max(13.5px, calc(19 * var(--u)));
+  }
+
+  section.stage.stage .stage__layer :is(.cta, .enter__cta) {
+    font-size: max(11.5px, calc(15 * var(--u)));
+  }
+
+  section.stage.stage .stage__layer .cal__label {
+    font-size: max(12px, calc(20 * var(--u)));
+  }
+
+  section.stage.stage .stage__layer .cal__line {
+    font-size: max(11px, calc(18.5 * var(--u)));
+  }
+
+  section.stage.stage
+    .stage__layer
+    :is(
+      .chip,
+      .dx__num,
+      .dx__label,
+      .arc__door,
+      .arc__drawer,
+      .endstate dt,
+      .think__nextGo,
+      .available,
+      .enter__ctaNote,
+      .enter__chips li,
+      .enter__stats dt,
+      .build__undef,
+      .build__state,
+      .build__awaitLine
+    ) {
+    font-size: max(10px, calc(14 * var(--u)));
+  }
+
+  section.stage.stage
+    .stage__layer
+    :is(.arc__count, .build__awaitHead, .build__iconLabel, .sys__coreHead, .live__coreHead) {
+    font-size: max(11.5px, calc(17 * var(--u)));
+  }
+
+  section.stage.stage
+    .stage__layer
+    :is(.build__iconLine, .sys__coreLine, .live__coreList, .rq__goLine, .build__links a) {
+    font-size: max(11px, calc(15 * var(--u)));
+  }
+}
+
+/* --- 01 / Enter in the laptop band -----------------------------------------
+ * With its text at a readable size, station 01's column runs to the foot of
+ * the frame, and the readout that sat under it — the status line and four
+ * readings — no longer fits there. It steps out with the trace panel instead:
+ * two full-width instrument strips directly under the scene, readings first.
+ */
+@media (min-width: 1025px) and (max-width: 1599.98px) {
+  .stage.enter.enter > .stage__layer > .enter__readout {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: auto;
+    grid-column: 1 / -1;
+    grid-row: auto;
+    --u: 0.8px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px 40px;
+    padding: 20px 24px;
+    border: 1px solid var(--plate-edge);
+    border-radius: 10px;
+    background: var(--plate-scrim);
+  }
+
+  .stage.enter.enter .enter__state {
+    margin: 0;
+  }
+
+  .stage.enter.enter .enter__stats {
+    flex: 1 1 520px;
+  }
+
+  /* The right-hand labels may use all the room between their pointer and the
+     frame's edge; at their designed 6.5% a readable "PostgreSQL 17" wrapped. */
+  .stage.enter.enter .enter__estate {
+    width: calc(100% - var(--x) - 6px);
+  }
+}
+
+/* --- Station fits in the band ----------------------------------------------
+ * The floors make the scene's labels larger than the room each composition
+ * left them, so four places where two pieces met get the room they need —
+ * every one measured against the neighbour it collided with.
+ */
+@media (min-width: 1025px) and (max-width: 1599.98px) {
+  /* 02: the core's label grows down over the electrical island's chips at
+     four lines; at this width it reads in two. */
+  .stage.stage .stage__layer .sys__core {
+    width: 22%;
+  }
+
+  /* 03: the slab labels wrapped to four lines and the client's ran into the
+     edge's. At their longest line's width they stay at two. */
+  .stage.stage[data-station='dissection'] .stage__layer > .cal {
+    width: max(var(--w), 168px);
+  }
+
+  /* 04: the lede ran under the gateway's label; it now ends left of it. */
+  .stage.stage .rq__col .lede {
+    max-width: 79%;
+  }
+
+  /* 08: the tag sits inside a box drawn in the artwork. At readable sizes
+     its second line ran out of the bottom and right of that box. */
+  .stage.stage .stage__layer .build__await {
+    top: 66.6%;
+    width: 11.2%;
+  }
+
+  .stage.stage .stage__layer :is(.build__awaitHead, .build__awaitLine) {
+    line-height: 1.3;
+  }
+
+  /* 04: the trace panel beside the call to action has moved below the
+     scene, so the block takes the room and stops running off the frame. */
+  .stage.stage .stage__layer .rq__go {
+    width: 24%;
+  }
+}
+
+/* --- Single cards under a scene ---------------------------------------------
+ * Stations 08 and 10 have one panel each. Half a row left it stranded beside
+ * an empty half, so it takes the full row and sets its readings side by side:
+ * the four ways to reach me, and the four routes out.
+ */
+@media (min-width: 1025px) and (max-width: 1599.98px) {
+  .stage.stage[data-station='build'] .pnl .insp__rows {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: 28px;
+  }
+
+  .stage.stage[data-station='build'] .pnl .insp__row {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 12px 0 4px;
+    border-top: 1px solid var(--plate-edge);
+    border-bottom: 0;
+  }
+
+  .stage.stage[data-station='build'] .pnl .insp__value {
+    text-align: left;
+  }
+
+  .stage.stage[data-station='end'] .pnl .feed--cols {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* --- The narrow end of the band (1025–1179px) ------------------------------
+ * iPads in landscape and narrowed windows. The frame is 41–47% of reference
+ * size here, and the floors above put the callouts a third larger than the
+ * room the artwork leaves them, so neighbouring labels met. A half-pixel to a
+ * pixel less is what fits; nothing drops below 10px.
+ */
+@media (min-width: 1025px) and (max-width: 1179.98px) {
+  section.stage.stage .stage__layer .cal__label {
+    font-size: max(11px, calc(20 * var(--u)));
+  }
+
+  section.stage.stage .stage__layer .cal__line {
+    font-size: max(10px, calc(18.5 * var(--u)));
+  }
+
+  section.stage.stage .stage__layer :is(.eyebrow, .sys__dxHead) {
+    font-size: max(10.5px, calc(17 * var(--u)));
+  }
+
+  .stage.enter.enter .enter__path {
+    width: 15%;
+  }
+
+  /* 02: clear of the chip beneath it by a few pixels rather than touching. */
+  .stage.stage .stage__layer .sys__core {
+    top: 50.5%;
+  }
+
+  /* 04: up a little and a little wider, so the lede ends above the
+     browser's label and still left of the gateway's. */
+  .stage.stage .stage__layer .rq__col {
+    top: 5.5%;
+  }
+
+  .stage.stage .rq__col .lede {
+    max-width: 85%;
+  }
+
+  /* 08: the artwork's box is 80% of its size at 1280; the tag's two lines
+     fit it at 10px with closer tracking. */
+  section.stage.stage .stage__layer :is(.build__awaitHead, .build__awaitLine) {
+    font-size: 10px;
+    letter-spacing: 0.03em;
+  }
+
+  /* 1.5px short of "PostgreSQL 17" on one line at 1025px; this closes it. */
+  .stage.enter.enter .enter__estate {
+    width: calc(100% - var(--x) - 5px);
+    letter-spacing: -0.01em;
   }
 }
