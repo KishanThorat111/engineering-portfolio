@@ -33,7 +33,8 @@ export type Tenant = {
 type State = {
   edge: EdgeReading | null;
   tenant: Tenant | null;
-  tenantState: 'pending' | 'provisioned' | 'resumed' | 'failed';
+  /** `none`: no control plane is configured for this deployment — recorded by design. */
+  tenantState: 'pending' | 'provisioned' | 'resumed' | 'failed' | 'none';
   tenantFailure: string | null;
   channel: 'waiting' | 'live' | 'down';
   presence: { connections: number; measured: boolean } | null;
@@ -78,11 +79,25 @@ export const useDrawing = create<State>((set) => ({
 }));
 
 export function deriveMode(s: Pick<State, 'tenantState' | 'channel'>): Mode {
-  if (s.tenantState === 'failed') return 'recorded';
+  if (s.tenantState === 'failed' || s.tenantState === 'none') return 'recorded';
   if (s.tenantState === 'pending') return 'connecting';
   if (s.channel === 'live') return 'live';
   if (s.channel === 'down') return 'partial';
   return 'connecting';
+}
+
+/**
+ * Whether this deployment has a control plane to talk to (S16).
+ *
+ * Off unless the build sets VITE_LIVE_BACKEND=on, or a harness sets
+ * globalThis.__LIVE_BACKEND__ = 'on' to point a production build at a local
+ * stack. With it off, /live/ never provisions, never opens a socket, and
+ * never waits on a control plane that is not there: RECORDED is the designed
+ * state, not a failure. The whole LIVE path is kept, unchanged, behind it.
+ */
+export function backendConfigured(): boolean {
+  const runtime = (globalThis as { __LIVE_BACKEND__?: string }).__LIVE_BACKEND__;
+  return (runtime ?? (import.meta.env['VITE_LIVE_BACKEND'] as string | undefined)) === 'on';
 }
 
 export const useMode = (): Mode =>

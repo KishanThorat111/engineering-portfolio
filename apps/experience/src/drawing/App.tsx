@@ -22,20 +22,27 @@ import { LiveSocketSource } from '../live/source.ts';
 import { clearSession, loadSession, saveSession } from '../state/session.ts';
 import { RECORDED } from './recorded.ts';
 import { syncAudit } from './demos.ts';
-import { useDrawing, useMode, type Mode, type Tenant } from './store.ts';
+import { backendConfigured, useDrawing, useMode, type Mode, type Tenant } from './store.ts';
 import { IsolationSheet } from './sheets/Isolation.tsx';
 import { LimitsSheet } from './sheets/Limits.tsx';
 import { PaymentsSheet } from './sheets/Payments.tsx';
 import { FraudSheet } from './sheets/Fraud.tsx';
 import { AiSheet } from './sheets/Ai.tsx';
+import { IncidentSheet, commitUrl, type IncidentId } from './sheets/Incident.tsx';
 
 const D = COPY.drawing;
 
-export const SHEETS = ['isolation', 'limits', 'payments', 'fraud', 'ai'] as const;
+/** Set A: the five demonstrations. Set B: three investigations (S16). */
+export const SET_A = ['isolation', 'limits', 'payments', 'fraud', 'ai'] as const;
+export const SET_B = ['b-201', 'b-202', 'b-203'] as const;
+export const SHEETS = [...SET_A, ...SET_B] as const;
 export type SheetId = (typeof SHEETS)[number];
 
+const isIncident = (id: SheetId): id is IncidentId => (SET_B as readonly string[]).includes(id);
+const sheetTitle = (id: SheetId) => (isIncident(id) ? D.incidents[id] : D.sheets[id]);
+
 const sheetFromPath = (pathname = location.pathname): SheetId => {
-  const slug = /\/live\/([a-z-]+)\/?$/.exec(pathname)?.[1];
+  const slug = /\/live\/([a-z0-9-]+)\/?$/.exec(pathname)?.[1];
   return (SHEETS as readonly string[]).includes(slug ?? '') ? (slug as SheetId) : 'isolation';
 };
 const pathFor = (id: SheetId) => (id === 'isolation' ? '/live/' : `/live/${id}/`);
@@ -55,6 +62,8 @@ function describeFailure(error: unknown): string {
       return 'the provisioning limit for this address was reached (HTTP 429)';
     if (error.status >= 500)
       return `the edge answered, the control plane behind it did not (HTTP ${error.status})`;
+    // The static host's own 404: there is no control plane at this address.
+    if (error.status === 404) return 'no control plane answers at this address (HTTP 404)';
     return `the control plane refused provisioning (HTTP ${error.status})`;
   }
   return 'no answer from the control plane';
@@ -135,6 +144,13 @@ export function App() {
       if (cancelled) return;
       store.setEdge(edge);
 
+      // RECORDED BY DESIGN: with no control plane configured there is nothing
+      // to provision, nothing to wait for and no socket to open (S16).
+      if (!backendConfigured()) {
+        store.setTenant(null, 'none');
+        return;
+      }
+
       const existing = loadSession();
       if (existing) {
         try {
@@ -191,8 +207,14 @@ export function App() {
   }, [attempt]);
 
   const recorded = mode === 'recorded';
-  const s = D.sheets[sheet];
+  const byDesign = useDrawing((st) => st.tenantState === 'none');
+  const s = sheetTitle(sheet);
+  const incident = isIncident(sheet);
   const index = SHEETS.indexOf(sheet);
+  const inSet = incident
+    ? (SET_B as readonly SheetId[]).indexOf(sheet)
+    : (SET_A as readonly SheetId[]).indexOf(sheet);
+  const next = SHEETS[index + 1];
 
   return (
     <div className="dw" data-mode={mode}>
@@ -230,33 +252,58 @@ export function App() {
         <p className="eyebrow">
           {D.project} · {D.projectDetail}
         </p>
-        <h1 id="intro-title">{recorded ? D.headlineRecorded : D.headline}</h1>
-        <p className="lede">{recorded ? D.ledeRecorded : D.lede}</p>
+        <h1 id="intro-title">
+          {byDesign ? D.opening.headline : recorded ? D.headlineRecorded : D.headline}
+        </h1>
+        <p className="lede">{byDesign ? D.opening.lede : recorded ? D.ledeRecorded : D.lede}</p>
+        {byDesign ? (
+          <p className="provenance">
+            <span>{D.opening.provenance[0]}</span>
+            <span aria-hidden="true"> · </span>
+            <a href={D.source.ci}>{D.opening.provenance[1]}</a>
+            <span aria-hidden="true"> · </span>
+            <a href={D.source.repo}>{D.opening.provenance[2]}</a>
+          </p>
+        ) : null}
         <SetOut mode={mode} onRetry={() => setAttempt((a) => a + 1)} />
       </section>
 
       <nav className="sheets" aria-label={D.sheetsLabel}>
-        <ol>
-          {SHEETS.map((id, i) => (
-            <li key={id}>
-              <a
-                href={pathFor(id)}
-                aria-current={id === sheet ? 'page' : undefined}
-                onClick={(e) => {
-                  if (e.metaKey || e.ctrlKey || e.shiftKey) return;
-                  e.preventDefault();
-                  go(id);
-                }}
-              >
-                <span className="sheets__no">{D.sheets[id].number}</span>
-                <span className="sheets__name">{D.sheets[id].name}</span>
-                <span className="sheets__i" aria-hidden="true">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-              </a>
-            </li>
-          ))}
-        </ol>
+        {(
+          [
+            [D.sets.a, SET_A],
+            [D.sets.b, SET_B],
+          ] as const
+        ).map(([label, set], g) => (
+          <div className={`sheets__set sheets__set--${g === 0 ? 'a' : 'b'}`} key={label}>
+            <p className="sheets__label" id={`set-${g}`}>
+              {label}
+            </p>
+            <ol aria-labelledby={`set-${g}`}>
+              {(set as readonly SheetId[]).map((id, i) => (
+                <li key={id}>
+                  <a
+                    href={pathFor(id)}
+                    aria-current={id === sheet ? 'page' : undefined}
+                    onClick={(e) => {
+                      if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                      e.preventDefault();
+                      go(id);
+                    }}
+                  >
+                    <span className="sheets__no">{sheetTitle(id).number}</span>
+                    <span className="sheets__name">
+                      {isIncident(id) ? D.incidents[id].short : D.sheets[id].name}
+                    </span>
+                    <span className="sheets__i" aria-hidden="true">
+                      {g === 0 ? String(i + 1).padStart(2, '0') : `B${i + 1}`}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </div>
+        ))}
       </nav>
 
       <main className="frame" id="sheet" tabIndex={-1}>
@@ -264,7 +311,8 @@ export function App() {
           <Strip mode={mode} tenant={tenant} />
           <header className="field-hd">
             <span className="field-hd__no">
-              {s.number} · {D.sheet} {index + 1} {D.of} {SHEETS.length}
+              {s.number} · {incident ? D.sets.investigation : D.sheet} {inSet + 1} {D.of}{' '}
+              {incident ? SET_B.length : SET_A.length}
             </span>
             <h2 id="sheet-title">
               {s.name}
@@ -287,23 +335,33 @@ export function App() {
           <div hidden={sheet !== 'ai'}>
             <AiSheet mode={mode} tenant={tenant} />
           </div>
-          {index < SHEETS.length - 1 ? (
+          {SET_B.map((id) => (
+            <div hidden={sheet !== id} key={id}>
+              <IncidentSheet id={id} />
+            </div>
+          ))}
+          {next ? (
             <p className="next">
               <a
-                href={pathFor(SHEETS[index + 1]!)}
+                href={pathFor(next)}
                 onClick={(e) => {
                   e.preventDefault();
-                  go(SHEETS[index + 1]!);
+                  go(next);
                   document.getElementById('sheet')?.focus();
                 }}
               >
-                {D.sheet} {D.sheets[SHEETS[index + 1]!].number} —{' '}
-                {D.sheets[SHEETS[index + 1]!].name} →
+                {D.sheet} {sheetTitle(next).number} — {sheetTitle(next).name} →
               </a>
             </p>
           ) : null}
         </div>
-        <TitleBlock mode={mode} tenant={tenant} sheetNo={s.number} sheetName={s.name} />
+        <TitleBlock
+          mode={mode}
+          tenant={tenant}
+          sheetNo={s.number}
+          sheetName={s.name}
+          incident={incident ? (sheet as IncidentId) : null}
+        />
       </main>
 
       <footer className="foot">
@@ -327,6 +385,7 @@ function SetOut({ mode, onRetry }: { mode: Mode; onRetry: () => void }) {
   const tenantState = useDrawing((s) => s.tenantState);
   const failure = useDrawing((s) => s.tenantFailure);
   const channel = useDrawing((s) => s.channel);
+  const byDesign = tenantState === 'none';
   const O = D.setOut;
   const line = (state: 'done' | 'wait' | 'fail', label: string, value?: string) => (
     <li className={`so so--${state}`}>
@@ -345,12 +404,18 @@ function SetOut({ mode, onRetry }: { mode: Mode; onRetry: () => void }) {
               `${edge.pop ?? D.values.unknown} · ${edge.rttMs} ms`,
             )
           : line('wait', O.edge)}
-        {tenantState === 'pending'
-          ? line('wait', O.tenant)
-          : tenantState === 'failed'
-            ? line('fail', O.tenantFailed, failure ?? undefined)
-            : line('done', tenantState === 'resumed' ? O.tenantResumed : O.tenant)}
-        {tenantState === 'failed'
+        {byDesign
+          ? line(
+              'done',
+              D.opening.loaded,
+              `${D.opening.captured} ${RECORDED.capturedAt.slice(0, 10)}`,
+            )
+          : tenantState === 'pending'
+            ? line('wait', O.tenant)
+            : tenantState === 'failed'
+              ? line('fail', O.tenantFailed, failure ?? undefined)
+              : line('done', tenantState === 'resumed' ? O.tenantResumed : O.tenant)}
+        {tenantState === 'failed' || byDesign
           ? null
           : channel === 'live'
             ? line('done', O.channel)
@@ -363,9 +428,10 @@ function SetOut({ mode, onRetry }: { mode: Mode; onRetry: () => void }) {
         <span className="status__word">
           {D.values[mode === 'connecting' ? 'connecting' : mode]}
         </span>
-        <span className="status__line">{D.statusLine[mode]}</span>
+        <span className="status__line">{byDesign ? D.opening.statusLine : D.statusLine[mode]}</span>
       </p>
-      {mode === 'recorded' ? (
+      {/* A retry only where there is a control plane to retry. */}
+      {mode === 'recorded' && !byDesign ? (
         <button type="button" className="act__secondary" onClick={onRetry}>
           {D.retryLive}
         </button>
@@ -426,13 +492,17 @@ function TitleBlock({
   tenant,
   sheetNo,
   sheetName,
+  incident,
 }: {
   mode: Mode;
   tenant: Tenant | null;
   sheetNo: string;
   sheetName: string;
+  incident: IncidentId | null;
 }) {
   const edge = useDrawing((s) => s.edge);
+  const byDesign = useDrawing((s) => s.tenantState === 'none');
+  const I = D.incidentFields;
   const channel = useDrawing((s) => s.channel);
   const presence = useDrawing((s) => s.presence);
   const revisions = useDrawing((s) => s.revisions);
@@ -481,6 +551,29 @@ function TitleBlock({
             {sheetNo} · {sheetName}
           </dd>
         </div>
+        {incident ? (
+          <>
+            <div className="tb__row">
+              <dt>{I.incident}</dt>
+              <dd>
+                {I.historical}
+                <span className="tb__sub">
+                  {I.occurred} {D.incidents[incident].when}
+                </span>
+              </dd>
+            </div>
+            <div className="tb__row">
+              <dt>{I.fixedIn}</dt>
+              <dd className="mono tb__commits">
+                {D.incidents[incident].fix.map((f) => (
+                  <a key={f.commit} href={commitUrl(f.commit)}>
+                    {f.commit}
+                  </a>
+                ))}
+              </dd>
+            </div>
+          </>
+        ) : null}
         <div className={`tb__row status--${mode}`}>
           <dt>{F.status}</dt>
           <dd>
@@ -548,6 +641,14 @@ function TitleBlock({
               <dt>{D.recordedTiming}</dt>
               <dd>{RECORDED.timingNote}</dd>
             </div>
+            {byDesign ? (
+              <div className="tb__row">
+                <dt>{D.source.verified}</dt>
+                <dd>
+                  <a href={D.source.ci}>{D.source.verifiedValue}</a>
+                </dd>
+              </div>
+            ) : null}
           </>
         )}
         <div className="tb__row">
@@ -567,6 +668,12 @@ function TitleBlock({
           <dd>
             {V.engineerName}
             <span className="tb__sub">{COPY.claim}</span>
+          </dd>
+        </div>
+        <div className="tb__row">
+          <dt>{I.source}</dt>
+          <dd>
+            <a href={D.source.repo}>{D.source.repoLabel}</a>
           </dd>
         </div>
       </dl>
@@ -651,7 +758,7 @@ function TitleBlock({
           )}
         </section>
       ) : (
-        <p className="tb__empty">{recorded ? D.receipt.recordedNote : ''}</p>
+        <p className="tb__empty">{recorded && !byDesign ? D.receipt.recordedNote : ''}</p>
       )}
     </aside>
   );

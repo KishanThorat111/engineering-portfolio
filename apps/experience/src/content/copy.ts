@@ -659,6 +659,370 @@ export const COPY = {
         'audit rows — one per accepted request. The shed requests never reached the handler, so they wrote none.',
       limitsProofRecorded: 'audit rows in the recording — one per accepted request.',
     },
+    /* --- S16: recorded by design, CI-verified, and three investigations --- */
+    opening: {
+      headline: 'Recorded runs of a real multi-tenant system.',
+      lede:
+        'Five demonstrations replayed from exchanges the system really produced, and three ' +
+        'investigations of defects it really had. No control plane is running behind this ' +
+        'page, so nothing here is live, and nothing is attributed to you.',
+      provenance: ['Recorded from the real system', 're-verified by CI on every push', 'source'],
+      loaded: 'Recorded set loaded',
+      captured: 'captured',
+      statusLine: 'Recorded set. Exchanges captured from real runs; none of them are yours.',
+    },
+    source: {
+      repo: 'https://github.com/KishanThorat111/engineering-portfolio',
+      ci: 'https://github.com/KishanThorat111/engineering-portfolio/actions/workflows/ci.yml',
+      repoLabel: 'Repository',
+      ciLabel: 'Verifying workflow',
+      verified: 'Verified',
+      verifiedValue: 'Re-captured against real PostgreSQL and Redis by CI on every push',
+      commitLabel: 'Commit',
+    },
+    sets: {
+      a: 'Set A — Demonstrations',
+      b: 'Set B — Investigations',
+      investigation: 'Investigation',
+    },
+    incidentFields: {
+      incident: 'Incident',
+      occurred: 'Occurred',
+      fixedIn: 'Fixed in',
+      protection: 'Protection',
+      historical: 'Historical incident',
+      symptom: 'Symptom',
+      evidence: 'Evidence',
+      evidenceNote: 'In the order an engineer would inspect it.',
+      investigation: 'Investigation',
+      cause: 'Root cause',
+      fix: 'Fix',
+      guard: 'Protection',
+      source: 'Source',
+      inspect: 'Inspect',
+      provedBy: 'Proved by',
+    },
+    incidents: {
+      'b-201': {
+        number: 'B-201',
+        short: 'Live channel',
+        name: '121 tests green; the live channel delivered nothing',
+        title: 'Sequence — a socket that said hello, then nothing',
+        when: '4–5 October 2026',
+        context:
+          'Found while building this page against the production-shaped stack. Fixed in the ' +
+          'browser the same day, then at the source.',
+        lanes: ['Browser', 'Gateway', 'Postgres · Redis'],
+        lanesShort: ['Browser', 'Gateway', 'DB · Redis'],
+        steps: [
+          { from: 0, to: 1, kind: 'ok', label: 'socket opens' },
+          { from: 0, to: 1, kind: 'lost', label: 'subscribe world' },
+          { from: 0, to: 1, kind: 'lost', label: 'subscribe self' },
+          { from: 1, to: 2, kind: 'ok', label: 'resolve credential · join presence' },
+          { from: 1, to: 1, kind: 'self', label: 'message listener attached' },
+          { from: 1, to: 0, kind: 'ok', label: 'hello' },
+          { from: 1, to: 0, kind: 'ok', label: 'presence' },
+        ],
+        gap: { lane: 1, from: 1, to: 4, label: 'no listener' },
+        drawingLabel:
+          'Sequence: the browser opens the socket and sends two subscriptions; the gateway ' +
+          'has no message listener until it has resolved the credential and joined ' +
+          'presence, so both are lost; it then sends hello and presence, and no ' +
+          'subscription is ever acknowledged.',
+        symptom:
+          'The socket opened and the server said hello. After that it delivered nothing: no ' +
+          'events from other visitors, and not the visitor’s own audit rows. All 121 API ' +
+          'tests passed.',
+        evidence: [
+          {
+            title: 'The frames, traced in a real browser',
+            kind: 'trace',
+            source: { label: 'efbf654 and bb4fd82 — commit messages', commit: 'bb4fd82' },
+            body:
+              '> subscribe  world\n' +
+              '> subscribe  self\n' +
+              '< hello\n' +
+              '< presence\n' +
+              '  — no subscribed acknowledgement, and no events, ever',
+          },
+          {
+            title: 'Where the gateway attached its listener',
+            kind: 'code',
+            source: {
+              label: 'services/api/src/live/gateway.ts at efbf654, lines 180–218',
+              path: 'services/api/src/live/gateway.ts',
+              commit: 'efbf654',
+              lines: 'L180-L218',
+            },
+            body:
+              '180  const resolved = await resolveCredential(presentedKey);\n' +
+              '198  await presence.join(subscriber.ephemeralId);\n' +
+              "218  socket.on('message', (raw: Buffer) => {",
+          },
+          {
+            title: 'Where the browser subscribed',
+            kind: 'code',
+            source: {
+              label: 'apps/experience/src/live/source.ts before efbf654, lines 92–107',
+              path: 'apps/experience/src/live/source.ts',
+              commit: '643475f',
+              lines: 'L92-L107',
+            },
+            body:
+              '92   socket.onopen = () => {\n' +
+              "104    socket.send(JSON.stringify({ type: 'subscribe', scope: 'world' }));\n" +
+              "106    socket.send(JSON.stringify({ type: 'subscribe', scope: 'self' }));",
+          },
+          {
+            title: 'Why 121 tests could not see it',
+            kind: 'code',
+            source: {
+              label: 'services/api/test/integration/live-spine.test.js, lines 88–91',
+              path: 'services/api/test/integration/live-spine.test.js',
+              commit: 'efbf654',
+              lines: 'L88-L91',
+            },
+            body:
+              "90   await client.waitFor((m) => m.type === 'hello');\n" +
+              "91   client.send({ type: 'subscribe', scope: 'self' });\n" +
+              '     — every case waits for hello before it subscribes',
+          },
+        ],
+        investigation: [
+          'The socket opened and authenticated: hello named the tenant. Transport and auth worked.',
+          'Traced the frames in a real browser: both subscriptions left before hello, and no acknowledgement came back.',
+          'Read the gateway: its message listener is attached only after two awaits.',
+          'Read the tests: every one waits for hello, so none of them ever sent a frame in the gap.',
+        ],
+        cause:
+          'The gateway attached its message listener only after resolving the credential and ' +
+          'joining presence. A frame that arrived in between had no listener, and was ' +
+          'discarded without an error.',
+        fix: [
+          {
+            commit: 'efbf654',
+            date: '4 Oct 2026',
+            summary: 'The browser subscribes on hello — the gateway’s own signal that it is ready.',
+          },
+          {
+            commit: 'bb4fd82',
+            date: '5 Oct 2026',
+            summary:
+              'The gateway attaches its listener first and queues early frames until the subscriber exists, then delivers them after hello.',
+          },
+        ],
+        protection: {
+          summary:
+            'A test that sends both subscriptions the instant the socket opens, without waiting ' +
+            'for hello, and must still receive both acknowledgements and its own audit row.',
+          gate: 'live-spine.test.js — "B-201: subscriptions sent the instant the socket opens are queued, not dropped"',
+          source: {
+            path: 'services/api/test/integration/live-spine.test.js',
+            commit: 'bb4fd82',
+            lines: 'L179',
+          },
+          proof:
+            'Run against the gateway before bb4fd82 it fails with the original symptom: “timed ' +
+            'out waiting for the early world subscription. Received: ["hello","presence"]”. It ' +
+            'runs in the API workflow, against real PostgreSQL and Redis.',
+        },
+      },
+      'b-202': {
+        number: 'B-202',
+        short: 'Blank page',
+        name: 'Production showed nothing; every check was green',
+        title: 'Sequence — two policies, one intersection',
+        when: '17–18 August 2026',
+        context:
+          'A historical incident on the earlier 3D surface, now preserved at /live/archive/. ' +
+          'The current /live/ does not have it; the policy it receives is checked on every push.',
+        lanes: ['Cloudflare', 'Browser', 'Control plane'],
+        lanesShort: ['Edge', 'Browser', 'API'],
+        steps: [
+          { from: 0, to: 1, kind: 'ok', label: "CSP from /*  —  connect-src 'none'" },
+          { from: 0, to: 1, kind: 'ok', label: "CSP from /live/*  —  connect-src 'self'" },
+          { from: 1, to: 1, kind: 'self', label: 'enforces both: the intersection' },
+          { from: 1, to: 2, kind: 'refused', label: 'POST /v1/tenants — blocked' },
+          { from: 1, to: 1, kind: 'self', label: 'scene worker: importScripts(blob:) — blocked' },
+        ],
+        drawingLabel:
+          'Sequence: Cloudflare sends the live page two security policies; the browser ' +
+          'enforces their intersection, so its request to the control plane is blocked, and ' +
+          'the 3D scene’s worker cannot load its code.',
+        symptom:
+          '17 August: /live/ loaded and could do nothing — provisioning failed, zero tenants, ' +
+          'zero events, “Failed to fetch”. Every API path answered from curl, including a real ' +
+          '201 from POST /v1/tenants. 18 August: the 3D scene shipped blank — WebGL fine, ' +
+          'canvas sized, frame loop at 176 fps, not one pixel drawn.',
+        evidence: [
+          {
+            title: 'The response headers /live/ actually received',
+            kind: 'text',
+            source: { label: '3cf7754 — commit message', commit: '3cf7754' },
+            body:
+              'Two Content-Security-Policy headers: the page’s own and the static one. All six ' +
+              'shared headers arrived twice, and Strict-Transport-Security came back ' +
+              'comma-joined with itself.',
+          },
+          {
+            title: 'What a browser does with two policies',
+            kind: 'text',
+            source: { label: '3cf7754 — commit message', commit: '3cf7754' },
+            body:
+              'A browser enforces the INTERSECTION of every policy it is given. The static ' +
+              "policy carried connect-src 'none', so it won, and nothing on the live surface " +
+              'could open a connection.',
+          },
+          {
+            title: 'The console, once connections worked',
+            kind: 'trace',
+            source: { label: '7b4cf85 — commit message', commit: '7b4cf85' },
+            body:
+              "NetworkError: Failed to execute 'importScripts' on 'WorkerGlobalScope'\n" +
+              'worker module init function failed to rehydrate',
+          },
+          {
+            title: 'Why the checks were green',
+            kind: 'text',
+            source: { label: '3cf7754 and 7b4cf85 — commit messages', commit: '7b4cf85' },
+            body:
+              'The browser harness applied headers with set, so a later rule replaced an earlier ' +
+              'one: 35/35 green while production was broken. Frame sampling and canvas size both ' +
+              'pass for a scene that draws nothing.',
+          },
+        ],
+        investigation: [
+          'Only the browser failed; curl succeeded. Only a browser enforces CSP.',
+          'Read the response: two policies and a doubled HSTS meant Cloudflare was accumulating rules, not overriding them.',
+          'Checked the installed wrangler rather than memory: UNSET_OPERATOR = "! ", and same-name values are comma-joined.',
+          'For the blank scene: the text renderer’s worker imports a blob, which script-src did not allow, and one suspended child left the whole scene empty.',
+        ],
+        cause:
+          'Cloudflare applies every matching _headers rule; a specific rule does not override a ' +
+          'broad one. And the live policy’s script-src lacked blob:, which the text renderer’s ' +
+          'worker needed to load its own code.',
+        fix: [
+          {
+            commit: '3cf7754',
+            date: '17 Aug 2026',
+            summary:
+              '/live/* unsets the inherited policy before setting its own; the harness now accumulates like Cloudflare.',
+          },
+          {
+            commit: '7b4cf85',
+            date: '18 Aug 2026',
+            summary: 'blob: in script-src for /live/* only; the static surface never gains it.',
+          },
+        ],
+        protection: {
+          summary:
+            'A CI gate that composes the built _headers exactly as Cloudflare does and asserts ' +
+            'the policy each surface really receives: one policy, connect-src allowing its own ' +
+            'API, blob: only where the scene needs it.',
+          gate: 'npm run gate:policy — scripts/policy-check.mjs, in the CI workflow',
+          source: { path: 'scripts/policy-check.mjs', commit: 'main' },
+          proof:
+            'On every run it re-applies both historical defects to a copy of the file and ' +
+            'requires each to fail. Until S16 the only protection was a local browser harness ' +
+            'that never ran in CI.',
+        },
+      },
+      'b-203': {
+        number: 'B-203',
+        short: 'Deploy report',
+        name: 'The deploy worked and reported failure',
+        title: 'Sequence — a release script read by its own readiness check',
+        when: '17 August 2026',
+        context:
+          'A historical incident in the control plane’s deploy workflow. No control plane is ' +
+          'deployed today; the workflow and its guard remain, and are checked on every push.',
+        lanes: ['Runner', 'bash -s on the VM', 'api container'],
+        lanesShort: ['Runner', 'bash -s', 'api'],
+        steps: [
+          { from: 0, to: 1, kind: 'ok', label: 'release script, on stdin' },
+          { from: 1, to: 2, kind: 'ok', label: 'compose pull · migrate · up -d' },
+          { from: 1, to: 2, kind: 'ok', label: 'exec -T api — readiness check' },
+          { from: 1, to: 2, kind: 'lost', label: 'the rest of the script, read as its stdin' },
+          { from: 1, to: 1, kind: 'self', label: 'EOF — exit 0' },
+          { from: 1, to: 0, kind: 'lost', label: 'completion marker never printed' },
+        ],
+        drawingLabel:
+          'Sequence: the runner sends the release script to bash on stdin; the stack comes up; ' +
+          'the readiness check inherits stdin and swallows the rest of the script; bash exits 0 ' +
+          'and the completion marker never arrives, so the runner reports failure.',
+        symptom:
+          'Deploy API run #3 reported failure. It had pulled the image, run the migration and ' +
+          'brought the whole stack up.',
+        evidence: [
+          {
+            title: 'The deploy runs',
+            kind: 'text',
+            source: { label: 'Deploy API workflow runs', workflow: 'deploy-api.yml' },
+            body:
+              '#3  17 Aug 2026 04:35 UTC  18d174e  failure\n' +
+              '#4  17 Aug 2026 09:12 UTC  3ed473e  success',
+          },
+          {
+            title: 'How the script reaches the VM',
+            kind: 'code',
+            source: {
+              label: '.github/workflows/deploy-api.yml at 3ed473e',
+              path: '.github/workflows/deploy-api.yml',
+              commit: '3ed473e',
+              lines: 'L208-L312',
+            },
+            body:
+              'gcloud compute ssh … --command "… bash -s" <<\'REMOTE\'\n' +
+              '  …\n' +
+              '  echo "__RELEASE_SCRIPT_COMPLETED__"\n' +
+              'REMOTE\n' +
+              "if ! grep -q '__RELEASE_SCRIPT_COMPLETED__' /tmp/release.log; then",
+          },
+          {
+            title: 'The readiness check, before the fix',
+            kind: 'code',
+            source: {
+              label: '.github/workflows/deploy-api.yml before 3ed473e, lines 275–276',
+              path: '.github/workflows/deploy-api.yml',
+              commit: '18d174e',
+              lines: 'L275-L276',
+            },
+            body:
+              'if sudo docker compose --env-file .env -f compose.yml exec -T api \\\n' +
+              '     node -e "fetch(\'http://127.0.0.1:8080/health/ready\')…"; then',
+          },
+        ],
+        investigation: [
+          'The stack was up and healthy, so the failure was in the report, not the release.',
+          'Reproduced against the same compose file and a real api container: without a redirect the marker never prints, and bash exits 0.',
+          'Extracted the whole script from the workflow and piped it through bash -s in a sandbox.',
+          'Audited every command in it: exec is the only one that reads stdin.',
+        ],
+        cause:
+          'bash reads a script on stdin incrementally. docker compose exec -T inherits that same ' +
+          'stdin and streamed every unexecuted line into the container, so bash reached EOF ' +
+          'with nothing left to run and exited 0 before printing the marker.',
+        fix: [
+          {
+            commit: '3ed473e',
+            date: '17 Aug 2026',
+            summary:
+              'The readiness command reads < /dev/null; the error message now says what a missing marker really means.',
+          },
+        ],
+        protection: {
+          summary:
+            'The completion-marker guard stays, and a CI check runs the committed release ' +
+            'script under bash -s with docker stubbed — the exec stub reading stdin exactly as ' +
+            'the real one does.',
+          gate: 'npm run gate:release — scripts/release-check.mjs, in the CI workflow',
+          source: { path: 'scripts/release-check.mjs', commit: 'main' },
+          proof:
+            'The marker must print. The negative control removes the redirect and requires the ' +
+            'marker to be missing — exit 0 with no marker, the shape of run #3.',
+        },
+      },
+    },
     notesHeading: 'Notes',
     evidenceHeading: 'Technical evidence',
     exchangesHeading: 'Exchanges',

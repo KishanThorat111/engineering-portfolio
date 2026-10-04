@@ -198,6 +198,25 @@ const SHEET_PAGES = [
     title: 'AI routing',
     description: 'Ask a question SQL can answer at zero cost, then one that is charged.',
   },
+  // S16: the three investigations are pages too, so each can be linked to directly.
+  {
+    path: 'b-201',
+    title: 'B-201 · 121 tests green, nothing delivered',
+    description:
+      'An investigation: a socket that said hello and delivered nothing, the gap 121 tests waited out, and the test that now covers it.',
+  },
+  {
+    path: 'b-202',
+    title: 'B-202 · Production showed nothing',
+    description:
+      'A historical investigation: two security policies, one intersection, and the CI gate that now composes them as Cloudflare does.',
+  },
+  {
+    path: 'b-203',
+    title: 'B-203 · The deploy worked and reported failure',
+    description:
+      'A historical investigation: a release script swallowed by its own readiness check, and the check that now runs it in CI.',
+  },
 ];
 
 function writePage(
