@@ -4487,3 +4487,23 @@ behaviour in a browser: 47 checks; forcing the backend flag on fails it.
 - The homepage liveness panel will keep reporting the control plane
   unreachable; the homepage is locked, so it is recorded, not changed.
 - Product videos and the 12 case-study screenshot slots: not part of /live/.
+
+### Addendum — CI, deployment and production verification
+
+First CI run of the new jobs (178ed43, run 37233605783) failed twice, both
+fixed in 762dd4c: the recording job set NODE_ENV=production at job level, so
+`npm ci` skipped devDependencies and the API build had no types; and
+`verify:live` raced a View Transition after a tab click, reproduced in the
+Linux Playwright image (v1.63.0-noble) and fixed by waiting for the new
+sheet. CI for 762dd4c (run 37234591929): Build & truth gates 22/22,
+Lighthouse 9/9, recording conformance 14/14 — the committed recording matches
+a fresh capture on GitHub's runners; artifact
+`recording-conformance-37234591929` retained. API workflow for 178ed43 (run
+37233605742): control-plane tests 18/18 steps (122 tests, including B-201),
+container image 6/6. Deployed by Workers Builds: the origin serves
+`main-CUR9PKVe.js`, the local hash; `verify:live` run against
+https://kishanthorat.com passes 47/47 (RECORDED from the first load in
+684 ms, zero requests to /v1/*); /live/b-201/, /b-202/, /b-203/,
+/live/archive/ and /live/payments/ return 200; /live/systems/ 301s to /live/;
+the served homepage is byte-identical to the build (d9a07cb220ae9d94); all 16
+GitHub links the investigations cite return 200.
