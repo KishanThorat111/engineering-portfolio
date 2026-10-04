@@ -164,6 +164,49 @@ describe('live spine — DEFINITION OF DONE: two clients see each other', () => 
     assert.equal(typeof event.event.correlationId, 'string');
   });
 
+  /*
+   * B-201 — THE ORDERING EVERY OTHER TEST IN THIS FILE WAITS OUT.
+   *
+   * Every other case waits for `hello` before subscribing, and so does the
+   * browser client since efbf654. A real client is not obliged to: the socket
+   * is open, so it may speak. Until the gateway queued early frames, a
+   * subscription sent in the gap between `open` and the listener being
+   * attached — the credential lookup and the presence join — was discarded
+   * without an error, and the socket then delivered nothing at all. 121 tests
+   * were green over exactly that gap. This case sends both subscriptions the
+   * instant the socket opens, and must still receive its own audit row.
+   */
+  it('B-201: subscriptions sent the instant the socket opens are queued, not dropped', async () => {
+    const actor = await provisionViaApi(app, 'live-early');
+    const socket = await connect(actor.apiKey);
+    // Deliberately no wait for hello.
+    socket.send({ type: 'subscribe', scope: 'world' });
+    socket.send({ type: 'subscribe', scope: 'self' });
+
+    const hello = await socket.waitFor((m) => m.type === 'hello', { label: 'hello' });
+    assert.equal(hello.identity.authenticated, true);
+    await socket.waitFor((m) => m.type === 'subscribed' && m.scope === 'world', {
+      label: 'the early world subscription',
+    });
+    await socket.waitFor((m) => m.type === 'subscribed' && m.scope === 'self', {
+      label: 'the early self subscription',
+    });
+    // The protocol order is unchanged: hello still comes first.
+    const order = socket.messages.map((m) => m.type);
+    assert.ok(order.indexOf('hello') < order.indexOf('subscribed'), `order was ${order}`);
+
+    await fetch(`${baseUrl}/v1/records`, {
+      method: 'POST',
+      headers: { ...auth(actor.apiKey), 'content-type': 'application/json' },
+      body: JSON.stringify({ title: 'sent before hello' }),
+    });
+    const event = await socket.waitFor(
+      (m) => m.type === 'event' && m.event.action === 'record.create',
+      { label: 'the own audit row' },
+    );
+    assert.equal(event.event.isSelf, true);
+  });
+
   it('a denied break-out is visible live, as denied', async () => {
     const attacker = await provisionViaApi(app, 'live-attacker');
     const victim = await provisionViaApi(app, 'live-victim');

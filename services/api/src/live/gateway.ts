@@ -140,6 +140,25 @@ export async function registerGateway(app: FastifyInstance): Promise<void> {
   app.get('/v1/live', { websocket: true }, async (socket: WebSocket, request: FastifyRequest) => {
     const address = request.ip;
 
+    /*
+     * B-201: FRAMES THAT ARRIVE BEFORE THE SUBSCRIBER EXISTS ARE QUEUED.
+     *
+     * The socket is open — and the client entitled to speak — from the first
+     * line of this handler, but the subscriber below exists only after the
+     * credential lookup and the presence join. A message listener attached
+     * after those awaits meant a subscription sent in that gap was discarded
+     * with no error: hello, then nothing. So the listener is attached here,
+     * first, and holds early frames until the subscriber can take them. The
+     * cap bounds what an unauthenticated client can make the server hold while
+     * it waits; the protocol allows two subscriptions, so 16 is generous.
+     */
+    const early: Buffer[] = [];
+    let deliver: ((raw: Buffer) => void) | null = null;
+    socket.on('message', (raw: Buffer) => {
+      if (deliver) deliver(raw);
+      else if (early.length < 16) early.push(raw);
+    });
+
     if (subscribers.size >= env.LIVE_MAX_CONNECTIONS) {
       socket.send(
         JSON.stringify({
@@ -215,7 +234,7 @@ export async function registerGateway(app: FastifyInstance): Promise<void> {
 
     void broadcastPresence();
 
-    socket.on('message', (raw: Buffer) => {
+    deliver = (raw: Buffer) => {
       let parsed: ClientMessage;
       try {
         parsed = JSON.parse(raw.toString('utf8')) as ClientMessage;
@@ -224,7 +243,9 @@ export async function registerGateway(app: FastifyInstance): Promise<void> {
         return;
       }
       handleClientMessage(subscriber, parsed);
-    });
+    };
+    // After hello, so the protocol order a client sees is unchanged.
+    for (const raw of early.splice(0)) deliver(raw);
 
     socket.on('pong', () => {
       subscriber.alive = true;
