@@ -4273,3 +4273,132 @@ had laid out, not a defect. Recorded rather than dropped.
 KT mark drawn as strokes — dark tile, brand-ramp ring — with ICO, Apple
 touch and manifest icons rendered from it by `scripts/make-icons.mjs`, and
 a `site.webmanifest`. /live/ uses /favicon.svg already and was not touched.
+
+## S15 — /live/ as a working drawing; the ten-station world preserved · 4 October 2026
+
+**Owner direction, approved after the deep audit and the visual research:**
+the public /live/ becomes a live architectural drawing of the real system.
+The audit and research are owner-held documents, not repository files.
+
+**What /live/ is now.** Five sheets, one per demonstration — A-101
+Isolation, A-102 Rate limits, A-103 Payments, A-104 Duplicate evidence,
+A-105 AI routing — each a real page (`/live/<sheet>/`), and a title block
+stating only what the system said: status, tenant, valid-until clock, edge
+and measured round trip, transport, live channel and presence, the
+revisions the database wrote. Paper ground, graphite ink, colour by meaning
+only: cyan = the tenant boundary, vermilion = a refusal, green = LIVE,
+violet = the KT mark. Media: DOM for every word and all evidence; SVG for
+the plans, laid out in CSS pixels at their real width so lettering is the
+same size on a phone. No WebGL and no animation library on this page.
+Motion is five verbs — draft, ink, hatch, stamp, revise — each started by a
+state the system reached: request sent → dashed line in flight; response →
+the line inks to where it stopped; 403 → the wall inks cyan and is annotated
+with the policy read live from `pg_policies`; audit row over the socket → a
+revision cloud and a numbered row. Every number on a dimension line is
+`performance.now()` around the real fetch. Each sheet reads plain words
+first (you / the system received / what it did / result / why / proof),
+then a collapsed "technical evidence" block with the exchanges, SQL, plan,
+policy and digests. Home-page storytelling (systems, think, build, proof,
+end) is gone from /live/.
+
+**LIVE / PARTIAL / RECORDED, derived, never chosen.** LIVE = a tenant the
+control plane provisioned and a socket that said hello. PARTIAL = a real
+tenant with the channel down; revisions are then read from `/v1/audit` and
+labelled so. RECORDED = the control plane did not answer; every sheet then
+plays a real captured exchange at the interval it took, labelled with its
+capture time, environment and a timing caveat, never attributed to the
+visitor ("Recorded tenant", "The request", "none of them are yours"), and no
+receipt is issued. The failure is stated in words with its status as
+evidence ("the edge answered, the control plane behind it did not (HTTP
+530)"), not as an alarm.
+
+**The recorded set** (`apps/experience/src/live/recorded-exchanges.json`)
+was captured by the new `scripts/capture-exchanges.mjs` from the
+production-shaped stack (`infra/compose.yml` with the loopback override) at
+2026-10-04T08:31Z, commit 090589d, API p8-local: isolation 403 with policy
+and plan; limits 10 × 200 then 10 × 429 (Retry-After 60); payments one
+activated, one replayed; fraud 201 then 409; AI data plane at 0 tokens and
+model plane charged 266 tokens (model plane not configured — the server's
+own answer says so). Keys redacted; the file was scanned for keys and
+addresses before commit. Never hand-edited; validated on load.
+
+**A defect found by building, in shared code.** `live/source.ts` sent its
+`subscribe` messages on socket open. The gateway attaches its message
+listener only after resolving the credential and registering presence, so
+those frames arrived in the gap and were dropped silently: hello, then
+nothing — not the world, not the visitor's own audit rows. Traced frame by
+frame in a real browser against the production-shaped stack. Fixed on the
+client by subscribing on `hello`, the gateway's own ready signal; the
+backend is unchanged. After the fix the `record.read denied` row arrives
+over the socket as REV 2 within the same second as the 403.
+
+**Preservation.** Tag `live-ten-stations-090589d` marks the last commit with
+the ten-station world as /live/. Nothing was deleted or moved: its entry is
+now `src/archive.tsx` (the old `main.tsx`, unchanged below its header) with
+its own shell `archive/index.html`, built alongside the drawing and served
+at `/live/archive/` (unlisted, noindex), all fourteen of its pages under
+`/live/archive/<slug>/`. One change made it runnable there: `LIVE_BASE` in
+`router.ts`, so the world's own URL writes stay inside the archive.
+`render/Scene.tsx`, `render/World.tsx` and `bench.tsx` were already
+unreachable and remain in place. The nine retired narrative URLs
+(`/live/systems/` and the rest) 301 to `/live/` through a generated
+`dist/_redirects`; the five demonstration URLs remain real pages. Restoring
+the world as /live/ is one line: point `index.html` at `src/archive.tsx`.
+
+**Build changes.** Two Rollup inputs; per-sheet pages from the drawing shell
+and per-station pages from the archive shell; a canonical per shell. The
+`react` manual chunk matched any `node_modules/react*` prefix and now
+matches only react, react-dom and scheduler. `emit-headers.mjs` also emits
+`_redirects` (failing if a redirected path is a built page) and
+`.assetsignore` with `*.map`: the hidden source maps (~6 MB) stay on disk
+and are no longer uploaded. Both metafile names verified against the
+installed wrangler. `.prettierignore` gains the archive shell, for the same
+reason as the main shell.
+
+**Dependencies.** `audit:prod` failed on main independently of this work: a
+patched http-cache-semantics (4.3.0) was published, so the recorded
+exception no longer held. Per §9.1 the lockfile was regenerated from
+scratch inside a Linux container (node:24-bookworm-slim), `npm ci` was
+verified there and on Windows (704 packages), and the exception was
+removed. 49 version changes, all within existing ranges (wrangler 4.147.0,
+vite 8.3.2, pg 8.23.1 among them). No new dependency.
+
+### Verified
+
+- `npm run verify` exits 0 on the fresh tree: typecheck, build, copy, links,
+  HTML, contrast, confidential parity, machine parity, fast lane, stations.
+  `format:check` clean; `audit:prod` clean with zero exceptions.
+- The copy gate covers the new copy: injecting "seamless" into the drawing
+  headline failed it (`dist\live\copy.json:329`); reverted uncommitted.
+- API on the new lockfile: check, build, and the full suite against real
+  Postgres and Redis — 121 tests, 21 suites, 0 failures.
+- LIVE, end to end in a browser against the production-shaped stack at
+  1440×900, 820×1180 and 390×844: all five demonstrations ran for real; the
+  REV rows arrived over the socket; 0 px horizontal overflow. RECORDED at
+  1440×900 and 320×700 with the API answering 530: all five sheets play.
+- Reduced motion, executed: 0 of 19 marks animate, every line is drawn
+  complete, the outcome is announced in the live region. The keyboard
+  reaches the action; focus ring 2px solid.
+- Routes on the built tree: `/live/systems/` and `/live/end` 301 to
+  `/live/`; `/live/payments/` is its own page; `/live/archive/` and
+  `/live/archive/systems/` render the preserved world with its canvas and
+  no page errors.
+- Weight: the public /live/ ships 101.9 KB JS gz (app 22.4, React 79.1,
+  runtime 0.4) and 4.4 KB CSS gz, against 366 KB JS gz before. Under
+  Lighthouse's mobile profile (1.6 Mbps, 150 ms RTT, 4× CPU) through gzip,
+  three runs: FCP 624–660 ms, LCP 1364–1396 ms, CLS 0, 212 KB transferred
+  including fonts. Measured locally, not on the origin.
+- The console errors in a LIVE run are only the browser logging the real
+  403/409/429 refusals, and the local 404 for `/cdn-cgi/trace`.
+
+### Still open
+
+- **The production control plane is down** (530 / 1033 since at least
+  3 October). The only Google account on this machine has no permission on
+  `engineering-portfolio-prod`, so it could not be inspected or restarted
+  from here; /live/ shows RECORDED in production until it is restored.
+  OWNER-INPUT: restore the project's billing/API access and the VM, then
+  confirm `/health/ready` from outside.
+- Frame and interaction timing on a named mid-range phone: not measured.
+- `scripts/render-verify.mjs` drives the ten-station world at `/live/`; it
+  has to point at `/live/archive/` to keep measuring it.
