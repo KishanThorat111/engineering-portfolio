@@ -18,13 +18,35 @@
  * usage:
  *   npm run stack:up
  *   LIVE_API=http://127.0.0.1:8080 node scripts/capture-exchanges.mjs
+ *
+ * CONFORMANCE MODE (S16) — what makes the recording more than a claim.
+ *   node scripts/capture-exchanges.mjs --check --out <file>
+ * captures a fresh set from a running API exactly as above, writes it to
+ * <file> (CI keeps it as an artifact), and does NOT touch the committed
+ * recording. It compares the two by behaviour — statuses, outcomes, the route
+ * taken, the policy that refused, the audit rows written — never by timings,
+ * ids or timestamps, which differ on every run by construction. Any
+ * behavioural difference fails the run: the committed recording no longer
+ * describes the code. It then tampers with a copy of the committed recording
+ * (the isolation refusal turned into a success) and requires that to fail
+ * too, so the comparison is proven non-vacuous on every run.
  */
-import { writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 
 const BASE = (process.env.LIVE_API ?? 'http://127.0.0.1:8080').replace(/\/$/, '');
-const OUT = resolve('apps/experience/src/live/recorded-exchanges.json');
+const COMMITTED = resolve('apps/experience/src/live/recorded-exchanges.json');
+const argv = process.argv.slice(2);
+const CHECK = argv.includes('--check');
+const outArg = argv.indexOf('--out');
+const OUT = outArg >= 0 ? resolve(argv[outArg + 1]) : COMMITTED;
+if (CHECK && OUT === COMMITTED) {
+  console.error(
+    'capture-exchanges: --check needs --out <file>; it never overwrites the recording.',
+  );
+  process.exit(1);
+}
 const EVIDENCE_BYTES = 'a2lzaGFuLXRob3JhdC1kZW1vLWV2aWRlbmNlLXBob3Rv';
 const OPERATIONAL = 'How many records do I have?';
 const CREATIVE = 'Write a haiku about hospital logistics';
@@ -188,6 +210,7 @@ try {
 const set = redact({
   capturedAt: new Date().toISOString(),
   environment:
+    process.env.CAPTURE_ENVIRONMENT ??
     'the production-shaped stack (infra/compose.yml with the loopback override), run locally',
   apiVersion: ready.body?.version ?? 'unknown',
   commit,
@@ -202,6 +225,7 @@ const set = redact({
   demos,
 });
 
+mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, `${JSON.stringify(set, null, 2)}\n`);
 const statuses = Object.fromEntries(
   Object.entries(demos).map(([name, demo]) => [
@@ -215,3 +239,76 @@ const statuses = Object.fromEntries(
 );
 console.log(`capture-exchanges: wrote ${OUT}`);
 console.log(statuses);
+
+if (CHECK) {
+  const committed = JSON.parse(readFileSync(COMMITTED, 'utf8'));
+  const diff = differences(behaviour(committed), behaviour(set));
+  if (diff.length) {
+    console.error(
+      `capture-exchanges: FAILED — the committed recording no longer matches the system (${diff.length}):`,
+    );
+    for (const d of diff) console.error(`  ✗ ${d}`);
+    process.exit(1);
+  }
+  // Negative control: a recording that claims the boundary let the read through.
+  const tampered = structuredClone(committed);
+  tampered.demos.isolation.exchanges.attempt.status = 200;
+  if (differences(behaviour(tampered), behaviour(set)).length === 0) {
+    console.error('capture-exchanges: FAILED — a tampered recording passed the comparison.');
+    process.exit(1);
+  }
+  console.log(
+    'capture-exchanges: CONFORMS — the committed recording matches a fresh capture by behaviour ' +
+      'across all five demonstrations; a tampered copy was caught.',
+  );
+}
+
+/** What a recording says the system DID — nothing that varies run to run. */
+function behaviour(r) {
+  const d = r.demos;
+  const audit = (rows) => rows.map((e) => `${e.action}:${e.outcome}`).sort();
+  const iso = d.isolation.exchanges;
+  const policy = iso.inspect.body?.policy?.policies?.[0] ?? {};
+  const pay = d.payments.exchanges;
+  const ai = d.ai.exchanges;
+  return {
+    'isolation.attempt.status': iso.attempt.status,
+    'isolation.attempt.code': iso.attempt.body?.error?.code,
+    'isolation.inspect.status': iso.inspect.status,
+    'isolation.inspect.outcome': iso.inspect.body?.outcome,
+    'isolation.layer.scope.refused': iso.inspect.body?.layers?.orgScope?.refused,
+    'isolation.layer.rls.refused': iso.inspect.body?.layers?.rowLevelSecurity?.refused,
+    'isolation.policy': `${policy.policyname} USING ${policy.qual}`,
+    'isolation.rls.forced': iso.inspect.body?.policy?.rlsForced,
+    'isolation.audit': audit(d.isolation.audit),
+    'limits.statuses': d.limits.exchanges.map((e) => e.status),
+    'limits.audit': audit(d.limits.audit),
+    'payments.statuses': [pay.first.status, pay.second.status].sort(),
+    'payments.outcomes': [pay.first.body?.outcome, pay.second.body?.outcome].sort(),
+    'payments.replays': pay.key.body?.activation?.replay_count,
+    'payments.statement': pay.key.body?.mechanism?.statement,
+    'payments.audit': audit(d.payments.audit),
+    'fraud.statuses': [d.fraud.exchanges.first.status, d.fraud.exchanges.second.status],
+    'fraud.outcomes': [
+      d.fraud.exchanges.first.body?.outcome,
+      d.fraud.exchanges.second.body?.outcome,
+    ],
+    'fraud.digest': d.fraud.exchanges.second.body?.digest,
+    'fraud.audit': audit(d.fraud.audit),
+    'ai.operational.route': ai.operational.body?.route,
+    'ai.operational.tokens': ai.operational.body?.tokensCharged,
+    'ai.operational.intent': ai.operational.body?.intent?.id,
+    'ai.creative.route': ai.creative.body?.route,
+    'ai.creative.charged': (ai.creative.body?.tokensCharged ?? 0) > 0,
+    'ai.audit': audit(d.ai.audit),
+  };
+}
+
+function differences(expected, actual) {
+  return Object.keys(expected)
+    .filter((k) => JSON.stringify(expected[k]) !== JSON.stringify(actual[k]))
+    .map(
+      (k) =>
+        `${k}: recorded ${JSON.stringify(expected[k])}, system now ${JSON.stringify(actual[k])}`,
+    );
+}

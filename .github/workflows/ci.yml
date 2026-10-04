@@ -91,6 +91,108 @@ jobs:
       - name: Station mapping, locked hero, and the world stays on /
         run: npm run gate:stations
 
+      # B-202. The effective Content-Security-Policy each surface receives once
+      # Cloudflare has composed every matching _headers rule — the thing that
+      # broke /live/ twice in August 2026 while every check here was green. It
+      # re-applies both historical defects on every run and requires a failure
+      # for each, so it cannot pass vacuously.
+      - name: B-202 — effective security policy per surface
+        run: npm run gate:policy
+
+      # B-203. The committed release script, run under `bash -s` as the deploy
+      # runs it, must reach its completion marker; with the 3ed473e redirect
+      # removed it must not. Nothing touches a VM.
+      - name: B-203 — the release script runs to completion
+        run: npm run gate:release
+
+      # /live/ has no control plane behind it by design. This proves, in the
+      # runner's Chrome, that it is RECORDED from the first frame, never calls
+      # /v1/*, shows no control that cannot work, plays all five recorded
+      # demonstrations, renders all three investigations, and has no overflow
+      # from 320 to 1440 px.
+      - name: /live/ in a real browser, with no control plane
+        run: npm run verify:live
+
+  # The recorded evidence /live/ shows is only worth something if it still
+  # describes the code. This starts the real API on real PostgreSQL and Redis,
+  # captures all five demonstrations afresh, and compares them with the
+  # committed recording by behaviour — statuses, outcomes, routes, the refusing
+  # policy, the audit rows — never by timings or ids. A difference fails the
+  # run; a deliberately tampered copy must fail too. The fresh capture is kept
+  # as an artifact.
+  recording:
+    name: Recorded evidence conforms (real API, PostgreSQL, Redis)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-bookworm
+        env:
+          POSTGRES_USER: cpadmin
+          POSTGRES_PASSWORD: devpassword
+          POSTGRES_DB: control_plane
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U cpadmin -d control_plane"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:7-bookworm
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      NODE_ENV: production
+      API_HOST: 127.0.0.1
+      API_PORT: '8080'
+      LOG_LEVEL: warn
+      DATABASE_ADMIN_URL: postgres://cpadmin:devpassword@127.0.0.1:5432/control_plane
+      DATABASE_URL: postgres://demo_app:ciapppassword@127.0.0.1:5432/control_plane
+      APP_DB_PASSWORD: ciapppassword
+      REDIS_URL: redis://127.0.0.1:6379
+      IP_HASH_PEPPER: ci-pepper-value-at-least-16-chars
+      ADMIN_TOKEN: ci-admin-token-at-least-24-characters
+      PAYMENT_WEBHOOK_SECRET: ci-webhook-secret-value
+      RECEIPT_SIGNING_KEY: ci-receipt-signing-key-at-least-32-chars
+      OTEL_ENABLED: 'false'
+      CAPTURE_ENVIRONMENT: GitHub Actions — the API on real PostgreSQL 17 and Redis 7 service containers
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Build the control plane
+        run: npm run build --workspace @portfolio/api
+
+      - name: Migrate
+        run: node services/api/dist/db/migrate.js
+
+      - name: Start the API
+        run: |
+          node services/api/dist/index.js > /tmp/api.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -sf http://127.0.0.1:8080/health/ready > /dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/api.log
+          exit 1
+
+      - name: Capture afresh and compare with the committed recording
+        run: LIVE_API=http://127.0.0.1:8080 npm run verify:recording
+
+      - name: Keep the fresh capture
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: recording-conformance-${{ github.run_id }}
+          path: build/recording-conformance.json
+          if-no-files-found: warn
+
   # Enforcing as of P8. Scoped to the two pages blueprint §7.5 names — Home and
   # the flagship case study — for the reason recorded in lighthouserc.json: the
   # live surface is measured against the §11 experience budgets by the render

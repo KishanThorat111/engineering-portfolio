@@ -27,6 +27,7 @@ import { connect as netConnect } from 'node:net';
 import { readFile, stat } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { join, extname, resolve } from 'node:path';
+import { composer } from './lib/cloudflare-headers.mjs';
 
 const DIST = resolve('dist');
 const PORT = 4317;
@@ -38,6 +39,12 @@ const PORT = 4317;
  * because the WebSocket was not proxied, and started failing the moment it was.
  */
 const DEAD_PORT = 4318;
+/*
+ * The world this harness measures. It was the public /live/ until S15, and is
+ * preserved — WebGL, quality tiers and all — at /live/archive/. The public
+ * /live/ is now the working drawing, which has no canvas to sample.
+ */
+const WORLD = '/live/archive/';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -73,52 +80,12 @@ const MIME = {
  * than no harness, because it converts an unknown into a false assurance.
  */
 const headerRules = (() => {
-  const rules = [];
   try {
-    let current = null;
-    for (const raw of readFileSync(join(DIST, '_headers'), 'utf8').split('\n')) {
-      const line = raw.trimEnd();
-      if (line.trim() === '' || line.trimStart().startsWith('#')) continue;
-      if (!/^\s/.test(line)) {
-        current = { pattern: line.trim(), headers: [], unset: [] };
-        rules.push(current);
-        continue;
-      }
-      const trimmed = line.trim();
-      if (!current) continue;
-      // `! Header` — the unset operator, matching wrangler's UNSET_OPERATOR.
-      if (trimmed.startsWith('! ')) {
-        current.unset.push(trimmed.slice(2).trim().toLowerCase());
-        continue;
-      }
-      const index = trimmed.indexOf(':');
-      if (index > 0) {
-        current.headers.push([
-          trimmed.slice(0, index).trim().toLowerCase(),
-          trimmed.slice(index + 1).trim(),
-        ]);
-      }
-    }
+    return composer(readFileSync(join(DIST, '_headers'), 'utf8'));
   } catch {
     /* absent file: the P8 checks fail loudly, which is the correct outcome */
+    return () => ({});
   }
-
-  const matches = (pattern, pathname) =>
-    pattern.endsWith('/*') ? pathname.startsWith(pattern.slice(0, -1)) : pattern === pathname;
-
-  return (pathname) => {
-    const applied = new Map();
-    for (const rule of rules) {
-      if (!matches(rule.pattern, pathname)) continue;
-      // Unset first, then set — the order each compiled rule is applied in.
-      for (const name of rule.unset) applied.delete(name);
-      for (const [name, value] of rule.headers) {
-        const existing = applied.get(name);
-        applied.set(name, existing ? `${existing}, ${value}` : value);
-      }
-    }
-    return Object.fromEntries(applied);
-  };
 })();
 
 /**
@@ -255,7 +222,7 @@ function record(name, detail, pass) {
   console.log(`  ${pass ? 'ok  ' : 'FAIL'}  ${name} — ${detail}`);
 }
 
-async function open(browser, options, path = '/live/') {
+async function open(browser, options, path = WORLD) {
   const page = await browser.newPage(options);
   await page.goto(`http://localhost:${PORT}${path}`, { waitUntil: 'load' });
   // The document renders as soon as React mounts; waiting on it rather than on
@@ -276,7 +243,7 @@ try {
   console.log('\n=== sustained frame time (this machine, real GPU) ===');
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-    await page.goto(`http://localhost:${PORT}/live/`, { waitUntil: 'load' });
+    await page.goto(`http://localhost:${PORT}${WORLD}`, { waitUntil: 'load' });
     // Warm-up: shader compilation and the first few frames are not steady state.
     await page.waitForTimeout(2500);
     const frames = await sampleFrames(page, 8);
@@ -312,7 +279,7 @@ try {
       viewport: { width: 1920, height: 1080 },
       deviceScaleFactor: 3,
     });
-    await page.goto(`http://localhost:${PORT}/live/`, { waitUntil: 'load' });
+    await page.goto(`http://localhost:${PORT}${WORLD}`, { waitUntil: 'load' });
     await page.waitForSelector('#document');
     await page.waitForTimeout(3000);
 
@@ -348,7 +315,7 @@ try {
       viewport: { width: 1440, height: 900 },
       reducedMotion: 'reduce',
     });
-    await page.goto(`http://localhost:${PORT}/live/`, { waitUntil: 'load' });
+    await page.goto(`http://localhost:${PORT}${WORLD}`, { waitUntil: 'load' });
     await page.waitForTimeout(2000);
 
     // The camera must not drift. Two samples a second apart must be identical.
@@ -384,7 +351,7 @@ try {
      * network layer. Nothing is stubbed and no page behaviour is overridden —
      * this is the real failure path, reached by genuinely removing the plane.
      */
-    await page.goto(`http://localhost:${DEAD_PORT}/live/`, { waitUntil: 'load' });
+    await page.goto(`http://localhost:${DEAD_PORT}${WORLD}`, { waitUntil: 'load' });
     await page.waitForTimeout(9000);
 
     const badge = await page
@@ -500,7 +467,7 @@ try {
      * only check here that can tell "drawing" from "running".
      */
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-    await page.goto(`http://localhost:${PORT}/live/`, { waitUntil: 'load' });
+    await page.goto(`http://localhost:${PORT}${WORLD}`, { waitUntil: 'load' });
     await page.waitForTimeout(6000);
 
     const hasCanvas = (await page.locator('canvas').count()) > 0;
@@ -586,7 +553,7 @@ try {
   console.log('\n=== accessibility ===');
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-    await page.goto(`http://localhost:${PORT}/live/`, { waitUntil: 'load' });
+    await page.goto(`http://localhost:${PORT}${WORLD}`, { waitUntil: 'load' });
     await page.waitForTimeout(6000);
 
     const h1 = await page.locator('h1').count();
@@ -626,7 +593,7 @@ try {
         return null;
       };
     });
-    await page.goto(`http://localhost:${PORT}/live/`, { waitUntil: 'load' });
+    await page.goto(`http://localhost:${PORT}${WORLD}`, { waitUntil: 'load' });
     await page.waitForTimeout(2500);
 
     const notice = await page
@@ -663,7 +630,7 @@ try {
       window.__API_BASE__ = '';
       window.__LIVE_URL__ = `ws://localhost:${location.port}/v1/live`;
     });
-    await page.goto(`http://localhost:${PORT}/live/`, { waitUntil: 'load' });
+    await page.goto(`http://localhost:${PORT}${WORLD}`, { waitUntil: 'load' });
     await page.waitForSelector('#document');
 
     // The arrival beat must show a REAL measured round trip.
@@ -777,7 +744,7 @@ try {
   console.log('\n=== P6 estate (§2.7, §2.8) ===');
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-    await page.goto(`http://localhost:${PORT}/live/`, { waitUntil: 'load' });
+    await page.goto(`http://localhost:${PORT}${WORLD}`, { waitUntil: 'load' });
     await page.waitForSelector('.estate-node', { timeout: 20_000 }).catch(() => null);
 
     const nodes = await page.locator('.estate-node').count();
@@ -954,7 +921,7 @@ try {
     ['desktop 1440', { width: 1440, height: 900 }],
   ]) {
     const page = await browser.newPage({ viewport });
-    await page.goto(`http://localhost:${PORT}/live/`, { waitUntil: 'load' });
+    await page.goto(`http://localhost:${PORT}${WORLD}`, { waitUntil: 'load' });
     await page.waitForTimeout(2000);
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
