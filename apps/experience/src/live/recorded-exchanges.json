@@ -1,0 +1,1075 @@
+{
+  "capturedAt": "2026-10-04T08:31:15.694Z",
+  "environment": "the production-shaped stack (infra/compose.yml with the loopback override), run locally",
+  "apiVersion": "p8-local",
+  "commit": "090589d",
+  "timingNote": "Round trips were measured by the capturing client on the same machine as the stack, so they carry no internet distance. They are real, and they are not what a visitor would see.",
+  "visitor": {
+    "publicRef": "tnt_zPgyB1CBiM_u",
+    "ttlSeconds": 1800,
+    "seededRecords": 8
+  },
+  "demos": {
+    "isolation": {
+      "neighbourRef": "tnt_dIk95qVqV0bR",
+      "target": "d9cbe2f0-adc3-44a7-9bc4-838d756747f5",
+      "exchanges": {
+        "neighbour": {
+          "request": {
+            "method": "POST",
+            "path": "/v1/tenants",
+            "body": {
+              "label": "the other tenant"
+            }
+          },
+          "status": 201,
+          "ms": 23,
+          "at": "2026-10-04T08:31:13.124Z",
+          "body": {
+            "tenant": {
+              "id": "60d8033f-5f2c-4c46-9d37-479dc446e636",
+              "publicRef": "tnt_dIk95qVqV0bR",
+              "label": "the other tenant",
+              "status": "active",
+              "createdAt": "2026-10-04T08:31:13.106Z",
+              "expiresAt": "2026-10-04T09:01:13.106Z",
+              "ttlSeconds": 1800
+            },
+            "credential": {
+              "apiKey": "[redacted key]",
+              "note": "Shown once. Only a SHA-256 of this key is stored; it cannot be retrieved again."
+            },
+            "seededRecords": 8,
+            "correlationId": "f374a782-310a-457d-ae22-8341b2fd2a09",
+            "disclosure": {
+              "plane": "demo",
+              "statement": "This is the demo plane. It is physically separate from any production system and has no path to one. This tenant is destroyed on its TTL by a scheduled job."
+            }
+          }
+        },
+        "list": {
+          "request": {
+            "method": "GET",
+            "path": "/v1/records",
+            "body": null
+          },
+          "status": 200,
+          "ms": 13,
+          "at": "2026-10-04T08:31:13.137Z",
+          "body": {
+            "records": [
+              {
+                "id": "d9cbe2f0-adc3-44a7-9bc4-838d756747f5",
+                "kind": "seeded",
+                "title": "Reception — hourly check",
+                "body": {
+                  "index": 3,
+                  "source": "provision-seed"
+                },
+                "created_at": "2026-10-04T08:31:13.106Z"
+              },
+              {
+                "id": "d36f8e5d-ab25-4422-b35a-2da412ef05c1",
+                "kind": "seeded",
+                "title": "Pharmacy — restricted access log",
+                "body": {
+                  "index": 4,
+                  "source": "provision-seed"
+                },
+                "created_at": "2026-10-04T08:31:13.106Z"
+              },
+              {
+                "id": "a92cfa6e-80d9-4c2b-8248-fa04b91adccd",
+                "kind": "seeded",
+                "title": "Ward 3 — evening round",
+                "body": {
+                  "index": 1,
+                  "source": "provision-seed"
+                },
+                "created_at": "2026-10-04T08:31:13.106Z"
+              },
+              {
+                "id": "845671c6-9d24-460a-9381-3bd5a06b2f86",
+                "kind": "seeded",
+                "title": "Theatre 1 — terminal clean",
+                "body": {
+                  "index": 2,
+                  "source": "provision-seed"
+                },
+                "created_at": "2026-10-04T08:31:13.106Z"
+              },
+              {
+                "id": "3e3253e8-bbfb-4c2d-a741-a468fab5a725",
+                "kind": "seeded",
+                "title": "Radiology — equipment wipe-down",
+                "body": {
+                  "index": 6,
+                  "source": "provision-seed"
+                },
+                "created_at": "2026-10-04T08:31:13.106Z"
+              },
+              {
+                "id": "27c0128f-d1b3-4f86-bbf3-16c33bd1b16f",
+                "kind": "seeded",
+                "title": "Ward 3 — morning round",
+                "body": {
+                  "index": 0,
+                  "source": "provision-seed"
+                },
+                "created_at": "2026-10-04T08:31:13.106Z"
+              },
+              {
+                "id": "1b8ee60c-f198-426c-a7d7-3563d6645db2",
+                "kind": "seeded",
+                "title": "Ward 7 — discharge turnaround",
+                "body": {
+                  "index": 5,
+                  "source": "provision-seed"
+                },
+                "created_at": "2026-10-04T08:31:13.106Z"
+              },
+              {
+                "id": "163afba1-23cb-48f3-9799-a160b0fe44f3",
+                "kind": "seeded",
+                "title": "Canteen — surface audit",
+                "body": {
+                  "index": 7,
+                  "source": "provision-seed"
+                },
+                "created_at": "2026-10-04T08:31:13.106Z"
+              }
+            ]
+          }
+        },
+        "attempt": {
+          "request": {
+            "method": "GET",
+            "path": "/v1/records/d9cbe2f0-adc3-44a7-9bc4-838d756747f5",
+            "body": null
+          },
+          "status": 403,
+          "ms": 14.3,
+          "at": "2026-10-04T08:31:13.152Z",
+          "body": {
+            "error": {
+              "code": "isolation.denied",
+              "message": "That record does not belong to your tenant.",
+              "correlationId": "b3684447-b44c-486a-aec4-bfb8227a5d3b"
+            }
+          }
+        },
+        "inspect": {
+          "request": {
+            "method": "GET",
+            "path": "/v1/demos/isolation/inspect/d9cbe2f0-adc3-44a7-9bc4-838d756747f5",
+            "body": null
+          },
+          "status": 200,
+          "ms": 19.7,
+          "at": "2026-10-04T08:31:13.172Z",
+          "body": {
+            "outcome": "denied",
+            "recordId": "d9cbe2f0-adc3-44a7-9bc4-838d756747f5",
+            "attempt": {
+              "requestedRecordId": "d9cbe2f0-adc3-44a7-9bc4-838d756747f5",
+              "effectiveOrgId": "6fb7d127-ece4-46a5-b840-517897f68821",
+              "orgIdSource": "derived from the verified API credential — never from a header, body, or path parameter",
+              "sql": "SELECT id, kind, title, body, created_at FROM demo_record WHERE tenant_id = $1 AND id = $2",
+              "parameters": [
+                "6fb7d127-ece4-46a5-b840-517897f68821",
+                "d9cbe2f0-adc3-44a7-9bc4-838d756747f5"
+              ]
+            },
+            "layers": {
+              "orgScope": {
+                "name": "server-derived org scope",
+                "mechanism": "application",
+                "rowsReturned": 0,
+                "refused": true
+              },
+              "rowLevelSecurity": {
+                "name": "PostgreSQL row-level security",
+                "mechanism": "database",
+                "rowsReturned": 0,
+                "refused": true
+              }
+            },
+            "policy": {
+              "table": "demo_record",
+              "rlsEnabled": true,
+              "rlsForced": true,
+              "policies": [
+                {
+                  "policyname": "demo_record_scope",
+                  "cmd": "ALL",
+                  "qual": "(tenant_id = app_current_org())",
+                  "with_check": "(tenant_id = app_current_org())",
+                  "permissive": "PERMISSIVE",
+                  "roles": ["public"]
+                }
+              ]
+            },
+            "queryPlan": [
+              {
+                "Plan": {
+                  "Node Type": "Result",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 0.01,
+                  "Total Cost": 1.78,
+                  "Plan Rows": 1,
+                  "Plan Width": 114,
+                  "Output": ["id", "kind", "title", "body", "created_at"],
+                  "One-Time Filter": "((NULLIF(current_setting('app.current_org'::text, true), ''::text))::uuid = '6fb7d127-ece4-46a5-b840-517897f68821'::uuid)",
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "demo_record",
+                      "Schema": "public",
+                      "Alias": "demo_record",
+                      "Startup Cost": 0.01,
+                      "Total Cost": 1.78,
+                      "Plan Rows": 1,
+                      "Plan Width": 114,
+                      "Output": ["id", "tenant_id", "kind", "title", "body", "created_at"],
+                      "Filter": "((demo_record.tenant_id = '6fb7d127-ece4-46a5-b840-517897f68821'::uuid) AND (demo_record.id = 'd9cbe2f0-adc3-44a7-9bc4-838d756747f5'::uuid))"
+                    }
+                  ]
+                }
+              }
+            ],
+            "branch": {
+              "file": "services/api/src/routes/records.ts",
+              "condition": "getRecord() returned null for a well-formed uuid",
+              "statusCode": 403,
+              "code": "isolation.denied"
+            },
+            "disclosure": {
+              "productionParity": "The production KodSpot platforms run the org-scope layer (ADR-0003) with a per-resource isolation regression suite. They do NOT run PostgreSQL row-level security. This demo adds it beneath the production pattern, so what you are looking at is stronger than the systems it demonstrates, not identical to them.",
+              "statusCodeChoice": "This demo answers 403 so the refusal is visible. The production platforms answer 404 on another org resource, deliberately, so the API does not confirm that it exists. The demo trades that for being watchable."
+            }
+          }
+        }
+      },
+      "audit": [
+        {
+          "id": "d4ce732c-c856-48aa-8cfa-bbd1c06350a9",
+          "occurred_at": "2026-10-04T08:31:13.143Z",
+          "action": "record.read",
+          "outcome": "denied",
+          "actor": "tenant:tnt_zPgyB1CBiM_u",
+          "resource_type": "demo_record",
+          "resource_id": "d9cbe2f0-adc3-44a7-9bc4-838d756747f5",
+          "correlation_id": "b3684447-b44c-486a-aec4-bfb8227a5d3b",
+          "trace_id": "89bc38568adb3fd20ca2401f14e7dd25",
+          "span_id": "48933bc4ea58e51a",
+          "duration_ms": 5,
+          "detail": {
+            "reason": "cross-tenant read refused",
+            "rlsHeld": true,
+            "orgScopeHeld": true
+          }
+        },
+        {
+          "id": "622cbb30-c20d-4d40-8f69-86057facd030",
+          "occurred_at": "2026-10-04T08:31:13.159Z",
+          "action": "demo.isolation.inspect",
+          "outcome": "denied",
+          "actor": "tenant:tnt_zPgyB1CBiM_u",
+          "resource_type": "demo_record",
+          "resource_id": "d9cbe2f0-adc3-44a7-9bc4-838d756747f5",
+          "correlation_id": "1e3b493b-df50-46c3-9b59-5af42a03f70f",
+          "trace_id": "48f0aef37b64d8f677569089c6b5ef95",
+          "span_id": "6fb25294a5aa503c",
+          "duration_ms": null,
+          "detail": {
+            "rlsRefused": true,
+            "orgScopeRefused": true
+          }
+        }
+      ]
+    },
+    "limits": {
+      "totalMs": 165,
+      "exchanges": [
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 200,
+          "ms": 14.7,
+          "at": "2026-10-04T08:31:13.643Z",
+          "body": {
+            "accepted": true,
+            "limit": {
+              "max": 10,
+              "window": "1 minute",
+              "keyedBy": "tenant",
+              "store": "Redis, so the limit is shared across API replicas rather than per-process"
+            },
+            "layers": [
+              {
+                "name": "Cloudflare edge rate limiting",
+                "position": "in front",
+                "note": "Keeps floods off the VM entirely. Configured at the edge, not in this repository, and not visible from here."
+              },
+              {
+                "name": "Fastify rate limiting",
+                "position": "this layer",
+                "note": "Exists because the VM must not depend on the edge being configured correctly, and because per-tenant limits are an application concept the edge cannot see."
+              }
+            ],
+            "note": "Keep going. When this returns 429 you are watching your own request shed, and the audit log records where the accepted run stopped."
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 200,
+          "ms": 13.1,
+          "at": "2026-10-04T08:31:13.656Z",
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 200,
+          "ms": 13,
+          "at": "2026-10-04T08:31:13.669Z",
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 200,
+          "ms": 11.6,
+          "at": "2026-10-04T08:31:13.681Z",
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 200,
+          "ms": 10.4,
+          "at": "2026-10-04T08:31:13.691Z",
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 200,
+          "ms": 13.6,
+          "at": "2026-10-04T08:31:13.705Z",
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 200,
+          "ms": 12.6,
+          "at": "2026-10-04T08:31:13.717Z",
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 200,
+          "ms": 11.4,
+          "at": "2026-10-04T08:31:13.729Z",
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 200,
+          "ms": 10.1,
+          "at": "2026-10-04T08:31:13.739Z",
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 200,
+          "ms": 9.5,
+          "at": "2026-10-04T08:31:13.749Z",
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 429,
+          "ms": 5.2,
+          "at": "2026-10-04T08:31:13.754Z",
+          "retryAfter": "60",
+          "body": {
+            "error": {
+              "code": "rate_limit.exceeded",
+              "message": "Rate limit exceeded. This limiter is the application-level one; Cloudflare has its own in front.",
+              "correlationId": "3aa2af08-3b15-4753-8fb4-cd096178c7be"
+            }
+          }
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 429,
+          "ms": 6.2,
+          "at": "2026-10-04T08:31:13.760Z",
+          "retryAfter": "60",
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 429,
+          "ms": 4.6,
+          "at": "2026-10-04T08:31:13.765Z",
+          "retryAfter": "60",
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 429,
+          "ms": 4.2,
+          "at": "2026-10-04T08:31:13.769Z",
+          "retryAfter": "60",
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 429,
+          "ms": 4,
+          "at": "2026-10-04T08:31:13.773Z",
+          "retryAfter": "60",
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 429,
+          "ms": 3.7,
+          "at": "2026-10-04T08:31:13.777Z",
+          "retryAfter": "60",
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 429,
+          "ms": 4.1,
+          "at": "2026-10-04T08:31:13.781Z",
+          "retryAfter": "60",
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 429,
+          "ms": 3.8,
+          "at": "2026-10-04T08:31:13.785Z",
+          "retryAfter": "60",
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 429,
+          "ms": 4.2,
+          "at": "2026-10-04T08:31:13.789Z",
+          "retryAfter": "60",
+          "body": null
+        },
+        {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/limits/hammer",
+            "body": null
+          },
+          "status": 429,
+          "ms": 4.2,
+          "at": "2026-10-04T08:31:13.793Z",
+          "retryAfter": "60",
+          "body": null
+        }
+      ],
+      "audit": [
+        {
+          "id": "73dd1689-a489-4065-a6a6-6749dd819a9b",
+          "occurred_at": "2026-10-04T08:31:13.634Z",
+          "action": "demo.limits.request",
+          "outcome": "allowed",
+          "actor": "tenant:tnt_zPgyB1CBiM_u",
+          "resource_type": null,
+          "resource_id": null,
+          "correlation_id": "003c1501-96f9-41e1-883a-dbc4a70fd21a",
+          "trace_id": "df8857ce89f623802b0248fa6bd42f92",
+          "span_id": "aea99c2096231925",
+          "duration_ms": 4,
+          "detail": {}
+        },
+        {
+          "id": "448e998a-c13a-44aa-928e-224435831501",
+          "occurred_at": "2026-10-04T08:31:13.648Z",
+          "action": "demo.limits.request",
+          "outcome": "allowed",
+          "actor": "tenant:tnt_zPgyB1CBiM_u",
+          "resource_type": null,
+          "resource_id": null,
+          "correlation_id": "d1e87ffb-b952-44b7-9ddc-bc0f39a6a740",
+          "trace_id": "d434fa33a827719a5246a45cdcdf644d",
+          "span_id": "ff5f48c5b14d8846",
+          "duration_ms": 3,
+          "detail": {}
+        },
+        {
+          "id": "a7af82dd-9c2c-46a7-a2b5-0ec007d1712c",
+          "occurred_at": "2026-10-04T08:31:13.661Z",
+          "action": "demo.limits.request",
+          "outcome": "allowed",
+          "actor": "tenant:tnt_zPgyB1CBiM_u",
+          "resource_type": null,
+          "resource_id": null,
+          "correlation_id": "a1be9d4d-bfd0-4b12-b118-4069b26ae341",
+          "trace_id": "2212be8e2329d5dea5ed1f49dea482b0",
+          "span_id": "8b02be18ee0a2661",
+          "duration_ms": 4,
+          "detail": {}
+        },
+        {
+          "id": "915f9f8d-e0a3-4e80-bbba-dae53ede139b",
+          "occurred_at": "2026-10-04T08:31:13.674Z",
+          "action": "demo.limits.request",
+          "outcome": "allowed",
+          "actor": "tenant:tnt_zPgyB1CBiM_u",
+          "resource_type": null,
+          "resource_id": null,
+          "correlation_id": "88dc7ae1-3fc4-40f6-bc7a-23749b034596",
+          "trace_id": "cf72362630cc4e49ed81722451e03319",
+          "span_id": "071db90edb22f462",
+          "duration_ms": 4,
+          "detail": {}
+        },
+        {
+          "id": "e091a9f2-f5c5-417f-803e-ca15a346c229",
+          "occurred_at": "2026-10-04T08:31:13.685Z",
+          "action": "demo.limits.request",
+          "outcome": "allowed",
+          "actor": "tenant:tnt_zPgyB1CBiM_u",
+          "resource_type": null,
+          "resource_id": null,
+          "correlation_id": "e3845427-6e51-41cd-b04a-d6e575eafdc4",
+          "trace_id": "ea0602555cd2120bf1c3988e0f2b6de4",
+          "span_id": "73f247dfb302b6de",
+          "duration_ms": 3,
+          "detail": {}
+        },
+        {
+          "id": "24c1efec-5508-41f8-932e-7e83d271b4fb",
+          "occurred_at": "2026-10-04T08:31:13.697Z",
+          "action": "demo.limits.request",
+          "outcome": "allowed",
+          "actor": "tenant:tnt_zPgyB1CBiM_u",
+          "resource_type": null,
+          "resource_id": null,
+          "correlation_id": "8a25f1b3-dc05-49a4-829b-9f23a7da876c",
+          "trace_id": "1d0d1db79fc63e36ba3b6871538a8aec",
+          "span_id": "5f1d22969999add1",
+          "duration_ms": 4,
+          "detail": {}
+        },
+        {
+          "id": "316d9457-c025-4e4f-adfa-6a9d57bad59a",
+          "occurred_at": "2026-10-04T08:31:13.710Z",
+          "action": "demo.limits.request",
+          "outcome": "allowed",
+          "actor": "tenant:tnt_zPgyB1CBiM_u",
+          "resource_type": null,
+          "resource_id": null,
+          "correlation_id": "617d8540-36b9-4c51-9b84-c3f8d8269208",
+          "trace_id": "cea57d404c7e82b5fd9e8cfec16a8ee1",
+          "span_id": "b6bb3e4ed8292e07",
+          "duration_ms": 4,
+          "detail": {}
+        },
+        {
+          "id": "1dc35b43-b2b0-4255-b354-683435b036fd",
+          "occurred_at": "2026-10-04T08:31:13.722Z",
+          "action": "demo.limits.request",
+          "outcome": "allowed",
+          "actor": "tenant:tnt_zPgyB1CBiM_u",
+          "resource_type": null,
+          "resource_id": null,
+          "correlation_id": "fcb4dcc9-2069-4cd0-823d-e463f91b393e",
+          "trace_id": "9e2e644d7b165bae9e12a6f64afedd5f",
+          "span_id": "8ac3a943321abb41",
+          "duration_ms": 3,
+          "detail": {}
+        },
+        {
+          "id": "b4d81664-6c46-4388-bec2-195f84bb4fd1",
+          "occurred_at": "2026-10-04T08:31:13.733Z",
+          "action": "demo.limits.request",
+          "outcome": "allowed",
+          "actor": "tenant:tnt_zPgyB1CBiM_u",
+          "resource_type": null,
+          "resource_id": null,
+          "correlation_id": "5f765fda-13de-4553-910d-5df9f57d988f",
+          "trace_id": "c26a466861ae1aa9a2ea0202d3930221",
+          "span_id": "0119f9b1f7487a69",
+          "duration_ms": 3,
+          "detail": {}
+        },
+        {
+          "id": "1cd8484f-d8d4-4382-a738-c605c85ba981",
+          "occurred_at": "2026-10-04T08:31:13.743Z",
+          "action": "demo.limits.request",
+          "outcome": "allowed",
+          "actor": "tenant:tnt_zPgyB1CBiM_u",
+          "resource_type": null,
+          "resource_id": null,
+          "correlation_id": "685f65a9-cdd7-4264-a8c7-527e166d923d",
+          "trace_id": "84c29030817dd8ee3873927b28647522",
+          "span_id": "ee1046b572bdbdc9",
+          "duration_ms": 3,
+          "detail": {}
+        }
+      ]
+    },
+    "payments": {
+      "idempotencyKey": "evt_y35jz9mk",
+      "exchanges": {
+        "first": {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/payments/verify",
+            "body": {
+              "idempotencyKey": "evt_y35jz9mk",
+              "subscriptionRef": "sub_demo",
+              "amountMinor": 4900,
+              "currency": "GBP"
+            }
+          },
+          "status": 201,
+          "ms": 20.5,
+          "at": "2026-10-04T08:31:14.241Z",
+          "body": {
+            "outcome": "activated",
+            "decidedHere": true,
+            "activation": {
+              "id": "5e5ef4d1-9d7b-45a4-9633-854eaa6cc39c",
+              "idempotency_key": "evt_y35jz9mk",
+              "activated_via": "client",
+              "subscription_ref": "sub_demo",
+              "amount_minor": 4900,
+              "currency": "GBP",
+              "activated_at": "2026-10-04T08:31:14.229Z",
+              "replay_count": 0,
+              "last_replay_at": null,
+              "first_correlation": "1eeca4d6-f877-42b3-8b1b-cf508c2e0170"
+            },
+            "mechanism": {
+              "authority": "PostgreSQL unique constraint payment_activation_key_unique",
+              "statement": "INSERT ... ON CONFLICT (tenant_id, idempotency_key) DO NOTHING",
+              "paths": ["webhook", "client"],
+              "why": "This call won the insert, so it performed the activation."
+            }
+          }
+        },
+        "second": {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/payments/verify",
+            "body": {
+              "idempotencyKey": "evt_y35jz9mk",
+              "subscriptionRef": "sub_demo",
+              "amountMinor": 4900,
+              "currency": "GBP"
+            }
+          },
+          "status": 200,
+          "ms": 34.2,
+          "at": "2026-10-04T08:31:14.255Z",
+          "body": {
+            "outcome": "replayed",
+            "decidedHere": false,
+            "activation": {
+              "id": "5e5ef4d1-9d7b-45a4-9633-854eaa6cc39c",
+              "idempotency_key": "evt_y35jz9mk",
+              "activated_via": "client",
+              "subscription_ref": "sub_demo",
+              "amount_minor": 4900,
+              "currency": "GBP",
+              "activated_at": "2026-10-04T08:31:14.229Z",
+              "replay_count": 1,
+              "last_replay_at": "2026-10-04T08:31:14.242Z",
+              "first_correlation": "1eeca4d6-f877-42b3-8b1b-cf508c2e0170"
+            },
+            "mechanism": {
+              "authority": "PostgreSQL unique constraint payment_activation_key_unique",
+              "statement": "INSERT ... ON CONFLICT (tenant_id, idempotency_key) DO NOTHING",
+              "paths": ["webhook", "client"],
+              "why": "This call lost the insert. It changed no money and incremented the replay counter on the activation that won."
+            }
+          }
+        },
+        "key": {
+          "request": {
+            "method": "GET",
+            "path": "/v1/demos/payments/keys/evt_y35jz9mk",
+            "body": null
+          },
+          "status": 200,
+          "ms": 11.3,
+          "at": "2026-10-04T08:31:14.266Z",
+          "body": {
+            "activation": {
+              "id": "5e5ef4d1-9d7b-45a4-9633-854eaa6cc39c",
+              "idempotency_key": "evt_y35jz9mk",
+              "activated_via": "client",
+              "subscription_ref": "sub_demo",
+              "amount_minor": 4900,
+              "currency": "GBP",
+              "activated_at": "2026-10-04T08:31:14.229Z",
+              "replay_count": 1,
+              "last_replay_at": "2026-10-04T08:31:14.242Z",
+              "first_correlation": "1eeca4d6-f877-42b3-8b1b-cf508c2e0170"
+            },
+            "cache": {
+              "present": true,
+              "ttlSeconds": 3600
+            },
+            "mechanism": {
+              "authority": "PostgreSQL unique constraint payment_activation_key_unique",
+              "statement": "INSERT ... ON CONFLICT (tenant_id, idempotency_key) DO NOTHING",
+              "why": "The race is decided by the database refusing the second insert, not by the application reading first and inserting after. Between that read and that write is exactly where a duplicate charge lives.",
+              "redisRole": "Redis holds a short-lived marker as a fast path. It is never the authority; if the two disagree, Postgres is right, because Postgres has the constraint."
+            }
+          }
+        }
+      },
+      "audit": [
+        {
+          "id": "7e2d2acb-5e3d-43b8-9066-a426e8e5b38f",
+          "occurred_at": "2026-10-04T08:31:14.229Z",
+          "action": "demo.payments.activated",
+          "outcome": "allowed",
+          "actor": "tenant:tnt_zPgyB1CBiM_u",
+          "resource_type": "payment_activation",
+          "resource_id": "5e5ef4d1-9d7b-45a4-9633-854eaa6cc39c",
+          "correlation_id": "1eeca4d6-f877-42b3-8b1b-cf508c2e0170",
+          "trace_id": "f3d4e268697f9068c8ef4aa40e90615e",
+          "span_id": "02b6bb02ee89b96d",
+          "duration_ms": 7,
+          "detail": {
+            "path": "client",
+            "decidedHere": true,
+            "replayCount": 0,
+            "idempotencyKey": "evt_y35jz9mk"
+          }
+        },
+        {
+          "id": "5ea6dba9-b640-4c22-a08a-19ff184cd351",
+          "occurred_at": "2026-10-04T08:31:14.242Z",
+          "action": "demo.payments.replayed",
+          "outcome": "allowed",
+          "actor": "tenant:tnt_zPgyB1CBiM_u",
+          "resource_type": "payment_activation",
+          "resource_id": "5e5ef4d1-9d7b-45a4-9633-854eaa6cc39c",
+          "correlation_id": "24e85c72-eb74-4c20-9f8e-183162bd2993",
+          "trace_id": "e04f658856060b64176a034280656b82",
+          "span_id": "00444736a4e893d0",
+          "duration_ms": 20,
+          "detail": {
+            "path": "client",
+            "decidedHere": false,
+            "replayCount": 1,
+            "idempotencyKey": "evt_y35jz9mk"
+          }
+        }
+      ]
+    },
+    "fraud": {
+      "exchanges": {
+        "first": {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/fraud/evidence",
+            "body": {
+              "label": "ward 3 clean",
+              "imageBase64": "a2lzaGFuLXRob3JhdC1kZW1vLWV2aWRlbmNlLXBob3Rv"
+            }
+          },
+          "status": 201,
+          "ms": 19.6,
+          "at": "2026-10-04T08:31:14.706Z",
+          "body": {
+            "outcome": "accepted",
+            "digest": "59d02801530732337cd8c95732ecec1dd884c4ebebe418edc04b322c52b8bcd8",
+            "submission": {
+              "id": "556cd332-3bcb-4f1b-9a85-566a37a4652e",
+              "image_sha256": "59d02801530732337cd8c95732ecec1dd884c4ebebe418edc04b322c52b8bcd8",
+              "label": "ward 3 clean",
+              "byte_length": 33,
+              "submitted_at": "2026-10-04T08:31:14.693Z",
+              "duplicate_attempts": 0,
+              "last_duplicate_at": null
+            },
+            "mechanism": {
+              "algorithm": "SHA-256 over the submitted bytes",
+              "authority": "PostgreSQL unique constraint fraud_submission_hash_unique",
+              "storage": "The image itself is never stored — only its digest, its length, and a label. This is a public upload endpoint; holding visitor bytes would be a liability with no demonstrative value.",
+              "why": "Photo evidence is only evidence if the same photo cannot be submitted twice. The constraint rejects, so two identical uploads racing behave exactly like two in sequence."
+            }
+          }
+        },
+        "second": {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/fraud/evidence",
+            "body": {
+              "label": "a different job",
+              "imageBase64": "a2lzaGFuLXRob3JhdC1kZW1vLWV2aWRlbmNlLXBob3Rv"
+            }
+          },
+          "status": 409,
+          "ms": 18.3,
+          "at": "2026-10-04T08:31:14.725Z",
+          "body": {
+            "outcome": "rejected-duplicate",
+            "digest": "59d02801530732337cd8c95732ecec1dd884c4ebebe418edc04b322c52b8bcd8",
+            "collidedWith": {
+              "id": "556cd332-3bcb-4f1b-9a85-566a37a4652e",
+              "image_sha256": "59d02801530732337cd8c95732ecec1dd884c4ebebe418edc04b322c52b8bcd8",
+              "label": "ward 3 clean",
+              "byte_length": 33,
+              "submitted_at": "2026-10-04T08:31:14.693Z",
+              "duplicate_attempts": 1,
+              "last_duplicate_at": "2026-10-04T08:31:14.714Z"
+            },
+            "mechanism": {
+              "algorithm": "SHA-256 over the submitted bytes",
+              "authority": "PostgreSQL unique constraint fraud_submission_hash_unique",
+              "storage": "The image itself is never stored — only its digest, its length, and a label. This is a public upload endpoint; holding visitor bytes would be a liability with no demonstrative value.",
+              "why": "Photo evidence is only evidence if the same photo cannot be submitted twice. The constraint rejects, so two identical uploads racing behave exactly like two in sequence."
+            }
+          }
+        }
+      },
+      "audit": [
+        {
+          "id": "ce9b5c8d-0443-407b-89b0-4dba1006d6c9",
+          "occurred_at": "2026-10-04T08:31:14.693Z",
+          "action": "demo.fraud.submit",
+          "outcome": "allowed",
+          "actor": "tenant:tnt_zPgyB1CBiM_u",
+          "resource_type": "fraud_submission",
+          "resource_id": "556cd332-3bcb-4f1b-9a85-566a37a4652e",
+          "correlation_id": "43d63bcb-4266-433e-a0ec-fef90b590774",
+          "trace_id": "e305050991538d7c802583e4ed81abf9",
+          "span_id": "04aa36ce4c2a60b8",
+          "duration_ms": null,
+          "detail": {
+            "digest": "59d02801530732337cd8c95732ecec1dd884c4ebebe418edc04b322c52b8bcd8",
+            "byteLength": 33
+          }
+        },
+        {
+          "id": "e3d01f7a-a2bf-4ddf-9049-e62dd872a700",
+          "occurred_at": "2026-10-04T08:31:14.714Z",
+          "action": "demo.fraud.submit",
+          "outcome": "denied",
+          "actor": "tenant:tnt_zPgyB1CBiM_u",
+          "resource_type": "fraud_submission",
+          "resource_id": "556cd332-3bcb-4f1b-9a85-566a37a4652e",
+          "correlation_id": "a8cc960c-c02d-4233-b706-1fbbcc0a0e1b",
+          "trace_id": "290801d4043c03d85a13eeee61b16c7f",
+          "span_id": "86d59de8713fd916",
+          "duration_ms": null,
+          "detail": {
+            "digest": "59d02801530732337cd8c95732ecec1dd884c4ebebe418edc04b322c52b8bcd8",
+            "attempt": 1,
+            "byteLength": 33,
+            "collidedWith": "556cd332-3bcb-4f1b-9a85-566a37a4652e"
+          }
+        }
+      ]
+    },
+    "ai": {
+      "exchanges": {
+        "operational": {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/ai/ask",
+            "body": {
+              "question": "How many records do I have?"
+            }
+          },
+          "status": 200,
+          "ms": 18.1,
+          "at": "2026-10-04T08:31:15.168Z",
+          "body": {
+            "route": "data-plane",
+            "question": "How many records do I have?",
+            "answer": "This tenant holds 8 record(s).",
+            "tokensCharged": 0,
+            "estimatedTokens": 263,
+            "intent": {
+              "id": "record-count",
+              "description": "How many records does this tenant hold?",
+              "sql": "SELECT count(*)::int AS n FROM demo_record WHERE tenant_id = $1"
+            },
+            "budget": {
+              "tokensLimit": 50000,
+              "tokensUsed": 0,
+              "tokensRemaining": 50000,
+              "exhausted": false,
+              "exhaustedAt": null
+            },
+            "modelPlane": {
+              "attempted": false,
+              "provider": "unconfigured",
+              "available": false,
+              "reason": null
+            },
+            "costNote": "Answered by SQL inside the data plane. No model was called, so this cost zero tokens and zero money — the routing decision is the saving."
+          }
+        },
+        "creative": {
+          "request": {
+            "method": "POST",
+            "path": "/v1/demos/ai/ask",
+            "body": {
+              "question": "Write a haiku about hospital logistics"
+            }
+          },
+          "status": 200,
+          "ms": 15.4,
+          "at": "2026-10-04T08:31:15.184Z",
+          "body": {
+            "route": "model-plane",
+            "question": "Write a haiku about hospital logistics",
+            "answer": "The model plane is not configured on this deployment, so no model was called. The routing decision, the token accounting, the span, and the audit record for this request are real; the model reply is the one thing that is absent, and it is reported absent rather than invented.",
+            "tokensCharged": 266,
+            "estimatedTokens": 266,
+            "intent": null,
+            "budget": {
+              "tokensLimit": 50000,
+              "tokensUsed": 266,
+              "tokensRemaining": 49734,
+              "exhausted": false,
+              "exhaustedAt": null
+            },
+            "modelPlane": {
+              "attempted": true,
+              "provider": "unconfigured",
+              "available": false,
+              "reason": "no model provider configured"
+            },
+            "costNote": "No fixed intent matched, so this escalated to the model plane and decremented the token budget. That decrement is the visible cost of a question SQL could not answer."
+          }
+        }
+      },
+      "audit": [
+        {
+          "id": "c191247e-9b8b-4c68-ac91-1236489dcc32",
+          "occurred_at": "2026-10-04T08:31:15.155Z",
+          "action": "demo.ai.ask",
+          "outcome": "allowed",
+          "actor": "tenant:tnt_zPgyB1CBiM_u",
+          "resource_type": null,
+          "resource_id": null,
+          "correlation_id": "85ea35b8-7af0-44f6-ac78-d4ba0f3051b4",
+          "trace_id": "712b53d9fd951b05ea0b18cdcc4f53b7",
+          "span_id": "b8a1a58325de2611",
+          "duration_ms": null,
+          "detail": {
+            "route": "data-plane",
+            "intent": "record-count",
+            "tokensCharged": 0,
+            "modelAvailable": false
+          }
+        },
+        {
+          "id": "f6bf48f5-f26a-4c7d-bd0c-44c8368bd0b3",
+          "occurred_at": "2026-10-04T08:31:15.175Z",
+          "action": "demo.ai.ask",
+          "outcome": "allowed",
+          "actor": "tenant:tnt_zPgyB1CBiM_u",
+          "resource_type": null,
+          "resource_id": null,
+          "correlation_id": "7377f333-984c-43c1-9745-f99c491e905b",
+          "trace_id": "998560382e002345465001e378464a20",
+          "span_id": "22cf139ba01b55ca",
+          "duration_ms": null,
+          "detail": {
+            "route": "model-plane",
+            "intent": null,
+            "tokensCharged": 266,
+            "modelAvailable": false
+          }
+        }
+      ]
+    }
+  }
+}

@@ -52,10 +52,12 @@ function siteOrigin(): string {
 function injectCanonical() {
   return {
     name: 'inject-canonical',
-    transformIndexHtml(html: string) {
+    transformIndexHtml(html: string, ctx: { path: string }) {
+      // The archive shell is its own destination, so it names itself.
+      const path = ctx.path.startsWith('/archive/') ? '/live/archive/' : '/live/';
       return html.replace(
         '</head>',
-        `  <link rel="canonical" href="${siteOrigin()}/live/">
+        `  <link rel="canonical" href="${siteOrigin()}${path}">
   </head>`,
       );
     },
@@ -159,26 +161,89 @@ const STATION_PAGES = [
   },
 ];
 
+/**
+ * S15: TWO SHELLS, TWO SETS OF PAGES.
+ *
+ * The working drawing is the public /live/, and each of its five sheets is a
+ * real page (/live/limits/ and so on) carrying the drawing's own title. The
+ * ten-station world is preserved at /live/archive/, and every page it could
+ * address — its nine narrative stations and its five demonstration routes —
+ * is emitted under that prefix from ITS shell, so the archive stays a working
+ * site rather than a folder of files. The old narrative URLs (/live/systems/
+ * and the rest) are redirected to /live/ by dist/_redirects.
+ */
+const SHEET_PAGES = [
+  {
+    path: 'isolation',
+    title: 'Isolation',
+    description: 'Try to read another tenant’s record and watch two independent layers refuse it.',
+  },
+  {
+    path: 'limits',
+    title: 'Rate limits',
+    description: 'Send twenty requests and watch the limiter shed the ones past its limit.',
+  },
+  {
+    path: 'payments',
+    title: 'Payments',
+    description: 'Send one payment twice at once and watch exactly one take effect.',
+  },
+  {
+    path: 'fraud',
+    title: 'Duplicate evidence',
+    description: 'Submit the same photo twice and watch the fingerprints collide.',
+  },
+  {
+    path: 'ai',
+    title: 'AI routing',
+    description: 'Ask a question SQL can answer at zero cost, then one that is charged.',
+  },
+];
+
+function writePage(
+  shellPath: string,
+  dir: string,
+  title: string,
+  description: string,
+  canonical: string,
+) {
+  const shell = readFileSync(shellPath, 'utf8');
+  const html = shell
+    .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
+    .replace(
+      /<meta name="description" content="[^"]*">/,
+      `<meta name="description" content="${description}">`,
+    )
+    .replace(
+      /<link rel="canonical" href="[^"]*">/,
+      `<link rel="canonical" href="${siteOrigin()}${canonical}">`,
+    );
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(resolve(dir, 'index.html'), html);
+}
+
 function emitStationPages() {
   return {
     name: 'emit-station-pages',
     closeBundle() {
       const outDir = resolve(repoRoot, 'dist/live');
-      const shell = readFileSync(resolve(outDir, 'index.html'), 'utf8');
+      for (const sheet of SHEET_PAGES) {
+        writePage(
+          resolve(outDir, 'index.html'),
+          resolve(outDir, sheet.path),
+          `${sheet.title} — live system`,
+          sheet.description,
+          `/live/${sheet.path}/`,
+        );
+      }
       for (const station of STATION_PAGES) {
-        const html = shell
-          .replace(/<title>[^<]*<\/title>/, `<title>${station.title} — live system</title>`)
-          .replace(
-            /<meta name="description" content="[^"]*">/,
-            `<meta name="description" content="${station.description}">`,
-          )
-          .replace(
-            /<link rel="canonical" href="[^"]*">/,
-            `<link rel="canonical" href="${siteOrigin()}/live/${station.path}/">`,
-          );
-        const dir = resolve(outDir, station.path);
-        mkdirSync(dir, { recursive: true });
-        writeFileSync(resolve(dir, 'index.html'), html);
+        writePage(
+          resolve(outDir, 'archive', 'index.html'),
+          resolve(outDir, 'archive', station.path),
+          `${station.title} — archive`,
+          station.description,
+          `/live/archive/${station.path}/`,
+        );
       }
     },
   };
@@ -247,6 +312,10 @@ export default defineConfig({
      */
     sourcemap: 'hidden',
     rollupOptions: {
+      input: {
+        main: resolve(here, 'index.html'),
+        archive: resolve(here, 'archive/index.html'),
+      },
       output: {
         /*
          * three is ~600KB and changes rarely; the app changes constantly.
@@ -255,7 +324,10 @@ export default defineConfig({
          */
         manualChunks(id: string) {
           if (id.includes('node_modules/three')) return 'three';
-          if (id.includes('node_modules/react') || id.includes('node_modules/scheduler')) {
+          // Exactly react, react-dom and scheduler. A bare `node_modules/react`
+          // prefix also matches react-reconciler, the archive's 3D renderer,
+          // which the public drawing must never download (S15).
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) {
             return 'react';
           }
           return undefined;

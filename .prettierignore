@@ -23,3 +23,6 @@ apps/static/public/fonts/
 # configurable to agree, so the one hand-written HTML file in the repository is
 # formatted to match the gate that ships rather than the formatter that does not.
 apps/experience/index.html
+# The archive shell (S15) is the same hand-written file for the preserved
+# ten-station world, under the same rule.
+apps/experience/archive/index.html

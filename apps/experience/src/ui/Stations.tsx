@@ -15,7 +15,7 @@ import { useCallback, useState } from 'react';
 import { COPY } from '../content/copy.ts';
 import { useWorld } from '../state/store.ts';
 import * as api from '../live/api.ts';
-import { STATIONS, navigate, type Station } from '../router.ts';
+import { LIVE_BASE, STATIONS, navigate, type Station } from '../router.ts';
 
 /** A tiny deterministic image. Same bytes every time, so the hash collides. */
 const EVIDENCE_BYTES = 'a2lzaGFuLXRob3JhdC1kZW1vLWV2aWRlbmNlLXBob3Rv';
@@ -459,7 +459,7 @@ export function Stations({ apiKey }: { apiKey: string }) {
       */}
       <nav className="station-nav" aria-label="Stations">
         <a
-          href="/live/"
+          href={LIVE_BASE}
           aria-current={station === null ? 'page' : undefined}
           onClick={(event) => {
             if (event.metaKey || event.ctrlKey) return;
@@ -472,7 +472,7 @@ export function Stations({ apiKey }: { apiKey: string }) {
         {STATIONS.map((id) => (
           <a
             key={id}
-            href={`/live/${id}/`}
+            href={`${LIVE_BASE}${id}/`}
             aria-current={station === id ? 'page' : undefined}
             onClick={(event) => {
               if (event.metaKey || event.ctrlKey) return;

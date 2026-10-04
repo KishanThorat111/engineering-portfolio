@@ -12,11 +12,21 @@
  */
 
 export const STATIONS = ['isolation', 'payments', 'fraud', 'ai', 'limits'] as const;
+
+/**
+ * Where this world is mounted. It was /live/ until S15; it is now preserved at
+ * /live/archive/, and every path it writes has to stay inside that prefix or
+ * its own navigation would walk the visitor out of the archive.
+ */
+export const LIVE_BASE =
+  typeof location !== 'undefined' && location.pathname.startsWith('/live/archive/')
+    ? '/live/archive/'
+    : '/live/';
 export type Station = (typeof STATIONS)[number];
 export type Route = { station: Station | null };
 
 export function currentRoute(pathname: string = location.pathname): Route {
-  const match = /\/live\/([a-z-]+)\/?$/.exec(pathname);
+  const match = /\/live\/(?:archive\/)?([a-z-]+)\/?$/.exec(pathname);
   const candidate = match?.[1];
   if (candidate && (STATIONS as readonly string[]).includes(candidate)) {
     return { station: candidate as Station };
@@ -25,7 +35,7 @@ export function currentRoute(pathname: string = location.pathname): Route {
 }
 
 export function stationPath(station: Station | null): string {
-  return station ? `/live/${station}/` : '/live/';
+  return station ? `${LIVE_BASE}${station}/` : LIVE_BASE;
 }
 
 /**

@@ -28,6 +28,7 @@
 import { useEffect } from 'react';
 import { useWorld } from '../state/store.ts';
 import { STATIONS, type StationId } from '../kit/stations.ts';
+import { LIVE_BASE } from '../router.ts';
 
 const ORDER: StationId[] = STATIONS.map((s) => s.id);
 
@@ -122,7 +123,7 @@ export function useStationScroll(): void {
   useEffect(() => {
     const station = STATIONS.find((s) => s.id === narrative);
     if (!station) return;
-    const path = station.id === 'enter' ? '/live/' : `/live/${station.slug}/`;
+    const path = station.id === 'enter' ? LIVE_BASE : `${LIVE_BASE}${station.slug}/`;
     if (location.pathname !== path) {
       /*
        * replaceState, not pushState. Every station the camera passes through
@@ -137,7 +138,7 @@ export function useStationScroll(): void {
 
 /** Deep links: land at the station the URL names, before the first paint. */
 export function initialStationFromPath(pathname: string = location.pathname): StationId {
-  const match = /\/live\/([a-z-]+)\/?$/.exec(pathname);
+  const match = /\/live\/(?:archive\/)?([a-z-]+)\/?$/.exec(pathname);
   const slug = match?.[1];
   if (!slug) return 'enter';
   return STATIONS.find((s) => s.slug === slug)?.id ?? 'enter';

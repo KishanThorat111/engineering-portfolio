@@ -3,16 +3,13 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Live system — Kishan Thorat</title>
+    <title>Archive: the ten-station world — Kishan Thorat</title>
     <!-- One line, deliberately: the machine-parity gate matches
          `<meta name="description" content="…"` contiguously, and Vite does not
          minify this shell, so a wrapped attribute ships as a page with no
          description as far as the gate — and a crawler — can tell. -->
-    <meta name="description" content="A live working drawing of a real multi-tenant system: your own tenant, five attacks, and the evidence of how each was stopped.">
-    <meta name="theme-color" content="#F3F0E8">
-    <meta name="color-scheme" content="light">
-    <!-- The site's own variable Inter, already cached by any visitor who came from the home page. -->
-    <link rel="preload" href="/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <meta name="description" content="The earlier ten-station live surface, preserved and runnable. The current one is at /live/.">
+    <meta name="theme-color" content="#0B0E14">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <!--
       Not indexed. The static surface is the SEO and machine layer (dossier
@@ -23,13 +20,14 @@
   </head>
   <body>
     <!--
-      The drawing is an interface, not an image (S15).
+      The scene is not the only way to understand this page.
 
-      Every outcome the sheets draw is also written in the notes beside them
-      and announced in a live region, so a screen reader, a keyboard or a text
-      browser gets all of it. There is no WebGL on this page: the earlier
-      ten-station world is preserved at /live/archive/ from its own shell.
-      WCAG 2.2 AA is a budget the dossier binds to BOTH surfaces (§11).
+      #root carries an accessible document — headings, prose, a live region —
+      that a screen reader, a keyboard, a text browser, or anyone whose GPU
+      cannot run WebGL gets in full. The canvas is layered behind it as an
+      illustration of what the text already says. WCAG 2.2 AA is a budget the
+      dossier binds to BOTH surfaces (§11), and a canvas with no textual
+      equivalent would fail it no matter how well it ran.
     -->
     <div id="root"></div>
     <noscript>
@@ -42,6 +40,6 @@
         <p><a href="/">Go to the site</a></p>
       </div>
     </noscript>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/archive.tsx"></script>
   </body>
 </html>
