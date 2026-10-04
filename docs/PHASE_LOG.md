@@ -4402,3 +4402,18 @@ vite 8.3.2, pg 8.23.1 among them). No new dependency.
 - Frame and interaction timing on a named mid-range phone: not measured.
 - `scripts/render-verify.mjs` drives the ten-station world at `/live/`; it
   has to point at `/live/archive/` to keep measuring it.
+
+### Addendum — deployed and verified on the live origin
+
+Fetched after da3b423 deployed: `/live/` serves `main-Dv03eQOg.js`, the same
+hash as the local build; `/live/`, `/live/payments/`, `/live/archive/`,
+`/live/archive/systems/`, `/live/copy.json` and `/` return 200;
+`/live/systems/` returns 301 to `/live/`; the bundle's `.map` now returns 404;
+assets carry `immutable`; `/live/` carries one CSP, the live policy. A browser
+run on `https://kishanthorat.com` at 1440×900 and 390×844: the edge answers
+(SIN, 76 ms measured), the control plane does not (530), so the page states
+RECORDED and all five sheets play their recorded exchanges; 0 px horizontal
+overflow. The only other console error is Cloudflare's injected analytics
+beacon, which the existing CSP blocks — a pre-existing dashboard setting, not
+changed here. Remote CI for da3b423 green at step level: Build & truth gates
+19/19, Lighthouse 9/9, control-plane tests 18/18, container image 6/6.
