@@ -1,16 +1,4 @@
 {
   "$comment": "Production-audit exceptions. Each entry is accepted ONLY while every condition below still holds; scripts/audit-check.mjs re-checks all of them on every run and fails the build the moment one stops being true. Adding an entry is an owner decision, recorded in docs/PHASE_LOG.md. Remove an entry as soon as a patched version is installed.",
-  "exceptions": [
-    {
-      "advisory": "GHSA-ch52-4w7c-c8xp",
-      "package": "http-cache-semantics",
-      "reachedOnlyVia": ["astro"],
-      "reviewBy": "2026-12-31",
-      "requires": {
-        "noPatchedVersionPublished": true,
-        "astroConfigHasNoRemoteImages": true
-      },
-      "why": "The advisory is a shared-cache flaw: a client's max-stale directive can make a cache serve a response that was zeroed to protect another user's Set-Cookie. Astro uses this package in exactly one place, assets/build/remote.js, to compute how long to keep a REMOTE image it fetched at BUILD time — one process, no users, no client cache directives, no cookies. It runs only for remote image domains allowed in astro.config (image.domains / image.remotePatterns), and this site allows none. Nothing in the deployed site executes Astro at all. No patched version of the package exists (4.2.0 is the latest) and astro 7.3.5, the latest, still requires it."
-    }
-  ]
+  "exceptions": []
 }
