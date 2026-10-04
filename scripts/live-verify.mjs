@@ -172,7 +172,16 @@ try {
       ai: '0 tokens',
     };
     for (const [id, expected] of Object.entries(results)) {
-      if (id !== 'isolation') await p.click(`.sheets a[href="/live/${id}/"]`);
+      if (id !== 'isolation') {
+        await p.click(`.sheets a[href="/live/${id}/"]`);
+        // A sheet change runs inside a View Transition, so the DOM swaps a
+        // frame or more after the click. Wait for the new sheet itself.
+        await p.waitForFunction(
+          (name) => document.querySelector('#sheet-title')?.textContent?.startsWith(name),
+          D.sheets[id].name,
+          { timeout: 10_000 },
+        );
+      }
       const notes = await runVisible(p);
       check(notes.includes(expected), `${id}: the recorded exchange plays to "${expected}"`);
     }

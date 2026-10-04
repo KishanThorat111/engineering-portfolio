@@ -141,7 +141,8 @@ jobs:
           --health-cmd "redis-cli ping"
           --health-interval 5s --health-timeout 5s --health-retries 20
     env:
-      NODE_ENV: production
+      # NODE_ENV is set only where the API starts: at job level it made `npm ci`
+      # skip devDependencies, and the TypeScript build then had no types.
       API_HOST: 127.0.0.1
       API_PORT: '8080'
       LOG_LEVEL: warn
@@ -173,6 +174,8 @@ jobs:
         run: node services/api/dist/db/migrate.js
 
       - name: Start the API
+        env:
+          NODE_ENV: production
         run: |
           node services/api/dist/index.js > /tmp/api.log 2>&1 &
           for i in $(seq 1 60); do

@@ -88,10 +88,14 @@ export function App() {
     const path = pathFor(id);
     if (location.pathname !== path) history.pushState({ sheet: id }, '', path);
     const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
-    if (doc.startViewTransition && !calm)
-      doc.startViewTransition(() => flushSync(() => setSheet(id)));
-    else setSheet(id);
+    const doc = document as Document & {
+      startViewTransition?: (cb: () => void) => { finished: Promise<void> };
+    };
+    if (doc.startViewTransition && !calm) {
+      // A transition interrupted by the next click rejects `finished`; the new
+      // sheet is already shown, so that is not an error worth surfacing.
+      doc.startViewTransition(() => flushSync(() => setSheet(id))).finished.catch(() => {});
+    } else setSheet(id);
   }, []);
 
   /* --- the real lifecycle ---------------------------------------------- */
