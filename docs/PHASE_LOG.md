@@ -4417,3 +4417,73 @@ overflow. The only other console error is Cloudflare's injected analytics
 beacon, which the existing CSP blocks — a pre-existing dashboard setting, not
 changed here. Remote CI for da3b423 green at step level: Build & truth gates
 19/19, Lighthouse 9/9, control-plane tests 18/18, container image 6/6.
+
+## S16 — /live/ recorded by design, CI-verified, and three investigations · 5 October 2026
+
+**Owner decision, final:** no VM. GCP credits are exhausted and no other
+backend is to be created. The deployed /live/ is static, recorded by design,
+and adds three investigations of real defects. This amends the dossier's
+founding premise — "a visitor is provisioned as a real tenant inside a real
+running system" — which cannot hold without a control plane; the LIVE path is
+kept, unchanged, behind a flag, so a future backend restores it without a
+rewrite.
+
+**Recorded by design.** With `VITE_LIVE_BACKEND` unset (the deployed state)
+the page reads the edge and loads the recorded set, nothing else: no
+provisioning, no socket, no request to `/v1/*`, no retry control, no
+live-channel row, no receipt. The opening reads "Recorded runs of a real
+multi-tenant system" with one line of provenance — recorded from the real
+system · re-verified by CI on every push · source. With the flag on against
+the local stack the page still goes LIVE, the 403 arrives and REV 2 is pushed
+by the database trigger. A static-host 404 from `/v1/*` is now described as
+"no control plane answers at this address", not as a refusal.
+
+**Set B — investigations**, on the same frame and title block as the five
+demonstrations (untouched): B-201 (efbf654, bb4fd82), B-202 (3cf7754,
+7b4cf85, historical, 17–18 Aug), B-203 (3ed473e, historical, 17 Aug). Each
+reads symptom → evidence in inspection order → investigation → cause → fix →
+protection → source, with a static sequence drawing. Every quoted line was
+checked against the commit it cites; one citation was caught pointing at a
+commit that already contained the fix and was corrected before commit. The
+first E1 draft showed JSON frames the repository does not record; it now
+quotes the order the commits record, in words.
+
+**The protections are real, and each was proven by breaking it:**
+
+| Case | Protection | Where it runs | Proof |
+|---|---|---|---|
+| B-201 | gateway queues frames that arrive before the subscriber exists (bb4fd82); test subscribes the instant the socket opens | API workflow | before the fix: "timed out waiting for the early world subscription. Received: ["hello","presence"]"; after: pass, suite 122/122 |
+| B-202 | `gate:policy` — composes `_headers` as Cloudflare does (shared `scripts/lib/cloudflare-headers.mjs`) and re-applies both defects every run | CI | removing the `/live/*` unset: "receives 2 Content-Security-Policy headers" |
+| B-203 | `gate:release` — the committed release script under `bash -s`, docker stubbed, exec reading stdin | CI | redirect removed: exit 0, no marker (run #3's shape) |
+
+**Recording conformance.** A new CI job starts the real API on PostgreSQL 17
+and Redis 7, captures the five demonstrations afresh, and compares them with
+the committed recording by behaviour (statuses, outcomes, routes, the refusing
+policy, replays, digest, audit rows) — never timings or ids. Proven locally:
+altering the recorded fraud status and AI route failed it with both diffs
+named; a built-in tampered copy must fail on every run. The fresh capture is a
+CI artifact. **`verify:live`** (CI, runner's Chrome) proves the no-backend
+behaviour in a browser: 47 checks; forcing the backend flag on fails it.
+
+### Verified
+
+- `npm run verify` exits 0 (13 gates, including `gate:policy` and
+  `gate:release`); `format:check` clean; API suite 122/122 on real Postgres.
+- `verify:live` 47/47; widths 320×700, 390×844, 820×1180, 1440×900 with 0 px
+  overflow on `/live/` and `/live/b-201/`; reduced motion leaves nothing
+  running; keyboard reaches the action with a visible ring.
+- `render-verify` now measures the archived world at `/live/archive/`: 35/35.
+- The homepage build is byte-identical (dist/index.html sha256 prefix
+  d9a07cb220ae9d94 before and after); no file under `apps/static` or the five
+  sheets changed.
+- The html gate caught one defect during the work — a page title over 70
+  characters on `/live/b-201/` — fixed by shortening the three titles.
+- Public /live/ JS 24.3 KB gz (was 22.4 for the app chunk), CSS 4.8 KB gz.
+
+### Still open
+
+- No backend in production by decision; `/health`, `/v1/*` and `/r/*` still
+  route to the unconnected tunnel (530) and were deliberately left as they are.
+- The homepage liveness panel will keep reporting the control plane
+  unreachable; the homepage is locked, so it is recorded, not changed.
+- Product videos and the 12 case-study screenshot slots: not part of /live/.
