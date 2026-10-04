@@ -91,20 +91,6 @@ export class LiveSocketSource implements EventSource {
 
     socket.onopen = () => {
       this.#attempts = 0;
-      /*
-       * BOTH scopes, when there is a credential.
-       *
-       * `world` alone was right in P4, where the surface had no tenant of its
-       * own. In P5 it is a bug: the gateway routes an event to `self` when it
-       * belongs to the subscriber and to `world` when it does not, so a
-       * world-only subscription silently drops the visitor's OWN events — which
-       * is precisely the audit row §2.5 ends on. Caught by the fusion check
-       * asserting the refusal comes back over the socket.
-       */
-      socket.send(JSON.stringify({ type: 'subscribe', scope: 'world' }));
-      if (this.#authenticated) {
-        socket.send(JSON.stringify({ type: 'subscribe', scope: 'self' }));
-      }
     };
 
     socket.onmessage = (message) => {
@@ -116,6 +102,28 @@ export class LiveSocketSource implements EventSource {
       }
       switch (parsed.type) {
         case 'hello':
+          /*
+           * SUBSCRIBE ON HELLO, NOT ON OPEN (S15 defect fix).
+           *
+           * The gateway attaches its message listener only after it has
+           * resolved the credential and registered presence — two awaits after
+           * the socket opens. Subscriptions sent from `onopen` arrived in that
+           * gap and were dropped without an error, so on a fast client the
+           * socket said hello and then delivered nothing: not the world, and
+           * not the visitor's own audit rows. Found by tracing the frames in a
+           * real browser against the production-shaped stack. `hello` is the
+           * gateway saying it is ready, so that is when to ask.
+           *
+           * BOTH scopes, when there is a credential: the gateway routes an
+           * event to `self` when it belongs to the subscriber and to `world`
+           * when it does not, so a world-only subscription silently drops the
+           * visitor's OWN events — which is precisely the audit row §2.5 ends
+           * on.
+           */
+          socket.send(JSON.stringify({ type: 'subscribe', scope: 'world' }));
+          if (this.#authenticated) {
+            socket.send(JSON.stringify({ type: 'subscribe', scope: 'self' }));
+          }
           this.#setState({ mode: 'live', reason: null, recordedAt: null });
           return;
         case 'event':
