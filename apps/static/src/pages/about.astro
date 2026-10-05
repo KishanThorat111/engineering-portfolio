@@ -52,6 +52,12 @@ const reach = [
       focus: '80% 42%',
       focusNarrow: '84% 38%',
       alt: 'Kishan Thorat looking out over a city at night',
+      // Plate 08's two HUD frames hold the home page's labels; here they would
+      // be empty boxes, so each is covered by the city beside it.
+      patches: [
+        { x: 68.6, y: 18.1, w: 10.8, h: 9.7, dx: -13, dy: -1 },
+        { x: 40.5, y: 65.4, w: 16.6, h: 8.2, dx: -14, dy: -12 },
+      ],
     }}
   >
     <Fragment slot="title">
