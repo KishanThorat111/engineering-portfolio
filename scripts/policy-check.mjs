@@ -73,6 +73,30 @@ export function violations(text) {
     }
     if (!(d.get('worker-src') ?? new Set()).has('blob:')) fail(`worker-src lacks blob:`);
   });
+  /*
+   * S17 — Cache-Control composes the same way. The /live/ HTML shells carry
+   * no-transform, which stops Cloudflare injecting its analytics beacon (a CSP
+   * violation in every console); nothing else may carry it, because it also
+   * stops edge compression and the homepage's HTML would ship at full size.
+   */
+  const cache = (path) => headersFor(path)['cache-control'] ?? '';
+  for (const path of ['/live/', '/live/b-201/']) {
+    const value = cache(path);
+    if (!value.includes('no-transform') || value.split('no-transform').length !== 2) {
+      found.push(`${path}: Cache-Control must carry no-transform exactly once ("${value}")`);
+    }
+  }
+  for (const path of ['/', '/live/assets/main-00000000.js', '/_astro/index.00000000.css']) {
+    if (cache(path).includes('no-transform')) {
+      found.push(`${path}: carries no-transform, which would stop edge compression`);
+    }
+  }
+  if (cache('/live/assets/main-00000000.js') !== 'public, max-age=31536000, immutable') {
+    found.push(
+      `/live/assets/*: Cache-Control composed to "${cache('/live/assets/main-00000000.js')}"`,
+    );
+  }
+
   // The static surface never gains blob:, and keeps its connect rule.
   check('/', (d, fail) => {
     if ((d.get('script-src') ?? new Set()).has('blob:')) fail(`the static surface gained blob:`);
@@ -115,5 +139,5 @@ for (const [name, tampered] of controls) {
 }
 
 console.log(
-  `policy-check: OK — effective policies correct for 5 paths; both historical defects (3cf7754, 7b4cf85) re-applied and caught.`,
+  `policy-check: OK — effective policies and cache rules correct; both historical defects (3cf7754, 7b4cf85) re-applied and caught.`,
 );

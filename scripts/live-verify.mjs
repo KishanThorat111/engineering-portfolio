@@ -280,6 +280,38 @@ try {
     await context.close();
   }
 
+  console.log('live-verify: the homepage readouts (S17)');
+  {
+    const { p, api, errors, context } = await page({ width: 1440, height: 900 });
+    const health = [];
+    p.on('request', (r) => {
+      if (new URL(r.url()).pathname === '/health') health.push(r.url());
+    });
+    await p.goto(`${BASE}/`, { waitUntil: 'load' });
+    await p.waitForFunction(() => document.documentElement.dataset.liveness === 'recorded', null, {
+      timeout: 10_000,
+    });
+    const readouts = await p.evaluate(() =>
+      [...document.querySelectorAll('[data-live-value], [data-trace-total], .sb__word')]
+        .filter(
+          (el) => el.getBoundingClientRect().width > 0 && getComputedStyle(el).display !== 'none',
+        )
+        .map((el) => el.textContent.trim()),
+    );
+    check(health.length === 0 && api.length === 0, 'the homepage makes no control-plane request');
+    check(
+      readouts.includes('Engineering experience — recorded · verified by CI'),
+      'the homepage states the recorded experience',
+    );
+    check(
+      !readouts.some((t) => /offline|checked just now/i.test(t)),
+      'no "offline" readout on the homepage',
+    );
+    check(readouts.includes('5'), 'the recorded demonstration count is shown');
+    check(errors.length === 0, `no homepage page errors (${errors.join(' | ')})`);
+    await context.close();
+  }
+
   console.log('live-verify: the archive and retired URLs');
   {
     const { p, context } = await page({ width: 1280, height: 900 });
@@ -287,6 +319,11 @@ try {
     await p.waitForTimeout(1500);
     check(archive?.status() === 200, '/live/archive/ serves');
     check((await p.locator('#root *').count()) > 0, '/live/archive/ mounts the preserved world');
+    const alias = await p.goto(`${BASE}/live/duplicates/`, { waitUntil: 'load' });
+    check(
+      new URL(p.url()).pathname === '/live/fraud/' && alias?.status() === 200,
+      '/live/duplicates/ redirects to the Duplicate evidence sheet',
+    );
     const retired = await p.goto(`${BASE}/live/systems/`, { waitUntil: 'load' });
     check(
       new URL(p.url()).pathname === '/live/' && retired?.status() === 200,

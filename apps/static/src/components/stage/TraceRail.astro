@@ -49,7 +49,7 @@ const { hops, request, class: className } = Astro.props;
     <p class="trace__request">{request}</p>
     <p class="trace__total">
       <span class="trace__total-label">TOTAL</span>
-      <span data-trace-total>—</span>
+      <span data-trace-total data-recorded-value="not run">—</span>
     </p>
   </div>
 
@@ -65,7 +65,11 @@ const { hops, request, class: className } = Astro.props;
     }
   </ol>
 
-  <p class="trace__caption" data-trace-caption>
+  <p
+    class="trace__caption"
+    data-trace-caption
+    data-recorded-value="No control plane runs behind this site, so this request is not made and nothing on this panel is a measurement. /live/ replays recorded runs of the real system, re-verified by CI on every push."
+  >
     Not yet measured. This line fills in when your browser completes a request to the control plane.
   </p>
 </div>

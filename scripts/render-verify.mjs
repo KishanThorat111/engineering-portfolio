@@ -439,7 +439,13 @@ try {
     record(
       'with the plane unreachable the home page says so rather than claiming live',
       `data-liveness: ${liveness}, state readouts: ${JSON.stringify(stateTexts)}`,
-      liveness === 'down' && saysDown,
+      /*
+       * S17: with no control plane configured (the default build) the page does
+       * not probe at all and states RECORDED; only a build with
+       * PUBLIC_LIVE_BACKEND=on probes and must then say it is down. Either way
+       * nothing may read as live.
+       */
+      liveness === (process.env['PUBLIC_LIVE_BACKEND'] === 'on' ? 'down' : 'recorded') && saysDown,
     );
     record(
       'no measured figure is shown that was never measured',

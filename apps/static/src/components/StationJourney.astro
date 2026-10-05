@@ -55,6 +55,12 @@ import { SITE } from '../config/site';
 import { PILLARS } from '../config/pillars';
 import { STATUS_LABELS } from '../schemas/constitution';
 import type { CollectionEntry } from 'astro:content';
+/*
+ * The demonstrations /live/ replays, counted from the recording itself at build
+ * time — not typed here — so this readout cannot drift from what /live/ shows.
+ */
+import recordedSet from '../../../experience/src/live/recorded-exchanges.json';
+const RECORDED_DEMOS = Object.keys(recordedSet.demos).length;
 
 interface Props {
   systems: CollectionEntry<'systems'>[];
@@ -1362,11 +1368,12 @@ const PINS_END: Pin[] = [
     <StatusBar
       fields={[
         { label: 'Round trip', live: 'rtt', unit: 'ms' },
-        { label: 'Demonstrations', live: 'demos' },
+        { label: 'Demonstrations', live: 'demos', recorded: String(RECORDED_DEMOS) },
         { label: 'Region', value: 'one' },
         { label: 'Machines', value: 'one' },
       ]}
       note="Measured in your browser when this page loaded, against this site's own control plane. Not a fleet-wide status — there is no fleet — and nothing is cached from an earlier visit."
+      recordedNote="No control plane runs behind this site, so nothing here is measured. /live/ replays recorded runs of the real system, re-verified by CI on every push."
     />
   </Panel>
 

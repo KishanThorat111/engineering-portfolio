@@ -42,6 +42,8 @@ export interface Field {
   value?: string;
   /** Binds this field to the page's one live reading. */
   live?: 'rtt' | 'state' | 'demos';
+  /** What the field states when the site is recorded by design (S17). */
+  recorded?: string;
   unit?: string;
 }
 
@@ -49,10 +51,12 @@ interface Props {
   fields: Field[];
   /** The sentence that says what "live" here does and does not mean. */
   note?: string;
+  /** The same sentence for the recorded-by-design state, which measures nothing. */
+  recordedNote?: string;
   class?: string;
 }
 
-const { fields, note, class: className } = Astro.props;
+const { fields, note, recordedNote, class: className } = Astro.props;
 ---
 
 <div class:list={['sb', className]}>
@@ -69,6 +73,7 @@ const { fields, note, class: className } = Astro.props;
     <span class="sb__word sb__word--unknown">not yet checked</span>
     <span class="sb__word sb__word--live">answering</span>
     <span class="sb__word sb__word--down">offline</span>
+    <span class="sb__word sb__word--recorded">recorded</span>
   </p>
 
   <dl class="sb__fields">
@@ -77,7 +82,9 @@ const { fields, note, class: className } = Astro.props;
         <div class="sb__field">
           <dt>{f.label}</dt>
           <dd>
-            <span data-live-value={f.live}>{f.value ?? '—'}</span>
+            <span data-live-value={f.live} data-recorded-value={f.recorded}>
+              {f.value ?? '—'}
+            </span>
             {f.unit && (f.value !== undefined || f.live) && <span class="sb__unit">{f.unit}</span>}
           </dd>
         </div>
@@ -85,7 +92,8 @@ const { fields, note, class: className } = Astro.props;
     }
   </dl>
 
-  {note && <p class="sb__note">{note}</p>}
+  {note && <p class="sb__note sb__note--measured">{note}</p>}
+  {recordedNote && <p class="sb__note sb__note--recorded">{recordedNote}</p>}
 </div>
 
 <style>
@@ -158,6 +166,20 @@ const { fields, note, class: className } = Astro.props;
   :global(:root[data-liveness='down']) .sb__word--down {
     display: inline;
     color: var(--pending);
+  }
+
+  /* Recorded by design: stated in the plain text colour — not amber, it is not a fault. */
+  :global(:root[data-liveness='recorded']) .sb__word--recorded {
+    display: inline;
+  }
+
+  .sb__note--recorded,
+  :global(:root[data-liveness='recorded']) .sb__note--measured {
+    display: none;
+  }
+
+  :global(:root[data-liveness='recorded']) .sb__note--recorded {
+    display: block;
   }
 
   .sb__fields {

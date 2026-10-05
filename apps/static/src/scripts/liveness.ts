@@ -35,7 +35,21 @@
  * that it has not asked. That is a true page, not a degraded one.
  */
 
-type Liveness = 'live' | 'down';
+/*
+ * RECORDED BY DESIGN (S17). No control plane runs behind this site: the GCP
+ * VM is gone by decision and /live/ replays recorded runs of the real system,
+ * re-verified by CI on every push. Probing /health on every visit then only
+ * ever produced "offline — checked just now", which read as the experience
+ * being broken when it is not. So unless the build opts in with
+ * PUBLIC_LIVE_BACKEND=on, nothing is requested and every instrument states the
+ * designed state instead: recorded. The round trip stays a dash — there is no
+ * measurement, so no figure — and the live probe below is kept, unchanged, for
+ * a deployment that has a control plane again.
+ */
+type Liveness = 'live' | 'down' | 'recorded';
+
+const backendConfigured = (): boolean =>
+  (import.meta.env as Record<string, string | undefined>)['PUBLIC_LIVE_BACKEND'] === 'on';
 
 /** Fill every readout bound to one key. */
 function fill(key: string, text: string): void {
@@ -60,7 +74,26 @@ async function sample(): Promise<number> {
   return rtt;
 }
 
+function recorded(): void {
+  setState('recorded');
+  fill('state', 'recorded');
+  fill('state-line', 'Engineering experience — recorded · verified by CI');
+  /*
+   * Everything else a recorded instrument says is written into the page as
+   * `data-recorded-value` — the demonstration count read from the recording at
+   * build time, the trace's total and caption — so it is in the markup, not in
+   * this script, which has to stay small enough to be inlined.
+   */
+  for (const node of document.querySelectorAll<HTMLElement>('[data-recorded-value]')) {
+    node.textContent = node.dataset['recordedValue'] ?? node.textContent;
+  }
+}
+
 export function initLiveness(): void {
+  if (!backendConfigured()) {
+    recorded();
+    return;
+  }
   void (async () => {
     try {
       const rtt = await sample();
