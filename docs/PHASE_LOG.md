@@ -4507,3 +4507,50 @@ https://kishanthorat.com passes 47/47 (RECORDED from the first load in
 /live/archive/ and /live/payments/ return 200; /live/systems/ 301s to /live/;
 the served homepage is byte-identical to the build (d9a07cb220ae9d94); all 16
 GitHub links the investigations cite return 200.
+
+## S17 — Final QA: the homepage states the recorded experience; /live/ defects fixed · 5 October 2026
+
+QA against the deployed site before changing anything, then small fixes only.
+
+**Found on production:**
+
+| Where | Defect | Fix |
+|---|---|---|
+| Homepage | probed /health every visit; with no control plane by decision it read "Live system offline — checked just now", control plane "offline" in amber in the hero, the station 06 bar and both GET /health traces — as if /live/ were broken | recorded state: no request; "Engineering experience — recorded · verified by CI"; control plane "recorded"; round trip a dash; trace total "not run" with its reason; the bar's note no longer claims a measurement; its demonstrations count read from the recording at build time. Live probe kept behind PUBLIC_LIVE_BACKEND=on — built with it, against the local stack, it reads LIVE, 147 ms |
+| B-201/202/203 | every fix-list commit hash squeezed to a 24–30px column at every width: `.notes li` matched list items nested in the Fix row | nested items are plain text; hashes never break |
+| B-203 E1 | the two deploy-run lines collapsed into one paragraph | shown as lines |
+| A-101/102/103/105 at ≤412px | text on text in the compact drawings (boundary label on a room name; request line through the sign; timing labels overprinting; constraint on the row marker; a room name wider than its box) | compact branches only; desktop drawings unchanged |
+| /live/duplicates/ | 404 for the URL implied by "Duplicate evidence" | 301 to /live/fraud/ |
+| every /live/ page | console CSP violation: Cloudflare Web Analytics injects a third-party beacon the live policy refuses | `Cache-Control: … no-transform` on the /live/ HTML shells only, which Cloudflare documents as preventing the injection; not on the static pages, where it would also stop brotli on the homepage's 165 KB of HTML |
+
+Two gates caught my own regressions, correctly: the liveness script grew to
+4,276 bytes, past the inline limit, and fastlane-check refused the bundled file
+— the recorded sentences moved into markup as `data-recorded-value`, and it is
+inlined again; render-verify's homepage assertion expected "down" — it now
+expects RECORDED by default and DOWN only with the flag on, nothing reading as
+live in either.
+
+New assertions: gate:policy checks Cache-Control composition (no-transform
+exactly once on /live/ pages, never on assets or static pages; proven by
+removing it and by spreading it site-wide); verify:live checks the homepage (no
+control-plane request, the recorded state, no "offline", the count) and the
+alias. A responsive audit (build/qa/audit.mjs, local) loads 10 pages at 9 widths
+(320 to 1440) and checks overflow, exploded identifiers, drawings within their
+frame and touch targets; run against production first it flagged all five
+hashes and the /health request, so it is not vacuous.
+
+### Verified (local)
+
+- `npm run verify` exit 0, 13 gates; `format:check` clean; `audit:prod` clean.
+- API suite 122/122 on real Postgres and Redis; recording conformance CONFORMS.
+- verify:live 53/53; render-verify 35/35; audit 90 loads, no problems.
+- /live/ LIVE path behind its flag against the local stack: LIVE, real 403,
+  REV 2 pushed by the database trigger, receipt present.
+
+### Still open
+
+- The homepage console still shows Cloudflare's injected analytics beacon being
+  refused by its CSP. no-transform there would cost brotli on 165 KB of HTML, and
+  the CSP is not loosened for third-party script. OWNER-INPUT: in the Cloudflare
+  dashboard, turn off Web Analytics automatic injection for kishanthorat.com
+  (or remove the site from Web Analytics).
