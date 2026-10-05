@@ -248,7 +248,7 @@ const ROUTES: Entry[] = [
   },
   {
     stamp: 'The live plane',
-    text: 'A real tenant in a real multi-tenant system, and an invitation to attack it.',
+    text: 'Recorded runs of a real multi-tenant system: five attacks, three investigations.',
     href: '/live/',
   },
   {
@@ -1031,10 +1031,10 @@ const PINS_END: Pin[] = [
 
   {/* ── The floor: what the reference puts under the path ─────────── */}
   <div class="rq__go">
-    <p class="rq__goHead">See it run against a real tenant.</p>
+    <p class="rq__goHead">See it run against the real system.</p>
     <p class="rq__goLine">
-      The live plane provisions you a tenant in a real multi-tenant system and traces your own
-      requests through it. A demonstration, labelled as one.
+      The live plane replays recorded runs of a real multi-tenant system, re-verified by CI on every
+      push, with the evidence of how each attack was stopped. A demonstration, labelled as one.
     </p>
     <a class="cta" href="/live/">Enter the live plane <span aria-hidden="true">→</span></a>
   </div>
@@ -1043,8 +1043,8 @@ const PINS_END: Pin[] = [
     x={22.5}
     y={77}
     w={54}
-    title="Live request trace"
-    note="measured in your browser"
+    title="Request trace"
+    note="one round trip, end to end"
     band="two-thirds"
   >
     <TraceRail hops={TRACE_HOPS} request="GET /health" />
@@ -1308,7 +1308,7 @@ const PINS_END: Pin[] = [
 
   <Panel x={4.8} y={66} w={14.6} title="The demo plane" status="isolation" band="third">
     <p>
-      A real tenant in a real multi-tenant system, yours to attack, with the layer that stopped you
+      Recorded runs of a real multi-tenant system: five attacks, and the layer that stopped each one
       shown.
     </p>
     <p class="note">A demonstration, labelled one. Never a production system.</p>

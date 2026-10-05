@@ -103,10 +103,11 @@ export async function buildProfile(origin: URL): Promise<Profile> {
       catalogue: absolute('/v1/demonstrations', origin),
       plane: 'demo' as const,
       summary:
-        'A real multi-tenant control plane, deliberately attackable, rendering its own ' +
-        'telemetry. It provisions a real tenant, refuses cross-tenant reads with genuine ' +
-        'PostgreSQL row-level security beneath server-derived scoping, and exposes five ' +
-        'demonstrations that each write an auditable trace.',
+        'Recorded runs of a real multi-tenant control plane, re-verified by CI on every ' +
+        'push: cross-tenant reads refused by genuine PostgreSQL row-level security beneath ' +
+        'server-derived scoping, and five demonstrations that each write an auditable trace. ' +
+        'The control plane is not publicly running; the recordings are captured from real ' +
+        'runs, never written by hand.',
       disclosure:
         'This is a demonstration plane, physically separate from any production system, with ' +
         'no path to one. Every tenant it creates is destroyed on a TTL by a scheduled job. It ' +

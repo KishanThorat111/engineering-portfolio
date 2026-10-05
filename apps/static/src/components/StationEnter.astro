@@ -377,7 +377,7 @@ const HOPS: Hop[] = [
   }
 
   {/* ── The trace panel ─────────────────────────────────────────── */}
-  <Panel x={39} y={76.2} w={37} title="Live request trace" note="measured here" band="full">
+  <Panel x={39} y={76.2} w={37} title="Request trace" note="one round trip, end to end" band="full">
     <TraceRail hops={HOPS} request="GET /health" />
   </Panel>
 
@@ -410,8 +410,8 @@ const HOPS: Hop[] = [
       <a class="enter__cta enter__cta--quiet" href="/cv.pdf" download>Download CV</a>
     </div>
     <p class="enterM__note">
-      A real multi-tenant system, labelled a demonstration. It provisions you a tenant and invites
-      you to attack it.
+      A real multi-tenant system, labelled a demonstration. Its attacks are recorded runs,
+      re-verified by CI on every push.
     </p>
     <p class="enterM__counts">
       {counts.systems} systems · {counts.decisions} decisions recorded · {counts.tests} integration tests
