@@ -4554,3 +4554,48 @@ hashes and the /health request, so it is not vacuous.
   the CSP is not loosened for third-party script. OWNER-INPUT: in the Cloudflare
   dashboard, turn off Web Analytics automatic injection for kishanthorat.com
   (or remove the site from Web Analytics).
+
+## S18 — Final UI polish and responsive QA: empty panels in two heroes, stale "provisions you a tenant" copy · 5 October 2026
+
+No architecture reopened: /live/, the stack, nav, typography and the
+/experience/ concept are untouched. Audit first, then the smallest fix for
+each real defect.
+
+**Found:**
+
+| Where | Defect | Fix |
+|---|---|---|
+| /experience/ hero | dark empty squares in the art. Plate 06 is the control room whose monitor screens hold station 06's overlays on the homepage; reused here without them, they read as broken panels | the hero's existing floor fade, raised to 40% for this page only (`floor` on PageHero): the globe and its light paths stay, the screens fall into the page. The shared plate is unchanged, so the homepage keeps its overlays |
+| /about/ hero | two empty HUD frames. Plate 08's frames hold "Next system" and "Awaiting the right problem" on the homepage; here they are empty boxes | `patches` on PageHero: each frame covered by a feathered piece of the same picture's city from beside it, placed in the plate's own coordinates (object-fit cover reproduced with container-query units, so it lands on the frame at every width) and carried by both of the plate's animations. No drawing, nothing invented. The browser reuses the hero's file (same `currentSrc` at 390 and 1440): no extra request, no extra bytes. Source offsets chosen by measured brightness (city around the frame 25.5, chosen source 23.3; the first candidate, 16.8, read as a dark block) |
+| Homepage stations 01, 02, 04, 06 | copy still said the live plane "provisions you a tenant and invites you to attack it" / "yours to attack", and the trace panels said "Live request trace · measured here" — false since S16 made /live/ recorded-first | rewritten to what is true: recorded runs of a real multi-tenant system, re-verified by CI on every push, labelled a demonstration; the panels are "Request trace · one round trip, end to end"; the no-JS trace caption no longer promises a reading |
+| llms.txt, profile JSON-LD | the machine layer said the same stale thing (rule 10) | the control plane is not publicly running; `/v1/demonstrations` answers only where deployed; the recordings are captured from real runs and CI re-runs the demonstrations on every push. The catalogue URL stays, as the schema and fastlane-check require |
+
+html-validate refused my first patch markup: inline geometry, and PlateImage's
+`div` inside a `span`. The gate is unchanged; the geometry moved into custom
+properties (which the recommended `no-inline-style` already permits, as the
+hero root uses) and the wrappers became `div`s.
+
+### Responsive audit
+
+`build/qa/site-audit.mjs` (local, not shipped): 12 routes (home, systems and
+the three case studies, experience, engineering, about, cv, /live/,
+/live/b-201/, the 404) at 320×700, 360×800, 390×844, 412×915, 480×900,
+768×1024, 820×1180, 1024×900, 1280×800, 1440×900 and 1920×1080 = 132 loads.
+It checks horizontal overflow, broken images, 4xx assets, console errors,
+unnamed controls, placeholder text, text past the viewport, and that the phone
+menu opens with the site links; it screenshots at five widths. Result: no
+problems except the homepage's "State: undefined" at 1280 and 1440, which is the
+intended station 08 text. Contact sheets at 320, 390, 768, 1440 and 1920
+inspected by eye; the /about/ and /experience/ heroes inspected full size at
+320, 390, 768, 1440 and 1920, with motion and without.
+
+### Verified (local)
+
+- `npm run verify` exit 0 (all gates, html-validate included); `format:check`
+  clean.
+- verify:live OK; render-verify 35/35.
+
+### Still open
+
+- Unchanged from S17: OWNER-INPUT — turn off Cloudflare Web Analytics automatic
+  injection for kishanthorat.com; its beacon is refused by the homepage CSP.
