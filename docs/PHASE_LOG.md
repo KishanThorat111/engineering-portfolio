@@ -4599,3 +4599,17 @@ inspected by eye; the /about/ and /experience/ heroes inspected full size at
 
 - Unchanged from S17: OWNER-INPUT — turn off Cloudflare Web Analytics automatic
   injection for kishanthorat.com; its beacon is refused by the homepage CSP.
+
+### S18 — CI and production
+
+CI for c94345f (run 37274965099): Build & truth gates 22/22, Lighthouse
+(enforcing) 9/9, recording conformance 14/14. The API workflow did not run, by
+design: services/ is untouched. Deployed by Workers Builds. `/`, `/about/`,
+`/experience/` and `/llms.txt` served by https://kishanthorat.com are
+byte-identical to the build (sha256 1565588d…, 5acf1d2c…, 030c8076…,
+6ca85106…). The served homepage no longer contains "provisions you a tenant".
+The site audit run against production gives 132 loads at all 11 widths, and its
+only finding is the intended "State: undefined". The production screenshots of
+the /about/ and /experience/ heroes at 390 and 1440 show no empty panels.
+`audit:prod` is clean. verify:live and render-verify serve the local build;
+they passed before the push.
