@@ -351,7 +351,8 @@ function Plan({
           anchor="end"
           className={refused ? 't-cyan' : 't-pencil'}
         >
-          {S.boundary}
+          {/* On the narrowest phones the full label meets the other room's name. */}
+          {width < 400 ? S.boundaryShort : S.boundary}
         </T>
         <Room
           x={theirs.x}

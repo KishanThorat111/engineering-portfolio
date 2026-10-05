@@ -956,7 +956,7 @@ export const COPY = {
         evidence: [
           {
             title: 'The deploy runs',
-            kind: 'text',
+            kind: 'trace',
             source: { label: 'Deploy API workflow runs', workflow: 'deploy-api.yml' },
             body:
               '#3  17 Aug 2026 04:35 UTC  18d174e  failure\n' +
@@ -1062,6 +1062,7 @@ export const COPY = {
         records: 'records',
         refused: 'Refused',
         boundary: 'Tenant boundary',
+        boundaryShort: 'Boundary',
         policy: 'Policy',
         forced: 'Row-level security forced',
         layerScope: 'Layer 1 — application scope',

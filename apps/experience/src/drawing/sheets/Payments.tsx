@@ -355,16 +355,23 @@ function Plan({
           />
         </>
       )}
-      <T x={compact ? 12 : door.x + 22} y={compact ? door.y + leaf + 36 : door.y + leaf / 2 + 40}>
+      <T x={compact ? 12 : door.x + 22} y={compact ? row.y + 50 : door.y + leaf / 2 + 40}>
         {S.door}
       </T>
-      <T
-        x={compact ? 12 : door.x + 22}
-        y={compact ? door.y + leaf + 54 : door.y + leaf / 2 + 58}
-        kind="mono"
-      >
-        UNIQUE (tenant_id, idempotency_key)
-      </T>
+      {compact ? (
+        <>
+          <T x={12} y={row.y + 68} kind="mono">
+            UNIQUE (tenant_id,
+          </T>
+          <T x={12 + 58} y={row.y + 84} kind="mono">
+            idempotency_key)
+          </T>
+        </>
+      ) : (
+        <T x={door.x + 22} y={door.y + leaf / 2 + 58} kind="mono">
+          UNIQUE (tenant_id, idempotency_key)
+        </T>
+      )}
 
       {points.map((p, i) => (
         <g key={i}>
@@ -419,9 +426,15 @@ function Plan({
                     draft
                   />
                 )}
-                <T x={mx} y={my + (p.y < door.y ? -12 : 22)} kind="num" anchor="middle">
-                  {`${fmtMs(o.ms)} · ${won ? S.activated : M.replayed}`}
-                </T>
+                {compact ? (
+                  <T x={12} y={yours.y + 62 + i * 16} kind="num">
+                    {`${i === 0 ? 'A' : 'B'} · ${fmtMs(o.ms)} · ${won ? S.activated : M.replayed}`}
+                  </T>
+                ) : (
+                  <T x={mx} y={my + (p.y < door.y ? -12 : 22)} kind="num" anchor="middle">
+                    {`${fmtMs(o.ms)} · ${won ? S.activated : M.replayed}`}
+                  </T>
+                )}
               </g>
             );
           })

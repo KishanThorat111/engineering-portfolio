@@ -267,8 +267,8 @@ function Plan({
         y={data.y}
         w={data.w}
         h={data.h}
-        name={S.dataPlane}
-        reference={S.free}
+        name={compact ? S.dataPlane.split(' — ')[0]! : S.dataPlane}
+        reference={compact ? `${S.dataPlane.split(' — ')[1] ?? ''} · ${S.free}` : S.free}
         inked={used.includes('data-plane')}
       />
       <Room

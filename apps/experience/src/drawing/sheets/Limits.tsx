@@ -251,9 +251,9 @@ function Plan({
       {runs.length ? (
         compact ? (
           <Line
-            x1={width / 2}
+            x1={width - 14}
             y1={doorY}
-            x2={width / 2}
+            x2={width - 14}
             y2={gridY - 8}
             className="ln ln--req"
             draft

@@ -1286,6 +1286,24 @@ h3 .tb__sub {
   gap: 8px;
 }
 
+/*
+ * The fix list sits INSIDE a notes row, so `.notes li` — the three-column
+ * grid every notes row uses — matched these items too, and squeezed each
+ * commit hash into the 30px number column, one or two characters per line.
+ * A fix item is plain flowing text; a commit hash never breaks.
+ */
+.incident__fixes li {
+  display: block;
+  padding: 0;
+  border: 0;
+}
+
+.incident__fixes a,
+.tb__commits a,
+.incident__sources a.mono {
+  white-space: nowrap;
+}
+
 .incident__date {
   color: var(--ink-2);
   font-size: 13px;
