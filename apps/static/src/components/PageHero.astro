@@ -42,12 +42,26 @@ interface Props {
     /** Set when the picture is content (the owner), empty for a scene. */
     alt?: string;
     /**
-     * Where the scene falls away into the page ground, as a share of its
-     * height (e.g. 52). For a plate whose lower part only makes sense under
-     * the home page's overlays — plate 06's console screens carry the live
-     * panels there and are blank anywhere else.
+     * Screens painted into a plate, written on with the page's own facts, as
+     * the home page writes on them (x, y, w, h in percent of the plate). Plate
+     * 06's ring screen and three deck panels carry the live panels on the home
+     * page; on /experience/ they carry the career's stages. The same facts are
+     * on the page in full, so the screens are hidden from assistive tech.
+     * `short` is what a screen shows when the picture is phone-sized.
+     * `narrowOnly` is for a screen the headline sits over on a wide screen,
+     * where its type would run into the headline's.
      */
-    floor?: number;
+    screens?: ReadonlyArray<{
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+      kicker: string;
+      title: string;
+      short: string;
+      now?: boolean;
+      narrowOnly?: boolean;
+    }>;
     /**
      * Frames painted into a plate that only make sense with the home page's
      * labels inside them, each covered by a feathered patch of the same
@@ -67,13 +81,14 @@ const { index, label, hue, compact = false, art } = Astro.props;
 function fraction(focus: string, axis: 0 | 1): number {
   return Number.parseFloat(focus.split(/\s+/)[axis] ?? '50') / 100;
 }
+const marks = Boolean(art?.patches || art?.screens);
 const style = [
   hue && `--ph-hue:${hue}`,
   art && `--ph-focus-narrow:${art.focusNarrow ?? art.focus}`,
-  art?.floor && `--ph-floor:${art.floor}%`,
   // The focal point as fractions, so a mark can sit where the picture does.
-  art?.patches && `--ph-fx:${fraction(art.focus, 0)}; --ph-fy:${fraction(art.focus, 1)}`,
-  art?.patches &&
+  art && marks && `--ph-fx:${fraction(art.focus, 0)}; --ph-fy:${fraction(art.focus, 1)}`,
+  art &&
+    marks &&
     `--ph-fx-n:${fraction(art.focusNarrow ?? art.focus, 0)}; --ph-fy-n:${fraction(art.focusNarrow ?? art.focus, 1)}`,
 ]
   .filter(Boolean)
@@ -81,7 +96,7 @@ const style = [
 ---
 
 <header
-  class:list={['ph', compact && 'ph--compact', art && 'ph--art', art?.floor && 'ph--floor']}
+  class:list={['ph', compact && 'ph--compact', art && 'ph--art']}
   style={style || undefined}
   data-light={art ? '.ph-scene' : undefined}
 >
@@ -101,11 +116,25 @@ const style = [
           focus={art.focus}
           class="ph-plate"
         />
-        {art.patches && (
+        {marks && (
           <div class="ph-marks" aria-hidden="true">
             <div class="ph-marks__settle">
               <div class="ph-marks__plate">
-                {art.patches.map((r) => (
+                {art.screens?.map((r) => (
+                  <div
+                    class:list={[
+                      'ph-screen',
+                      r.now && 'ph-screen--now',
+                      r.narrowOnly && 'ph-screen--narrow',
+                    ]}
+                    style={`--x:${r.x}%;--y:${r.y}%;--w:${r.w}%;--h:${r.h}%`}
+                  >
+                    <p class="ph-screen__kicker">{r.kicker}</p>
+                    <p class="ph-screen__title">{r.title}</p>
+                    <p class="ph-screen__short">{r.short}</p>
+                  </div>
+                ))}
+                {art.patches?.map((r) => (
                   <div class="ph-patch" style={`--x:${r.x}%;--y:${r.y}%;--w:${r.w}%;--h:${r.h}%`}>
                     <div
                       class="ph-patch__src"
@@ -302,21 +331,7 @@ const style = [
   }
 
   /*
-   * A plate with a floor fades out below it. Set on the plate rather than the
-   * scene, so it multiplies with the scene's own feathered edge. The plate is
-   * fitted to the frame's height at every width, so a share of the frame is
-   * the same rows of the picture on a phone and on a wide screen.
-   */
-  .ph--floor .ph-scene :global(.ph-plate) {
-    mask-image: linear-gradient(
-      to bottom,
-      #000 calc(var(--ph-floor) - 10%),
-      transparent var(--ph-floor)
-    );
-  }
-
-  /*
-   * PATCHES, PLACED IN THE PICTURE'S OWN COORDINATES.
+   * PATCHES AND SCREENS, PLACED IN THE PICTURE'S OWN COORDINATES.
    *
    * The plate is drawn with object-fit: cover on a focal point, so a point of
    * the picture lands somewhere that depends on the frame's shape. The inner
@@ -325,7 +340,9 @@ const style = [
    * fraction — using the scene as a size container, so a region given in
    * percent of the plate lands on the same pixels at every width. The two
    * outer layers carry the plate's own two animations, so a patch never
-   * slides off what it covers. Every plate is 2528 x 1696.
+   * slides off what it covers. Every plate is 2528 x 1696; type on a screen is
+   * sized in plate pixels (--u), as the home page sizes its own, so it scales
+   * with the picture it is written on.
    */
   .ph-marks {
     position: absolute;
@@ -343,6 +360,7 @@ const style = [
 
   .ph-marks__plate {
     position: absolute;
+    container-type: size;
     width: max(100cqw, 100cqh * var(--ph-a));
     height: max(100cqh, 100cqw / var(--ph-a));
     left: calc((100cqw - max(100cqw, 100cqh * var(--ph-a))) * var(--ph-fx));
@@ -374,6 +392,95 @@ const style = [
   .ph-patch__src :global(.ph-patch__img) {
     width: 100%;
     height: 100%;
+  }
+
+  .ph-screen {
+    --u: calc(100cqw / 2528);
+    --ph-ink: var(--hue-violet);
+
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: var(--w);
+    height: var(--h);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: calc(10 * var(--u));
+    padding: calc(16 * var(--u)) calc(22 * var(--u));
+    border: 1px solid color-mix(in srgb, var(--ph-ink) 38%, transparent);
+    border-radius: calc(14 * var(--u));
+    background:
+      radial-gradient(
+        120% 90% at 50% 0%,
+        color-mix(in srgb, var(--ph-ink) 16%, transparent),
+        transparent 70%
+      ),
+      rgb(6 9 16 / 0.72);
+    box-shadow:
+      0 0 calc(36 * var(--u)) color-mix(in srgb, var(--ph-ink) 22%, transparent),
+      inset 0 0 calc(24 * var(--u)) color-mix(in srgb, var(--ph-ink) 10%, transparent);
+    overflow: hidden;
+  }
+
+  .ph-screen--now {
+    --ph-ink: var(--hue-ember);
+  }
+
+  .ph-screen p {
+    margin: 0;
+  }
+
+  .ph-screen__kicker {
+    font-family: var(--font-mono);
+    font-size: calc(21 * var(--u));
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--ph-ink) 70%, white);
+  }
+
+  .ph-screen__title {
+    font-size: calc(31 * var(--u));
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--text);
+    text-wrap: balance;
+  }
+
+  .ph-screen__short {
+    display: none;
+    white-space: pre-line;
+    line-height: 1.15;
+    font-family: var(--font-mono);
+    font-size: calc(54 * var(--u));
+    letter-spacing: 0.04em;
+    text-align: center;
+    color: color-mix(in srgb, var(--ph-ink) 55%, white);
+  }
+
+  /* Phones and tablets, where the picture is narrower than the page: plate-
+     pixel type would be too small to read, so each screen shows one large
+     short mark instead. */
+  @media (max-width: 899.98px) {
+    .ph-screen {
+      align-items: center;
+      padding: 0;
+    }
+
+    .ph-screen__kicker,
+    .ph-screen__title {
+      display: none;
+    }
+
+    .ph-screen__short {
+      display: block;
+    }
+  }
+
+  @media (min-width: 900px) {
+    .ph-screen--narrow {
+      display: none;
+    }
   }
 
   @media (max-width: 899.98px) {

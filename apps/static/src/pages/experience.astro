@@ -72,6 +72,45 @@ const journey = [
 ];
 
 /*
+ * The same stages on the screens plate 06 draws, as the home page writes its
+ * live panels there: the whole span on the ring's screen, one stage on each
+ * of the deck's three panels, oldest on the left (on a wide screen, where the
+ * headline covers the first panel, the two after it). Read from `journey`, so they
+ * cannot disagree with the career line beneath. Screen bounds measured off the
+ * plate (percent of its width and height).
+ */
+const DECK = [
+  { x: 23.4, w: 12.2 },
+  { x: 40.8, w: 17.7 },
+  { x: 63.2, w: 13.3 },
+] as const;
+const first = journey[0]!.when.split(' – ')[0]!;
+const last = journey[journey.length - 1]!.when.split(' – ')[1]!;
+const heroScreens = [
+  {
+    x: 44.6,
+    y: 30.4,
+    w: 10.6,
+    h: 11.4,
+    kicker: `${journey.length} stages`,
+    title: `${first} – ${last}`,
+    short: `${first}\n– ${last === 'Present' ? 'now' : last}`,
+  },
+  ...journey.map((stage, i) => ({
+    ...DECK[i]!,
+    y: 53.6,
+    h: 11,
+    kicker: stage.when,
+    title: stage.what,
+    short: stage.when.split(' – ')[0]!.replace(/^\D+/, ''),
+    now: stage.now,
+    // On a wide screen the headline ends over this panel; the ring's span
+    // still starts the line there, and the career line below lists it.
+    narrowOnly: i === 0,
+  })),
+];
+
+/*
  * The same three stages on the path plate 10 draws through the city, from its
  * lit start at the foot of the frame to the cube it ends in. Positions are
  * points on the plate, measured off a 10% grid. The card shows the plate with
@@ -95,7 +134,7 @@ const pathTags = journey.map((stage, i) => {
   <PageHero
     index="02"
     label="Experience"
-    art={{ plate: 'live', focus: '50% 38%', focusNarrow: '50% 34%', floor: 40 }}
+    art={{ plate: 'live', focus: '50% 38%', focusNarrow: '50% 34%', screens: heroScreens }}
   >
     <Fragment slot="title">Where the work has been, and <em>what it was</em></Fragment>
     <p slot="lede">{description}</p>
