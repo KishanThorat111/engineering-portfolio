@@ -4613,3 +4613,46 @@ only finding is the intended "State: undefined". The production screenshots of
 the /about/ and /experience/ heroes at 390 and 1440 show no empty panels.
 `audit:prod` is clean. verify:live and render-verify serve the local build;
 they passed before the push.
+
+## S19 — /experience/ hero: the screens carry the career instead of fading out · 5 October 2026
+
+**Correction to S18.** S18 removed plate 06's empty screens from the
+/experience/ hero by raising its floor fade to 40%. The owner rejected that:
+darkening a picture to hide its empty panels does not improve the design. The
+screens are now written on, as the homepage writes on the same screens at
+station 06.
+
+- PageHero's `floor` (added in S18, used only here) is removed. A `screens`
+  prop takes the place of the fade. Each screen is a box in the plate's own
+  coordinates, using the same cover arithmetic as `patches`, so it sits on the
+  painted screen at every width and moves with the plate's settle and drift.
+  Type is sized in plate pixels (`--u`), as the homepage sizes its own.
+- What the screens say comes from `journey`, the same data as the career line
+  beneath (CV_EARLIER_CAREER plus the experience collection). Nothing is
+  retyped or estimated.
+  - **Ring:** the span ("3 stages · 2018 – Present").
+  - **Deck:** one stage per panel, oldest on the left; the current stage is
+    ember, matching the career line's current dot.
+  - Below 900px the type would be unreadable, so each screen shows one large
+    mark instead: 2018 – now · 2018 · 2023 · 2025.
+- On wide screens the headline ends over the first deck panel. Its text ran
+  into the headline at every width from 1024 to 1920, so that one panel is
+  shown only below 900px. There the picture sits above the type, and the
+  headline covers that spot otherwise.
+- The screens are `aria-hidden`: the same facts are in the career line in
+  full.
+
+Plate screen bounds were measured from runs of dark pixels on the full-size
+plate: ring x 44.3–55.4, y 30.2–42; deck panels at x 23.4/40.8/63.2, about
+y 53–65.
+
+### Verified (local)
+
+- Screenshots at 1920, 1440, 1280, 1024, 820, 768, 480, 390 and 320, plus the
+  full-motion entrance and a scrolled state at 1440. The screens stay on the
+  plate and no type collides.
+- site-audit: 132 loads at 11 widths; its only finding is the intended "State:
+  undefined".
+- `npm run verify` exit 0. astro check caught a narrowing error in the style
+  list, which is fixed. format:check, render-verify and verify:live all pass.
+  The /about/ patches are unchanged.
